@@ -137,37 +137,42 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
   - **Không tách theo khối lượng**: một `order_part` luôn đi nguyên trên một chuyến.
 
 ### Kế hoạch & chuyến
-- `delivery_plans(plan_date, status: DRAFT|APPROVED|CLOSED)` – kế hoạch ngày = tập hợp lệnh trong ngày
-- `planning_runs(plan_id, trigger: SCHEDULED|MANUAL, cutover_at, input_snapshot jsonb, result_summary, unassigned jsonb)`
-- `trips` – **Lệnh giao = Chuyến (1–1)**, gộp làm một bảng với hai trục trạng thái:
-  - `vehicle_id, driver_id, assistant_id, warehouse_id, trip_seq_in_day, planned_start/end, planned_distance_km, planned_cost, source: AUTO|MANUAL`
+- **Kế hoạch ngày** = tập các lệnh có cùng `plan_date` (không có bảng riêng; M4 thêm `planning_runs(plan_date, trigger, cutover_at, input_snapshot, result_summary, unassigned)`).
+- `trips` – **Lệnh giao = Chuyến (1–1)**, mã `L{yyMMdd}-{nn}`, hai trục trạng thái:
+  - `plan_date, vehicle_id, warehouse_id, driver_id?, assistant_id?, trip_seq` (lượt thứ mấy của xe trong ngày)`, source: MANUAL|AUTO, total_weight_kg, total_value`, mốc thời gian duyệt/xuất kho/xuất phát/kết thúc.
   - `order_status` (lệnh): `DRAFT → APPROVED → PICKED → DISPATCHED → CLOSED` (+ `CANCELLED`)
-  - `delivery_status` (chuyến): `NOT_STARTED | IN_PROGRESS | FINISHED` + thống kê `success_count`, `failed_count`, `cancelled_count`
-- `trip_stops(trip_id, seq, delivery_point_id? | adhoc_address + location, planned_eta)` – lệnh thủ công có thể có điểm dừng không gắn đơn
-- `trip_items(trip_stop_id, order_part_id? | adhoc_description)`
+  - `delivery_status` (chuyến): `NOT_STARTED | IN_PROGRESS | FINISHED`; thống kê thành công/thất bại/hủy tính từ item.
+  - (M4) `planned_distance_km, planned_cost, planned_start/end`.
+- `trip_stops(trip_id, seq, delivery_point_id? | name + address + latitude/longitude)` – lệnh thủ công có thể có điểm dừng tự do.
+- `trip_items(trip_id, stop_id, order_part_id? | description, weight_kg, value, status, reason, delivered_at, updated_by, is_manual_update)`; unique index: 1 phần đơn chỉ nằm trong 1 item chưa hủy.
 
 ### Giao hàng
 - `delivery_rules(company_id)`: cửa sổ thời gian được phép xác nhận, bán kính dung sai (m), bắt buộc ảnh, cho phép xác nhận offline.
 - `delivery_confirmations(trip_item_id, result: SUCCESS|FAILED, reason_code, delivered_at, recorded_at, device_time, lat, lng, distance_to_point_m, rule_check jsonb, confirmed_by, is_manual_override)`
 - `delivery_photos(confirmation_id, object_key)`
-- `audit_logs(entity, entity_id, action, before, after, user_id, at)` – mọi thay đổi trạng thái & chỉnh sửa thời gian giao.
+- `audit_logs(entity, entity_id, action, data jsonb, user_id, created_at)` – mọi thay đổi trạng thái lệnh & cập nhật giao hàng (đã có từ M2).
 
 ## 8. Luồng trạng thái & nguyên tắc vận hành
 
 ```
-order_part: PENDING ──(lập lệnh)──► PLANNED ──► DELIVERED
-                ▲                         └───► FAILED ──(vòng kế hoạch sau)──┐
-                └──────────────────────────────────────────────────────────────┘
+order_part: PENDING ──(vào lệnh)──► PLANNED ──► DELIVERED
+              ▲  ▲                       └───► FAILED (attempt_count+1) ── xếp lệnh lại được
+              │  └──── hủy lệnh / hủy item (về PENDING, hoặc FAILED nếu đã từng thất bại)
+              └──────── sửa lệnh bỏ phần đơn ra
 trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho─► PICKED ─lái xe nhận─► DISPATCHED ─QL xác nhận kết thúc─► CLOSED
 ```
 
-- Sửa lệnh sau `APPROVED` → quay về `DRAFT`, cần duyệt lại; sau `PICKED` chỉ cho phép khi thủ kho xác nhận hoàn trả.
+- Phần đơn được xếp lệnh khi `PENDING` hoặc `FAILED` (giao lại), đơn `OPEN`, ngày giao yêu cầu ≤ ngày lập lệnh. Vào lệnh (kể cả nháp) → `PLANNED` để không xếp trùng.
+- Ràng buộc **chặn** khi lưu lệnh: xe hoạt động, kho thuộc danh sách kho của xe, lái xe/phụ xe có vai trò `driver`, phụ xe bắt buộc nếu xe yêu cầu, phần đơn đúng điểm dừng, loại hàng hợp `cargo_class` của xe, loại xe đúng yêu cầu của khách, tổng khối lượng ≤ trọng tải. **Cảnh báo** (vẫn lưu): tồn kho tại kho xuất không đủ (trừ phần đã giữ bởi lệnh khác chưa xuất kho), ngày giao khác ngày yêu cầu, ngày không phải ngày giao hàng.
+- Duyệt cần có lái xe. Sửa lệnh sau `APPROVED` → quay về `DRAFT`, cần duyệt lại; sau `PICKED` không sửa/hủy được (chưa có luồng hoàn trả kho).
+- Quyền: lập/sửa/duyệt/hủy/cập nhật giao/kết thúc = `manager`; xác nhận xuất kho = `warehouse_keeper`; xuất phát = `manager` hoặc lái xe/phụ xe của chuyến.
 - Thủ kho chỉ xác nhận `PICKED` cho lệnh `APPROVED`.
 - Lái xe chỉ xác nhận item thuộc trip `DISPATCHED` mà mình là `driver_id` (hoặc `assistant_id`).
 - Item trong chuyến có trạng thái `PENDING → SUCCESS | FAILED | CANCELLED`.
 - `trip.delivery_status` chuyển sang `FINISHED` ("Kết thúc") khi **không còn item `PENDING`**, kể cả khi có đơn thất bại. Chuyến lưu kèm thống kê thành công / thất bại / hủy.
 - **Chỉ quản lý** được hủy (`CANCELLED`) item đang `PENDING`, phải ghi lý do và có audit. Lái xe không được hủy.
-- Đơn `FAILED`, và đơn bị hủy khỏi chuyến, tự động quay về `PENDING` cho lần lập kế hoạch kế tiếp. Muốn hủy hẳn đơn hàng thì quản lý thao tác trên đơn (`order_part.status = CANCELLED`).
+- Phần đơn `FAILED` giữ trạng thái (kèm `attempt_count`) và **được xếp lại** ở lần lập kế hoạch kế tiếp; phần đơn bị hủy khỏi chuyến quay về `PENDING`. Muốn hủy hẳn đơn hàng thì quản lý hủy đơn (chỉ khi chưa vào lệnh).
+- Đơn chuyển `COMPLETED` khi mọi phần đơn (không tính đã hủy) `DELIVERED`.
 
 ## 9. Lập kế hoạch tự động (module `planning` + `optimization`)
 
@@ -252,3 +257,6 @@ Ghi nhận khi dựng M0 trên Spark:
 | D12 | Docker Compose; dev/test trên DGX Spark (ARM64), mobile giả lập; production trên cloud VPS | Chốt |
 | D13 | Một chuyến chỉ lấy hàng tại 1 kho (giai đoạn này; có thể mở ở phase sau) | Chốt tạm |
 | D14 | Item bị quản lý hủy khỏi chuyến quay về `PENDING` để lập lại kế hoạch (không hủy hẳn đơn) | Chốt |
+| D15 | Không có bảng kế hoạch ngày riêng: kế hoạch = các lệnh cùng `plan_date` | Chốt (M2) |
+| D16 | Bản đồ: MapLibre + tile OSM công cộng khi dev; production cấu hình `VITE_MAP_TILE_URL` (nhà cung cấp tile/tự host) | Chốt (M2) |
+| D17 | In phiếu soạn hàng / giao hàng bằng trang in của trình duyệt (In / Lưu PDF), chưa sinh PDF phía server | Chốt (M2) |

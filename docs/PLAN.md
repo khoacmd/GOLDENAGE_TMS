@@ -33,18 +33,21 @@
 - [x] Báo cáo lỗi import theo dòng, upsert idempotent, all-or-nothing, dry-run, lịch sử import
 - [x] Template chuẩn 6 loại dữ liệu + `docs/IMPORT_TEMPLATES.md` (sinh tự động) + dữ liệu mẫu `docs/samples/`
 - [x] API key cho hệ thống ngoài (`/api/v1/integration/{loại}`)
-- [ ] Bản đồ: chọn tọa độ trên bản đồ, hiển thị khách hàng/kho (MapLibre) - chuyển sang M2 cùng màn hình lập lệnh
+- [x] Bản đồ: chọn tọa độ trên bản đồ (làm ở M2)
 - [ ] Cấu hình thiết bị (PC/mobile/máy in) - chuyển sang M3 cùng đăng ký thiết bị mobile
 - [ ] Quy tắc xác nhận giao (thời gian, bán kính tọa độ) - chuyển sang M3
 
 ## M2 – Lập lệnh thủ công & kho
-- [ ] Kế hoạch ngày, tạo lệnh giao (chuyến) thủ công: chọn xe, kho, đơn hoặc điểm dừng tự do
-- [ ] Kiểm tra ràng buộc khi lập thủ công (tải trọng, loại hàng, loại xe yêu cầu, kho của xe)
-- [ ] Phân công lái xe, phụ xe (bắt buộc phụ xe nếu xe yêu cầu)
-- [ ] Phê duyệt / điều chỉnh / hủy lệnh, audit log
-- [ ] Thủ kho: danh sách lệnh đã duyệt, phiếu soạn hàng, xác nhận xuất hàng
-- [ ] In phiếu soạn hàng / phiếu giao hàng (PDF)
-- [ ] Quản lý cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến
+- [x] Kế hoạch ngày, tạo lệnh giao (chuyến) thủ công: chọn xe, kho, đơn hoặc điểm dừng tự do
+- [x] Kiểm tra ràng buộc khi lập thủ công (tải trọng, loại hàng, loại xe yêu cầu, kho của xe) + cảnh báo tồn kho
+- [x] Phân công lái xe, phụ xe (bắt buộc phụ xe nếu xe yêu cầu)
+- [x] Phê duyệt / điều chỉnh / hủy lệnh, audit log
+- [x] Thủ kho: danh sách lệnh đã duyệt, phiếu soạn hàng, xác nhận xuất hàng
+- [x] In phiếu soạn hàng / phiếu giao hàng (trang in trình duyệt → PDF)
+- [x] Quản lý cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến
+- [x] Bản đồ (MapLibre): chọn tọa độ kho/điểm giao, xem điểm dừng của lệnh
+- [ ] Thủ kho giới hạn theo kho được phân công (`user_roles.warehouse_id`)
+- [ ] Hoàn trả kho / hủy lệnh sau khi đã xuất kho
 
 ## M3 – Mobile cho nhân viên giao hàng (→ pilot vận hành thủ công)
 - [ ] Danh sách chuyến được gán, chi tiết điểm dừng, mở chỉ đường

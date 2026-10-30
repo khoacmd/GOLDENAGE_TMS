@@ -35,7 +35,7 @@ const OFFICE: Access[] = ['company_admin', 'manager', 'warehouse_keeper']
 const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Tổng quan', icon: <HomeOutlined />, access: ['all'] },
   { path: '/orders', label: 'Đơn hàng', icon: <FileTextOutlined />, access: OFFICE },
-  { path: '/plans', label: 'Kế hoạch giao hàng', icon: <CarOutlined />, access: ['manager'] },
+  { path: '/plans', label: 'Kế hoạch giao hàng', icon: <CarOutlined />, access: ['manager', 'company_admin'] },
   { path: '/warehouse', label: 'Xuất kho', icon: <InboxOutlined />, access: ['warehouse_keeper'] },
   {
     path: '/master-data',
