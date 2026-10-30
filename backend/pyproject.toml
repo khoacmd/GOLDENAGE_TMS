@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
     "asyncpg>=0.32.0",
+    "boto3>=1.43.122",
     "fastapi>=0.162.0",
     "geoalchemy2>=0.20.0",
     "openpyxl>=3.1.5",
@@ -23,6 +24,7 @@ package = false
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[s3]>=1.43.122",
     "httpx>=0.28.1",
     "mypy>=2.4.1",
     "pytest>=9.2.0",

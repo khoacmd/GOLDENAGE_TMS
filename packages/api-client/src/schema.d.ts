@@ -604,6 +604,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{trip_id}/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Trip Confirmations */
+        get: operations["trip_confirmations_api_v1_trips__trip_id__confirmations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rules */
+        get: operations["rules_api_v1_driver_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Trips
+         * @description Chuyến đã duyệt được phân công cho tôi (lái xe hoặc phụ xe).
+         */
+        get: operations["my_trips_api_v1_driver_trips_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/trips/{trip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Trip */
+        get: operations["my_trip_api_v1_driver_trips__trip_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Photo */
+        post: operations["upload_photo_api_v1_driver_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Item
+         * @description Xác nhận kết quả giao. `accepted=false` kèm `violations` nếu vi phạm quy tắc (vẫn lưu).
+         */
+        post: operations["confirm_item_api_v1_driver_trips__trip_id__items__item_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/specs": {
         parameters: {
             query?: never;
@@ -860,6 +968,14 @@ export interface components {
              */
             file: string;
         };
+        /** Body_upload_photo_api_v1_driver_photos_post */
+        Body_upload_photo_api_v1_driver_photos_post: {
+            /**
+             * File
+             * @description Ảnh chứng từ giao nhận
+             */
+            file: string;
+        };
         /** CancelIn */
         CancelIn: {
             /** Reason */
@@ -946,6 +1062,20 @@ export interface components {
         CompanyRole: "company_admin" | "manager" | "warehouse_keeper" | "driver";
         /** CompanySettingsOut */
         CompanySettingsOut: {
+            /** Confirm Time Rule */
+            confirm_time_rule: boolean;
+            /** Confirm Grace Minutes */
+            confirm_grace_minutes: number;
+            /** Confirm Geofence */
+            confirm_geofence: boolean;
+            /** Confirm Radius M */
+            confirm_radius_m: number;
+            /** Photo Required Success */
+            photo_required_success: boolean;
+            /** Photo Required Failed */
+            photo_required_failed: boolean;
+            /** Offline Max Delay Minutes */
+            offline_max_delay_minutes: number;
             /** Working Weekdays */
             working_weekdays: number[];
             /**
@@ -978,6 +1108,20 @@ export interface components {
             cutover_time?: string | null;
             /** Timezone */
             timezone?: string | null;
+            /** Confirm Time Rule */
+            confirm_time_rule?: boolean | null;
+            /** Confirm Grace Minutes */
+            confirm_grace_minutes?: number | null;
+            /** Confirm Geofence */
+            confirm_geofence?: boolean | null;
+            /** Confirm Radius M */
+            confirm_radius_m?: number | null;
+            /** Photo Required Success */
+            photo_required_success?: boolean | null;
+            /** Photo Required Failed */
+            photo_required_failed?: boolean | null;
+            /** Offline Max Delay Minutes */
+            offline_max_delay_minutes?: number | null;
         };
         /** CompanyUpdate */
         CompanyUpdate: {
@@ -1033,6 +1177,98 @@ export interface components {
             password?: string | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /**
+         * ConfirmIn
+         * @description Nhân viên giao hàng xác nhận kết quả 1 mục hàng (gửi từ app, có thể gửi lại khi offline).
+         */
+        ConfirmIn: {
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /** @description SUCCESS hoặc FAILED */
+            status: components["schemas"]["ItemStatus"];
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Device Time
+             * Format: date-time
+             * @description Thời điểm thao tác trên thiết bị (có múi giờ)
+             */
+            device_time: string;
+            /** Latitude */
+            latitude?: number | string | null;
+            /** Longitude */
+            longitude?: number | string | null;
+            /** Accuracy M */
+            accuracy_m?: number | string | null;
+            /**
+             * Is Mock Location
+             * @default false
+             */
+            is_mock_location: boolean;
+            /**
+             * Photo Keys
+             * @default []
+             */
+            photo_keys: string[];
+        };
+        /** ConfirmationOut */
+        ConfirmationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            status: components["schemas"]["ItemStatus"];
+            /** Reason */
+            reason: string | null;
+            /**
+             * Device Time
+             * Format: date-time
+             */
+            device_time: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Latitude */
+            latitude: string | null;
+            /** Longitude */
+            longitude: string | null;
+            /** Accuracy M */
+            accuracy_m: string | null;
+            /** Is Mock Location */
+            is_mock_location: boolean;
+            /** Distance M */
+            distance_m: string | null;
+            /** Accepted */
+            accepted: boolean;
+            /** Violations */
+            violations: string[];
+            /**
+             * Photos
+             * @default []
+             */
+            photos: components["schemas"]["PhotoOut"][];
         };
         /**
          * CostAllocationMethod
@@ -1172,6 +1408,26 @@ export interface components {
             is_default: boolean;
             /** Is Active */
             is_active: boolean;
+        };
+        /**
+         * DeliveryRules
+         * @description Điều kiện cho nhân viên giao hàng xác nhận kết quả giao.
+         */
+        DeliveryRules: {
+            /** Confirm Time Rule */
+            confirm_time_rule: boolean;
+            /** Confirm Grace Minutes */
+            confirm_grace_minutes: number;
+            /** Confirm Geofence */
+            confirm_geofence: boolean;
+            /** Confirm Radius M */
+            confirm_radius_m: number;
+            /** Photo Required Success */
+            photo_required_success: boolean;
+            /** Photo Required Failed */
+            photo_required_failed: boolean;
+            /** Offline Max Delay Minutes */
+            offline_max_delay_minutes: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1560,6 +1816,13 @@ export interface components {
             /** Phone */
             phone: string | null;
         };
+        /** PhotoOut */
+        PhotoOut: {
+            /** Key */
+            key: string;
+            /** Url */
+            url: string;
+        };
         /** PickingLineOut */
         PickingLineOut: {
             /** Product Code */
@@ -1937,6 +2200,11 @@ export interface components {
             };
             /** Note */
             note: string | null;
+        };
+        /** UploadedPhoto */
+        UploadedPhoto: {
+            /** Key */
+            key: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -3582,6 +3850,189 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trip_confirmations_api_v1_trips__trip_id__confirmations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rules_api_v1_driver_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryRules"];
+                };
+            };
+        };
+    };
+    my_trips_api_v1_driver_trips_get: {
+        parameters: {
+            query?: {
+                /** @description Mặc định: hôm nay */
+                plan_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_trip_api_v1_driver_trips__trip_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_photo_api_v1_driver_photos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_photo_api_v1_driver_photos_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadedPhoto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_item_api_v1_driver_trips__trip_id__items__item_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmationOut"];
                 };
             };
             /** @description Validation Error */

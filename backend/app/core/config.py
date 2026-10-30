@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = 7
 
     business_timezone: str = "Asia/Ho_Chi_Minh"
+
+    # Lưu ảnh chứng từ: "s3" (SeaweedFS/MinIO/S3 thật) hoặc "memory" (test).
+    storage_backend: Literal["s3", "memory"] = "s3"
+    s3_endpoint: str = "http://localhost:58333"
+    # Địa chỉ trình duyệt dùng để mở ảnh (URL ký sẵn); mặc định = s3_endpoint.
+    s3_public_endpoint: str | None = None
+    s3_access_key: str = "tms-dev"
+    s3_secret_key: str = "tms-dev-secret"
+    s3_bucket: str = "tms-photos"
+    s3_region: str = "us-east-1"
+    max_photo_bytes: int = 8 * 1024 * 1024
     cors_origins: list[str] = ["http://localhost:5173"]
 
     @model_validator(mode="after")

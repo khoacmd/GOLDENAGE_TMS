@@ -2588,6 +2588,309 @@
         }
       }
     },
+    "/api/v1/trips/{trip_id}/confirmations": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Trip Confirmations",
+        "operationId": "trip_confirmations_api_v1_trips__trip_id__confirmations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConfirmationOut"
+                  },
+                  "title": "Response Trip Confirmations Api V1 Trips  Trip Id  Confirmations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/driver/rules": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Rules",
+        "operationId": "rules_api_v1_driver_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryRules"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/driver/trips": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "My Trips",
+        "description": "Chuyến đã duyệt được phân công cho tôi (lái xe hoặc phụ xe).",
+        "operationId": "my_trips_api_v1_driver_trips_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Mặc định: hôm nay",
+              "title": "Plan Date"
+            },
+            "description": "Mặc định: hôm nay"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TripSummaryOut"
+                  },
+                  "title": "Response My Trips Api V1 Driver Trips Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/driver/trips/{trip_id}": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "My Trip",
+        "operationId": "my_trip_api_v1_driver_trips__trip_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/driver/photos": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Upload Photo",
+        "operationId": "upload_photo_api_v1_driver_photos_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_photo_api_v1_driver_photos_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedPhoto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Confirm Item",
+        "description": "Xác nhận kết quả giao. `accepted=false` kèm `violations` nếu vi phạm quy tắc (vẫn lưu).",
+        "operationId": "confirm_item_api_v1_driver_trips__trip_id__items__item_id__confirm_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/imports/specs": {
       "get": {
         "tags": [
@@ -3283,6 +3586,21 @@
         ],
         "title": "Body_import_file_api_v1_imports__kind__post"
       },
+      "Body_upload_photo_api_v1_driver_photos_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Ảnh chứng từ giao nhận"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_photo_api_v1_driver_photos_post"
+      },
       "CancelIn": {
         "properties": {
           "reason": {
@@ -3490,6 +3808,40 @@
       },
       "CompanySettingsOut": {
         "properties": {
+          "confirm_time_rule": {
+            "type": "boolean",
+            "title": "Confirm Time Rule"
+          },
+          "confirm_grace_minutes": {
+            "type": "integer",
+            "maximum": 720.0,
+            "minimum": 0.0,
+            "title": "Confirm Grace Minutes"
+          },
+          "confirm_geofence": {
+            "type": "boolean",
+            "title": "Confirm Geofence"
+          },
+          "confirm_radius_m": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 20.0,
+            "title": "Confirm Radius M"
+          },
+          "photo_required_success": {
+            "type": "boolean",
+            "title": "Photo Required Success"
+          },
+          "photo_required_failed": {
+            "type": "boolean",
+            "title": "Photo Required Failed"
+          },
+          "offline_max_delay_minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 5.0,
+            "title": "Offline Max Delay Minutes"
+          },
           "working_weekdays": {
             "items": {
               "type": "integer"
@@ -3519,6 +3871,13 @@
         },
         "type": "object",
         "required": [
+          "confirm_time_rule",
+          "confirm_grace_minutes",
+          "confirm_geofence",
+          "confirm_radius_m",
+          "photo_required_success",
+          "photo_required_failed",
+          "offline_max_delay_minutes",
           "working_weekdays",
           "shift_start",
           "shift_end",
@@ -3592,6 +3951,89 @@
               }
             ],
             "title": "Timezone"
+          },
+          "confirm_time_rule": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Time Rule"
+          },
+          "confirm_grace_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 720.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Grace Minutes"
+          },
+          "confirm_geofence": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Geofence"
+          },
+          "confirm_radius_m": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000.0,
+                "minimum": 20.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Radius M"
+          },
+          "photo_required_success": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Required Success"
+          },
+          "photo_required_failed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Required Failed"
+          },
+          "offline_max_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offline Max Delay Minutes"
           }
         },
         "type": "object",
@@ -3815,6 +4257,240 @@
         },
         "type": "object",
         "title": "CompanyUserUpdate"
+      },
+      "ConfirmIn": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ItemStatus",
+            "description": "SUCCESS hoặc FAILED"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "device_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Device Time",
+            "description": "Thời điểm thao tác trên thiết bị (có múi giờ)"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy M"
+          },
+          "is_mock_location": {
+            "type": "boolean",
+            "title": "Is Mock Location",
+            "default": false
+          },
+          "photo_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Photo Keys",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "status",
+          "device_time"
+        ],
+        "title": "ConfirmIn",
+        "description": "Nhân viên giao hàng xác nhận kết quả 1 mục hàng (gửi từ app, có thể gửi lại khi offline)."
+      },
+      "ConfirmationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Id"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ItemStatus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "device_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Device Time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "accuracy_m": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy M"
+          },
+          "is_mock_location": {
+            "type": "boolean",
+            "title": "Is Mock Location"
+          },
+          "distance_m": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance M"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Photos",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "client_id",
+          "item_id",
+          "user_id",
+          "status",
+          "reason",
+          "device_time",
+          "created_at",
+          "latitude",
+          "longitude",
+          "accuracy_m",
+          "is_mock_location",
+          "distance_m",
+          "accepted",
+          "violations"
+        ],
+        "title": "ConfirmationOut"
       },
       "CostAllocationMethod": {
         "type": "string",
@@ -4344,6 +5020,56 @@
           "is_active"
         ],
         "title": "DeliveryPointOut"
+      },
+      "DeliveryRules": {
+        "properties": {
+          "confirm_time_rule": {
+            "type": "boolean",
+            "title": "Confirm Time Rule"
+          },
+          "confirm_grace_minutes": {
+            "type": "integer",
+            "maximum": 720.0,
+            "minimum": 0.0,
+            "title": "Confirm Grace Minutes"
+          },
+          "confirm_geofence": {
+            "type": "boolean",
+            "title": "Confirm Geofence"
+          },
+          "confirm_radius_m": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 20.0,
+            "title": "Confirm Radius M"
+          },
+          "photo_required_success": {
+            "type": "boolean",
+            "title": "Photo Required Success"
+          },
+          "photo_required_failed": {
+            "type": "boolean",
+            "title": "Photo Required Failed"
+          },
+          "offline_max_delay_minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 5.0,
+            "title": "Offline Max Delay Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirm_time_rule",
+          "confirm_grace_minutes",
+          "confirm_geofence",
+          "confirm_radius_m",
+          "photo_required_success",
+          "photo_required_failed",
+          "offline_max_delay_minutes"
+        ],
+        "title": "DeliveryRules",
+        "description": "Điều kiện cho nhân viên giao hàng xác nhận kết quả giao."
       },
       "HTTPValidationError": {
         "properties": {
@@ -5281,6 +6007,24 @@
           "phone"
         ],
         "title": "PersonOut"
+      },
+      "PhotoOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "url"
+        ],
+        "title": "PhotoOut"
       },
       "PickingLineOut": {
         "properties": {
@@ -6416,6 +7160,19 @@
           "note"
         ],
         "title": "TripSummaryOut"
+      },
+      "UploadedPhoto": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "UploadedPhoto"
       },
       "ValidationError": {
         "properties": {

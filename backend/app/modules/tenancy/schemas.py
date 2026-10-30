@@ -39,7 +39,19 @@ class CompanyOut(BaseModel):
     created_at: datetime
 
 
-class CompanySettingsOut(BaseModel):
+class DeliveryRules(BaseModel):
+    """Điều kiện cho nhân viên giao hàng xác nhận kết quả giao."""
+
+    confirm_time_rule: bool
+    confirm_grace_minutes: int = Field(ge=0, le=720)
+    confirm_geofence: bool
+    confirm_radius_m: int = Field(ge=20, le=10_000)
+    photo_required_success: bool
+    photo_required_failed: bool
+    offline_max_delay_minutes: int = Field(ge=5, le=24 * 60)
+
+
+class CompanySettingsOut(DeliveryRules):
     model_config = ConfigDict(from_attributes=True)
 
     working_weekdays: list[int]
@@ -57,6 +69,13 @@ class CompanySettingsUpdate(BaseModel):
     shift_end: time | None = None
     cutover_time: time | None = None
     timezone: str | None = None
+    confirm_time_rule: bool | None = None
+    confirm_grace_minutes: int | None = Field(default=None, ge=0, le=720)
+    confirm_geofence: bool | None = None
+    confirm_radius_m: int | None = Field(default=None, ge=20, le=10_000)
+    photo_required_success: bool | None = None
+    photo_required_failed: bool | None = None
+    offline_max_delay_minutes: int | None = Field(default=None, ge=5, le=24 * 60)
 
     @field_validator("working_weekdays")
     @classmethod

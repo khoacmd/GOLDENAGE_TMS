@@ -11,13 +11,21 @@ echo "== backend"
   uv run ruff format --check .
   uv run mypy app
   uv run pytest -q
-  uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md >/dev/null
 )
-git diff --exit-code docs/IMPORT_TEMPLATES.md
+
+# File sinh tự động phải khớp code: sinh lại rồi so với bản hiện có trên đĩa.
+unchanged() {
+  local before
+  before=$(cat "$@" | sha256sum)
+  "${GENERATE[@]}" >/dev/null
+  [[ $(cat "$@" | sha256sum) == "$before" ]] || { echo "Chưa cập nhật: $* (đã sinh lại, hãy commit)"; exit 1; }
+}
+GENERATE=(bash -c "cd backend && uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md")
+unchanged docs/IMPORT_TEMPLATES.md
 
 echo "== frontend"
-pnpm api:generate >/dev/null
-git diff --exit-code packages/api-client
+GENERATE=(pnpm api:generate)
+unchanged packages/api-client/openapi.json packages/api-client/src/schema.d.ts
 pnpm typecheck
 pnpm lint
 pnpm --filter web build >/dev/null

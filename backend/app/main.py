@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import register_error_handlers
+from app.modules.delivery.router import confirmations_router, driver_router
 from app.modules.dispatch.router import router as dispatch_router
 from app.modules.identity.router import router as auth_router
 from app.modules.identity.router import staff_router, users_router
@@ -42,6 +43,8 @@ def create_app() -> FastAPI:
         orders_router,
         inventory_router,
         dispatch_router,
+        confirmations_router,
+        driver_router,
         imports_router,
         api_keys_router,
         integration_router,

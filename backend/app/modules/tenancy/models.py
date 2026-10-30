@@ -33,3 +33,14 @@ class CompanySettings(TimestampMixin, Base):
     shift_end: Mapped[time] = mapped_column(default=time(19, 0))
     cutover_time: Mapped[time] = mapped_column(default=time(17, 0))
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Ho_Chi_Minh")
+
+    # Quy tắc cho nhân viên giao hàng xác nhận kết quả giao trên mobile.
+    confirm_time_rule: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    # Được xác nhận sớm/muộn hơn giờ ca bao nhiêu phút.
+    confirm_grace_minutes: Mapped[int] = mapped_column(default=60, server_default=text("60"))
+    confirm_geofence: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    confirm_radius_m: Mapped[int] = mapped_column(default=300, server_default=text("300"))
+    photo_required_success: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    photo_required_failed: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Thao tác ghi nhận khi mất mạng được gửi muộn tối đa bao lâu.
+    offline_max_delay_minutes: Mapped[int] = mapped_column(default=240, server_default=text("240"))
