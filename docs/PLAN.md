@@ -10,14 +10,14 @@
 - [x] Backend: FastAPI skeleton, cấu hình, `uv`, `ruff`, `mypy`, `pytest`
 - [x] Cài `uv`, `pnpm` trên máy Spark
 - [x] Docker Compose dev (arm64): PostgreSQL+PostGIS (`imresamu/postgis`), Redis, SeaweedFS S3
-- [ ] Kiểm chứng môi trường giả lập mobile trên ARM64 (Redroid / Expo Go / Expo web) - cần `sudo modprobe binder_linux`
-- [ ] Đẩy repo lên remote (GitHub) để CI chạy
+- [x] Kiểm chứng môi trường giả lập mobile trên ARM64: Redroid (Android 14 arm64) + Expo Go, xem `infra/android/README.md`
+- [x] Đẩy repo lên remote (GitHub) để CI chạy
 - [x] Alembic + cơ chế tenancy (`company_id`, RLS, tenant context per request/job)
 - [x] Auth JWT + refresh token, RBAC 5 vai trò
 - [x] Web skeleton (Vite + React + Ant Design), đăng nhập, layout theo vai trò
 - [x] Mobile skeleton (Expo), đăng nhập
 - [x] Sinh TS API client từ OpenAPI
-- [x] CI: lint, type-check, test cho backend/web/mobile (workflow đã viết, chưa chạy trên GitHub)
+- [x] CI: lint, type-check, test cho backend/web/mobile
 - [x] Cập nhật mục "Lệnh phát triển" trong CLAUDE.md
 
 ## M1 – Dữ liệu gốc & tích hợp

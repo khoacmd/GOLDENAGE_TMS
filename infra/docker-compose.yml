@@ -40,3 +40,30 @@ services:
     volumes:
       - ./data/seaweedfs:/data
       - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  # Android giả lập cho app mobile (chỉ chạy khi cần: --profile mobile).
+  # Yêu cầu: sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
+  redroid:
+    image: redroid/redroid:14.0.0_64only-latest
+    profiles: ["mobile"]
+    privileged: true
+    command:
+      - androidboot.redroid_width=720
+      - androidboot.redroid_height=1440
+      - androidboot.redroid_dpi=320
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./data/redroid:/data
+
+  # adb server (máy ARM64 không có adb cài sẵn); dùng qua infra/android/adb.sh
+  adb:
+    build:
+      context: ./android
+      dockerfile: Dockerfile.adb
+    image: tms-adb
+    profiles: ["mobile"]
+    network_mode: host
+    command: ["-a", "nodaemon", "server", "start"]
+    volumes:
+      - ./data/adb:/root/.android

@@ -223,7 +223,7 @@ Image đã kiểm tra có `arm64`: `imresamu/postgis:16-3.4`, `ghcr.io/project-o
 Kiểm thử điều kiện tọa độ trên giả lập: dùng `adb emu geo fix` hoặc mock location.
 
 Ghi nhận khi dựng M0 trên Spark:
-- Kernel có module `binder_linux` (cần `sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"`) → Redroid khả thi.
+- **Đã kiểm chứng**: Redroid `14.0.0_64only` (arm64) + Expo Go SDK 58 chạy được app, đăng nhập qua backend thật. Cần `sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"`; adb chạy trong container (không có bản adb arm64 cài sẵn). Hướng dẫn: `infra/android/README.md`.
 - Trình biên dịch Hermes (`hermesc`) đi kèm React Native chỉ có bản x86-64 → `expo export` cần `--no-bytecode` trên Spark; build APK release nên chạy trên CI x86-64 hoặc EAS Build. Chế độ dev qua Metro không bị ảnh hưởng.
 - TypeScript: web dùng TS 7 (bản native); `packages/api-client` ghim TS 5.9 vì `openapi-typescript` cần API compiler JS; mobile dùng TS theo SDK Expo.
 

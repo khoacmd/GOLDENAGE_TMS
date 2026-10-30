@@ -35,20 +35,21 @@ export function createApiClient(baseUrl: string, tokens: TokenStore) {
     return Boolean(data);
   }
 
+  // Middleware trả `undefined` khi không thay request/response: trên React Native,
+  // openapi-fetch kiểm tra `instanceof Response` và từ chối object gốc của fetch polyfill.
   const auth: Middleware = {
     onRequest({ request }) {
       const current = tokens.get();
       if (current) request.headers.set("Authorization", `Bearer ${current.access_token}`);
-      return request;
     },
     async onResponse({ request, response }) {
       if (response.status !== 401 || !tokens.get() || request.url.includes("/auth/")) {
-        return response;
+        return undefined;
       }
       refreshing ??= refreshTokens().finally(() => {
         refreshing = null;
       });
-      if (!(await refreshing)) return response;
+      if (!(await refreshing)) return undefined;
       const retry = new Request(request);
       retry.headers.set("Authorization", `Bearer ${tokens.get()!.access_token}`);
       return fetch(retry);

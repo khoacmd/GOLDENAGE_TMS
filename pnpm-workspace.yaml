@@ -2,3 +2,8 @@ packages:
   - web
   - mobile
   - packages/*
+
+# Quyền chạy build script của dependency (pnpm chặn mặc định, CI báo lỗi nếu chưa khai báo).
+allowBuilds:
+  # postinstall chỉ tải binding dự phòng; binding native đã có qua optionalDependencies.
+  unrs-resolver: false

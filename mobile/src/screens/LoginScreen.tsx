@@ -27,7 +27,8 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
       const body = err as { error?: { code?: string } } | undefined
       if (body?.error?.code === 'company_required') setNeedCompany(true)
       setError(errorMessage(err, 'Đăng nhập thất bại'))
-    } catch {
+    } catch (e) {
+      console.warn('Đăng nhập lỗi', e)
       setError(`Không kết nối được máy chủ (${API_URL})`)
     } finally {
       setSubmitting(false)
