@@ -328,6 +328,65 @@
         }
       }
     },
+    "/api/v1/staff": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Staff",
+        "description": "Nhân sự đang hoạt động của công ty (vd. role=driver để phân công lái xe/phụ xe).",
+        "operationId": "list_staff_api_v1_staff_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompanyRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyUserOut"
+                  },
+                  "title": "Response List Staff Api V1 Staff Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/companies": {
       "get": {
         "tags": [
@@ -1831,6 +1890,704 @@
         }
       }
     },
+    "/api/v1/trips/available-parts": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Available Parts",
+        "description": "Phần đơn chờ xếp lệnh, ngày giao yêu cầu đến hết `plan_date`.",
+        "operationId": "available_parts_api_v1_trips_available_parts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Plan Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailablePartOut"
+                  },
+                  "title": "Response Available Parts Api V1 Trips Available Parts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "List Trips",
+        "operationId": "list_trips_api_v1_trips_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plan Date"
+            }
+          },
+          {
+            "name": "order_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TripOrderStatus"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TripSummaryOut"
+                  },
+                  "title": "Response List Trips Api V1 Trips Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Create Trip",
+        "operationId": "create_trip_api_v1_trips_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TripIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Get Trip",
+        "operationId": "get_trip_api_v1_trips__trip_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Update Trip",
+        "operationId": "update_trip_api_v1_trips__trip_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TripIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/approve": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Approve Trip",
+        "operationId": "approve_trip_api_v1_trips__trip_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/cancel": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Cancel Trip",
+        "operationId": "cancel_trip_api_v1_trips__trip_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/pick": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Pick Trip",
+        "operationId": "pick_trip_api_v1_trips__trip_id__pick_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/dispatch": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Dispatch Trip",
+        "operationId": "dispatch_trip_api_v1_trips__trip_id__dispatch_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/items/{item_id}": {
+      "patch": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Update Item",
+        "description": "Quản lý cập nhật thủ công trạng thái giao (kể cả hủy item chưa giao).",
+        "operationId": "update_item_api_v1_trips__trip_id__items__item_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/close": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Close Trip",
+        "operationId": "close_trip_api_v1_trips__trip_id__close_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/picking-list": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Picking List",
+        "operationId": "picking_list_api_v1_trips__trip_id__picking_list_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickingListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/history": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Trip History",
+        "operationId": "trip_history_api_v1_trips__trip_id__history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditOut"
+                  },
+                  "title": "Response Trip History Api V1 Trips  Trip Id  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/imports/specs": {
       "get": {
         "tags": [
@@ -2234,6 +2991,34 @@
   },
   "components": {
     "schemas": {
+      "AdhocItemIn": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "weight_kg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Weight Kg",
+            "default": "0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "AdhocItemIn"
+      },
       "ApiKeyCreate": {
         "properties": {
           "name": {
@@ -2350,6 +3135,139 @@
         ],
         "title": "ApiKeyOut"
       },
+      "AuditOut": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "data",
+          "user_id",
+          "created_at"
+        ],
+        "title": "AuditOut"
+      },
+      "AvailablePartOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "temp_group": {
+            "$ref": "#/components/schemas/TempGroup"
+          },
+          "weight_kg": {
+            "type": "string",
+            "title": "Weight Kg"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderPartStatus"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "external_ref": {
+            "type": "string",
+            "title": "External Ref"
+          },
+          "requested_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Date"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "required_vehicle_type": {
+            "$ref": "#/components/schemas/VehicleRequirement"
+          },
+          "delivery_point_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Delivery Point Id"
+          },
+          "delivery_point_code": {
+            "type": "string",
+            "title": "Delivery Point Code"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "latitude": {
+            "type": "string",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "string",
+            "title": "Longitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "temp_group",
+          "weight_kg",
+          "value",
+          "status",
+          "attempt_count",
+          "order_id",
+          "external_ref",
+          "requested_date",
+          "customer_code",
+          "customer_name",
+          "required_vehicle_type",
+          "delivery_point_id",
+          "delivery_point_code",
+          "address",
+          "latitude",
+          "longitude"
+        ],
+        "title": "AvailablePartOut",
+        "description": "Phần đơn đang chờ xếp lệnh (PENDING hoặc giao thất bại trước đó)."
+      },
       "Body_import_file_api_v1_imports__kind__post": {
         "properties": {
           "file": {
@@ -2364,6 +3282,21 @@
           "file"
         ],
         "title": "Body_import_file_api_v1_imports__kind__post"
+      },
+      "CancelIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "CancelIn"
       },
       "CargoClass": {
         "type": "string",
@@ -3679,6 +4612,52 @@
         ],
         "title": "InventoryOut"
       },
+      "ItemStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCESS",
+          "FAILED",
+          "CANCELLED"
+        ],
+        "title": "ItemStatus"
+      },
+      "ItemUpdateIn": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ItemStatus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ItemUpdateIn"
+      },
       "LoginRequest": {
         "properties": {
           "username": {
@@ -4272,6 +5251,102 @@
         ],
         "title": "Page[WarehouseOut]"
       },
+      "PersonOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "phone"
+        ],
+        "title": "PersonOut"
+      },
+      "PickingLineOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "temp_group": {
+            "$ref": "#/components/schemas/TempGroup"
+          },
+          "qty": {
+            "type": "string",
+            "title": "Qty"
+          },
+          "weight_kg": {
+            "type": "string",
+            "title": "Weight Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "uom",
+          "temp_group",
+          "qty",
+          "weight_kg"
+        ],
+        "title": "PickingLineOut"
+      },
+      "PickingListOut": {
+        "properties": {
+          "trip": {
+            "$ref": "#/components/schemas/TripSummaryOut"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PickingLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "adhoc_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Adhoc Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip",
+          "lines",
+          "adhoc_items"
+        ],
+        "title": "PickingListOut"
+      },
       "ProductCreate": {
         "properties": {
           "code": {
@@ -4493,6 +5568,110 @@
         ],
         "title": "RowErrorOut"
       },
+      "StopIn": {
+        "properties": {
+          "delivery_point_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Id"
+          },
+          "order_part_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Order Part Ids",
+            "default": []
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "adhoc_items": {
+            "items": {
+              "$ref": "#/components/schemas/AdhocItemIn"
+            },
+            "type": "array",
+            "title": "Adhoc Items",
+            "default": []
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "StopIn",
+        "description": "Điểm dừng: điểm giao của khách (kèm phần đơn) hoặc điểm tự do (nhập địa chỉ/tọa độ)."
+      },
       "TempClass": {
         "type": "string",
         "enum": [
@@ -4533,6 +5712,710 @@
           "refresh_token"
         ],
         "title": "TokenPair"
+      },
+      "TripDeliveryStatus": {
+        "type": "string",
+        "enum": [
+          "NOT_STARTED",
+          "IN_PROGRESS",
+          "FINISHED"
+        ],
+        "title": "TripDeliveryStatus",
+        "description": "Trạng thái giao của chuyến."
+      },
+      "TripIn": {
+        "properties": {
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehicle Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id"
+          },
+          "assistant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/StopIn"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Stops"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_date",
+          "vehicle_id",
+          "warehouse_id",
+          "stops"
+        ],
+        "title": "TripIn"
+      },
+      "TripItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "order_part_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Part Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "weight_kg": {
+            "type": "string",
+            "title": "Weight Kg"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ItemStatus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "is_manual_update": {
+            "type": "boolean",
+            "title": "Is Manual Update"
+          },
+          "temp_group": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TempGroup"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "external_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "order_part_id",
+          "description",
+          "weight_kg",
+          "value",
+          "status",
+          "reason",
+          "delivered_at",
+          "is_manual_update"
+        ],
+        "title": "TripItemOut"
+      },
+      "TripOrderStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "APPROVED",
+          "PICKED",
+          "DISPATCHED",
+          "CLOSED",
+          "CANCELLED"
+        ],
+        "title": "TripOrderStatus",
+        "description": "Trạng thái lệnh giao."
+      },
+      "TripOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "trip_seq": {
+            "type": "integer",
+            "title": "Trip Seq"
+          },
+          "source": {
+            "$ref": "#/components/schemas/TripSource"
+          },
+          "order_status": {
+            "$ref": "#/components/schemas/TripOrderStatus"
+          },
+          "delivery_status": {
+            "$ref": "#/components/schemas/TripDeliveryStatus"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehicle Id"
+          },
+          "vehicle_code": {
+            "type": "string",
+            "title": "Vehicle Code"
+          },
+          "vehicle_name": {
+            "type": "string",
+            "title": "Vehicle Name"
+          },
+          "capacity_kg": {
+            "type": "string",
+            "title": "Capacity Kg"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_weight_kg": {
+            "type": "string",
+            "title": "Total Weight Kg"
+          },
+          "total_value": {
+            "type": "string",
+            "title": "Total Value"
+          },
+          "stop_count": {
+            "type": "integer",
+            "title": "Stop Count",
+            "default": 0
+          },
+          "item_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/ItemStatus"
+            },
+            "type": "object",
+            "title": "Item Counts",
+            "default": {}
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "warehouse_name": {
+            "type": "string",
+            "title": "Warehouse Name"
+          },
+          "warehouse_latitude": {
+            "type": "string",
+            "title": "Warehouse Latitude"
+          },
+          "warehouse_longitude": {
+            "type": "string",
+            "title": "Warehouse Longitude"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "picked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picked At"
+          },
+          "dispatched_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispatched At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Reason"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/TripStopOut"
+            },
+            "type": "array",
+            "title": "Stops"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "plan_date",
+          "trip_seq",
+          "source",
+          "order_status",
+          "delivery_status",
+          "vehicle_id",
+          "vehicle_code",
+          "vehicle_name",
+          "capacity_kg",
+          "warehouse_id",
+          "warehouse_code",
+          "driver",
+          "assistant",
+          "total_weight_kg",
+          "total_value",
+          "note",
+          "warehouse_name",
+          "warehouse_latitude",
+          "warehouse_longitude",
+          "approved_at",
+          "picked_at",
+          "dispatched_at",
+          "finished_at",
+          "closed_at",
+          "cancel_reason",
+          "stops"
+        ],
+        "title": "TripOut"
+      },
+      "TripSource": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "AUTO"
+        ],
+        "title": "TripSource"
+      },
+      "TripStopOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "delivery_point_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Id"
+          },
+          "customer_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TripItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "delivery_point_id",
+          "name",
+          "address",
+          "latitude",
+          "longitude",
+          "note",
+          "items"
+        ],
+        "title": "TripStopOut"
+      },
+      "TripSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "trip_seq": {
+            "type": "integer",
+            "title": "Trip Seq"
+          },
+          "source": {
+            "$ref": "#/components/schemas/TripSource"
+          },
+          "order_status": {
+            "$ref": "#/components/schemas/TripOrderStatus"
+          },
+          "delivery_status": {
+            "$ref": "#/components/schemas/TripDeliveryStatus"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehicle Id"
+          },
+          "vehicle_code": {
+            "type": "string",
+            "title": "Vehicle Code"
+          },
+          "vehicle_name": {
+            "type": "string",
+            "title": "Vehicle Name"
+          },
+          "capacity_kg": {
+            "type": "string",
+            "title": "Capacity Kg"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_weight_kg": {
+            "type": "string",
+            "title": "Total Weight Kg"
+          },
+          "total_value": {
+            "type": "string",
+            "title": "Total Value"
+          },
+          "stop_count": {
+            "type": "integer",
+            "title": "Stop Count",
+            "default": 0
+          },
+          "item_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/ItemStatus"
+            },
+            "type": "object",
+            "title": "Item Counts",
+            "default": {}
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "plan_date",
+          "trip_seq",
+          "source",
+          "order_status",
+          "delivery_status",
+          "vehicle_id",
+          "vehicle_code",
+          "vehicle_name",
+          "capacity_kg",
+          "warehouse_id",
+          "warehouse_code",
+          "driver",
+          "assistant",
+          "total_weight_kg",
+          "total_value",
+          "note"
+        ],
+        "title": "TripSummaryOut"
       },
       "ValidationError": {
         "properties": {

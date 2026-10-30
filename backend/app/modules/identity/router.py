@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, status
 
-from app.core.auth import CompanyAdminDep, CurrentUserDep
+from app.core.auth import CompanyAdminDep, CurrentUserDep, OfficeStaffDep
 from app.core.db import DbSession
 from app.core.errors import AppError, NotFoundError
 from app.core.security import hash_password
@@ -116,3 +116,18 @@ async def set_user_roles(
     await service.set_roles(session, admin.cid, user.id, set(body.roles), actor_id=admin.id)
     await session.commit()
     return _user_out(user, sorted(set(body.roles)))
+
+
+staff_router = APIRouter(prefix="/staff", tags=["users"])
+
+
+@staff_router.get("")
+async def list_staff(
+    user: OfficeStaffDep, session: DbSession, role: CompanyRole | None = None
+) -> list[CompanyUserOut]:
+    """Nhân sự đang hoạt động của công ty (vd. role=driver để phân công lái xe/phụ xe)."""
+    return [
+        _user_out(u, r)
+        for u, r in await service.list_company_users(session, user.cid)
+        if u.is_active and (role is None or role in r)
+    ]

@@ -5,8 +5,9 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import register_error_handlers
+from app.modules.dispatch.router import router as dispatch_router
 from app.modules.identity.router import router as auth_router
-from app.modules.identity.router import users_router
+from app.modules.identity.router import staff_router, users_router
 from app.modules.integration.router import api_keys_router, imports_router, integration_router
 from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_data_router
@@ -34,11 +35,13 @@ def create_app() -> FastAPI:
     for router in (
         auth_router,
         users_router,
+        staff_router,
         admin_router,
         company_router,
         master_data_router,
         orders_router,
         inventory_router,
+        dispatch_router,
         imports_router,
         api_keys_router,
         integration_router,

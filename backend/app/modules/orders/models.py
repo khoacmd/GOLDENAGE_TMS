@@ -68,7 +68,10 @@ class SalesOrder(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
         cascade="all, delete-orphan", lazy="selectin", order_by="SalesOrderLine.line_no"
     )
     parts: Mapped[list["OrderPart"]] = relationship(
-        cascade="all, delete-orphan", lazy="selectin", order_by="OrderPart.temp_group"
+        back_populates="order",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="OrderPart.temp_group",
     )
 
 
@@ -109,3 +112,5 @@ class OrderPart(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
         enum_type(OrderPartStatus), default=OrderPartStatus.PENDING, index=True
     )
     attempt_count: Mapped[int] = mapped_column(SmallInteger, default=0)
+
+    order: Mapped[SalesOrder] = relationship(back_populates="parts", lazy="selectin")

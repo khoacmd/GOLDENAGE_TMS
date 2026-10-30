@@ -174,7 +174,7 @@ class DeliveryPoint(UUIDPrimaryKeyMixin, TenantMixin, GeoPointMixin, TimestampMi
     is_default: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
 
-    customer: Mapped[Customer] = relationship(back_populates="delivery_points")
+    customer: Mapped[Customer] = relationship(back_populates="delivery_points", lazy="joined")
 
 
 class Product(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):

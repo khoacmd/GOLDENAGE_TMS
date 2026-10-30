@@ -124,6 +124,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Staff
+         * @description Nhân sự đang hoạt động của công ty (vd. role=driver để phân công lái xe/phụ xe).
+         */
+        get: operations["list_staff_api_v1_staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/companies": {
         parameters: {
             query?: never;
@@ -389,6 +409,201 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/available-parts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Available Parts
+         * @description Phần đơn chờ xếp lệnh, ngày giao yêu cầu đến hết `plan_date`.
+         */
+        get: operations["available_parts_api_v1_trips_available_parts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Trips */
+        get: operations["list_trips_api_v1_trips_get"];
+        put?: never;
+        /** Create Trip */
+        post: operations["create_trip_api_v1_trips_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Trip */
+        get: operations["get_trip_api_v1_trips__trip_id__get"];
+        /** Update Trip */
+        put: operations["update_trip_api_v1_trips__trip_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Trip */
+        post: operations["approve_trip_api_v1_trips__trip_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Trip */
+        post: operations["cancel_trip_api_v1_trips__trip_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/pick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pick Trip */
+        post: operations["pick_trip_api_v1_trips__trip_id__pick_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dispatch Trip */
+        post: operations["dispatch_trip_api_v1_trips__trip_id__dispatch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Item
+         * @description Quản lý cập nhật thủ công trạng thái giao (kể cả hủy item chưa giao).
+         */
+        patch: operations["update_item_api_v1_trips__trip_id__items__item_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Trip */
+        post: operations["close_trip_api_v1_trips__trip_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/picking-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Picking List */
+        get: operations["picking_list_api_v1_trips__trip_id__picking_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Trip History */
+        get: operations["trip_history_api_v1_trips__trip_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/specs": {
         parameters: {
             query?: never;
@@ -513,6 +728,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdhocItemIn */
+        AdhocItemIn: {
+            /** Description */
+            description: string;
+            /**
+             * Weight Kg
+             * @default 0
+             */
+            weight_kg: number | string;
+        };
         /** ApiKeyCreate */
         ApiKeyCreate: {
             /** Name */
@@ -562,6 +787,71 @@ export interface components {
              */
             created_at: string;
         };
+        /** AuditOut */
+        AuditOut: {
+            /** Action */
+            action: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            /** User Id */
+            user_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AvailablePartOut
+         * @description Phần đơn đang chờ xếp lệnh (PENDING hoặc giao thất bại trước đó).
+         */
+        AvailablePartOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Weight Kg */
+            weight_kg: string;
+            /** Value */
+            value: string;
+            status: components["schemas"]["OrderPartStatus"];
+            /** Attempt Count */
+            attempt_count: number;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** External Ref */
+            external_ref: string;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            required_vehicle_type: components["schemas"]["VehicleRequirement"];
+            /**
+             * Delivery Point Id
+             * Format: uuid
+             */
+            delivery_point_id: string;
+            /** Delivery Point Code */
+            delivery_point_code: string;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+        };
         /** Body_import_file_api_v1_imports__kind__post */
         Body_import_file_api_v1_imports__kind__post: {
             /**
@@ -569,6 +859,11 @@ export interface components {
              * @description File .xlsx hoặc .csv theo template
              */
             file: string;
+        };
+        /** CancelIn */
+        CancelIn: {
+            /** Reason */
+            reason: string;
         };
         /**
          * CargoClass
@@ -999,6 +1294,19 @@ export interface components {
              */
             synced_at: string;
         };
+        /**
+         * ItemStatus
+         * @enum {string}
+         */
+        ItemStatus: "PENDING" | "SUCCESS" | "FAILED" | "CANCELLED";
+        /** ItemUpdateIn */
+        ItemUpdateIn: {
+            status: components["schemas"]["ItemStatus"];
+            /** Reason */
+            reason?: string | null;
+            /** Delivered At */
+            delivered_at?: string | null;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Username */
@@ -1240,6 +1548,40 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** PersonOut */
+        PersonOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Phone */
+            phone: string | null;
+        };
+        /** PickingLineOut */
+        PickingLineOut: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            /** Uom */
+            uom: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Qty */
+            qty: string;
+            /** Weight Kg */
+            weight_kg: string;
+        };
+        /** PickingListOut */
+        PickingListOut: {
+            trip: components["schemas"]["TripSummaryOut"];
+            /** Lines */
+            lines: components["schemas"]["PickingLineOut"][];
+            /** Adhoc Items */
+            adhoc_items: string[];
+        };
         /** ProductCreate */
         ProductCreate: {
             /** Code */
@@ -1308,6 +1650,34 @@ export interface components {
             message: string;
         };
         /**
+         * StopIn
+         * @description Điểm dừng: điểm giao của khách (kèm phần đơn) hoặc điểm tự do (nhập địa chỉ/tọa độ).
+         */
+        StopIn: {
+            /** Delivery Point Id */
+            delivery_point_id?: string | null;
+            /**
+             * Order Part Ids
+             * @default []
+             */
+            order_part_ids: string[];
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Latitude */
+            latitude?: number | string | null;
+            /** Longitude */
+            longitude?: number | string | null;
+            /**
+             * Adhoc Items
+             * @default []
+             */
+            adhoc_items: components["schemas"]["AdhocItemIn"][];
+            /** Note */
+            note?: string | null;
+        };
+        /**
          * TempClass
          * @enum {string}
          */
@@ -1329,6 +1699,244 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /**
+         * TripDeliveryStatus
+         * @description Trạng thái giao của chuyến.
+         * @enum {string}
+         */
+        TripDeliveryStatus: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
+        /** TripIn */
+        TripIn: {
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            /**
+             * Vehicle Id
+             * Format: uuid
+             */
+            vehicle_id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Driver Id */
+            driver_id?: string | null;
+            /** Assistant Id */
+            assistant_id?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Stops */
+            stops: components["schemas"]["StopIn"][];
+        };
+        /** TripItemOut */
+        TripItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Order Part Id */
+            order_part_id: string | null;
+            /** Description */
+            description: string | null;
+            /** Weight Kg */
+            weight_kg: string;
+            /** Value */
+            value: string;
+            status: components["schemas"]["ItemStatus"];
+            /** Reason */
+            reason: string | null;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** Is Manual Update */
+            is_manual_update: boolean;
+            temp_group?: components["schemas"]["TempGroup"] | null;
+            /** External Ref */
+            external_ref?: string | null;
+        };
+        /**
+         * TripOrderStatus
+         * @description Trạng thái lệnh giao.
+         * @enum {string}
+         */
+        TripOrderStatus: "DRAFT" | "APPROVED" | "PICKED" | "DISPATCHED" | "CLOSED" | "CANCELLED";
+        /** TripOut */
+        TripOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            /** Trip Seq */
+            trip_seq: number;
+            source: components["schemas"]["TripSource"];
+            order_status: components["schemas"]["TripOrderStatus"];
+            delivery_status: components["schemas"]["TripDeliveryStatus"];
+            /**
+             * Vehicle Id
+             * Format: uuid
+             */
+            vehicle_id: string;
+            /** Vehicle Code */
+            vehicle_code: string;
+            /** Vehicle Name */
+            vehicle_name: string;
+            /** Capacity Kg */
+            capacity_kg: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Warehouse Code */
+            warehouse_code: string;
+            driver: components["schemas"]["PersonOut"] | null;
+            assistant: components["schemas"]["PersonOut"] | null;
+            /** Total Weight Kg */
+            total_weight_kg: string;
+            /** Total Value */
+            total_value: string;
+            /**
+             * Stop Count
+             * @default 0
+             */
+            stop_count: number;
+            /**
+             * Item Counts
+             * @default {}
+             */
+            item_counts: {
+                [key: string]: number;
+            };
+            /** Note */
+            note: string | null;
+            /** Warehouse Name */
+            warehouse_name: string;
+            /** Warehouse Latitude */
+            warehouse_latitude: string;
+            /** Warehouse Longitude */
+            warehouse_longitude: string;
+            /** Approved At */
+            approved_at: string | null;
+            /** Picked At */
+            picked_at: string | null;
+            /** Dispatched At */
+            dispatched_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Stops */
+            stops: components["schemas"]["TripStopOut"][];
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
+         * TripSource
+         * @enum {string}
+         */
+        TripSource: "MANUAL" | "AUTO";
+        /** TripStopOut */
+        TripStopOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Seq */
+            seq: number;
+            /** Delivery Point Id */
+            delivery_point_id: string | null;
+            /** Customer Code */
+            customer_code?: string | null;
+            /** Customer Name */
+            customer_name?: string | null;
+            /** Name */
+            name: string | null;
+            /** Address */
+            address: string | null;
+            /** Latitude */
+            latitude: string | null;
+            /** Longitude */
+            longitude: string | null;
+            /** Note */
+            note: string | null;
+            /** Items */
+            items: components["schemas"]["TripItemOut"][];
+        };
+        /** TripSummaryOut */
+        TripSummaryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            /** Trip Seq */
+            trip_seq: number;
+            source: components["schemas"]["TripSource"];
+            order_status: components["schemas"]["TripOrderStatus"];
+            delivery_status: components["schemas"]["TripDeliveryStatus"];
+            /**
+             * Vehicle Id
+             * Format: uuid
+             */
+            vehicle_id: string;
+            /** Vehicle Code */
+            vehicle_code: string;
+            /** Vehicle Name */
+            vehicle_name: string;
+            /** Capacity Kg */
+            capacity_kg: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Warehouse Code */
+            warehouse_code: string;
+            driver: components["schemas"]["PersonOut"] | null;
+            assistant: components["schemas"]["PersonOut"] | null;
+            /** Total Weight Kg */
+            total_weight_kg: string;
+            /** Total Value */
+            total_value: string;
+            /**
+             * Stop Count
+             * @default 0
+             */
+            stop_count: number;
+            /**
+             * Item Counts
+             * @default {}
+             */
+            item_counts: {
+                [key: string]: number;
+            };
+            /** Note */
+            note: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1709,6 +2317,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staff_api_v1_staff_get: {
+        parameters: {
+            query?: {
+                role?: components["schemas"]["CompanyRole"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2524,6 +3163,425 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_InventoryOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    available_parts_api_v1_trips_available_parts_get: {
+        parameters: {
+            query: {
+                plan_date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailablePartOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_trips_api_v1_trips_get: {
+        parameters: {
+            query?: {
+                plan_date?: string | null;
+                order_status?: components["schemas"]["TripOrderStatus"][] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_trip_api_v1_trips_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TripIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trip_api_v1_trips__trip_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_trip_api_v1_trips__trip_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TripIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_trip_api_v1_trips__trip_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_trip_api_v1_trips__trip_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pick_trip_api_v1_trips__trip_id__pick_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dispatch_trip_api_v1_trips__trip_id__dispatch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_v1_trips__trip_id__items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_trip_api_v1_trips__trip_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    picking_list_api_v1_trips__trip_id__picking_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trip_history_api_v1_trips__trip_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditOut"][];
                 };
             };
             /** @description Validation Error */

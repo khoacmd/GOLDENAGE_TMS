@@ -8,9 +8,12 @@ class AppError(Exception):
     status_code = 400
     code = "bad_request"
 
-    def __init__(self, message: str, *, code: str | None = None) -> None:
+    def __init__(
+        self, message: str, *, code: str | None = None, details: list[str] | None = None
+    ) -> None:
         super().__init__(message)
         self.message = message
+        self.details = details or []
         if code is not None:
             self.code = code
 
@@ -40,5 +43,5 @@ def register_error_handlers(app: FastAPI) -> None:
     async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
-            content={"error": {"code": exc.code, "message": exc.message}},
+            content={"error": {"code": exc.code, "message": exc.message, "details": exc.details}},
         )
