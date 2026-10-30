@@ -31,7 +31,7 @@ from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import Trip, TripOrderStatus, TripSource
 from app.modules.dispatch.schemas import StopIn, TripIn
 from app.modules.master_data import service as master_data
-from app.modules.master_data.models import Vehicle, VehicleRequirement, VehicleType, Warehouse
+from app.modules.master_data.models import Vehicle, VehicleRequirement, Warehouse
 from app.modules.orders.models import OrderPart, TempGroup
 from app.modules.planning.models import PlanningRun, RunStatus, RunTrigger
 from app.modules.routing import service as routing
@@ -102,10 +102,6 @@ async def list_runs(session: AsyncSession, plan_date: date | None) -> list[Plann
 
 def _point(obj: Any) -> Point:
     return (float(obj.latitude), float(obj.longitude))
-
-
-def _profile(vehicle: Vehicle) -> Profile:
-    return Profile.MOTORBIKE if vehicle.vehicle_type == VehicleType.MOTORBIKE else Profile.CAR
 
 
 def _infeasible_reason(part: OrderPart, vehicles: list[Vehicle]) -> str | None:
@@ -346,7 +342,7 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
 
     sources: set[str] = set()
     matrices = {}
-    for profile in {_profile(v) for v in usable} or {Profile.CAR}:
+    for profile in {dispatch.vehicle_profile(v) for v in usable} or {Profile.CAR}:
         matrices[str(profile)], source = await routing.matrix(locations, profile)
         sources.add(source)
     run.distance_source = "estimate" if "estimate" in sources else sorted(sources)[0]
@@ -364,7 +360,7 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
         vehicles=[
             SolverVehicle(
                 id=str(v.id),
-                profile=str(_profile(v)),
+                profile=str(dispatch.vehicle_profile(v)),
                 capacity=int(v.capacity_kg * GRAMS),
                 cost_per_km=float(v.cost_per_km),
                 depot_ids=tuple(str(w) for w in v.warehouse_ids if w in active_wh),
@@ -577,14 +573,9 @@ async def run_trips(session: AsyncSession, run_id: uuid.UUID) -> list[Trip]:
 
 async def trip_distance_km(trip: Trip) -> float:
     """Quãng đường hiện tại của lệnh: kho → các điểm dừng theo thứ tự → kho."""
-    stops = [
-        _point(s.delivery_point)
-        if s.delivery_point
-        else (float(s.latitude or 0), float(s.longitude or 0))
-        for s in trip.stops
-    ]
-    depot = _point(trip.warehouse)
-    meters = await routing.route_distance_m([depot, *stops, depot], _profile(trip.vehicle))
+    meters = await routing.route_distance_m(
+        dispatch.trip_path(trip), dispatch.vehicle_profile(trip.vehicle)
+    )
     return meters / 1000
 
 

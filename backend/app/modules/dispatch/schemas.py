@@ -190,3 +190,10 @@ class AuditOut(_Out):
     data: dict[str, object]
     user_id: uuid.UUID | None
     created_at: datetime
+
+
+class TripRouteOut(BaseModel):
+    """Đường đi của lệnh trên bản đồ, [kinh độ, vĩ độ]; `road=False` → nối thẳng các điểm."""
+
+    road: bool
+    coordinates: list[tuple[float, float]]

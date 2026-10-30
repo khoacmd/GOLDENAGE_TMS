@@ -25,6 +25,7 @@ import { useAuth } from '../../auth-context'
 import { unwrap } from '../../lib/api-helpers'
 import { TEMP_GROUP, TRIP_STATUS, fmtDate, fmtDateTime, fmtNumber } from '../../lib/labels'
 import { MapView, type MapMarker, type MapRoute } from '../../lib/MapView'
+import { useTripRoads } from '../../lib/roads'
 import { loadPercent, type Trip } from '../../lib/trips'
 
 type Run = components['schemas']['RunDetailOut']
@@ -194,7 +195,8 @@ function RunMap({ trips, color }: { trips: Trip[]; color: (id: string) => string
     coords.push(depot)
     routes.push({ id: t.id, color: color(t.id), coords })
   }
-  return <MapView markers={[...warehouses.values(), ...markers]} routes={routes} height={480} />
+  const roads = useTripRoads(routes)
+  return <MapView markers={[...warehouses.values(), ...markers]} routes={roads} height={480} />
 }
 
 function TripBoard({

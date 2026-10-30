@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     # OSRM tự host theo profile (infra/osrm). Để trống → ước lượng theo đường chim bay.
     osrm_car_url: str | None = None
     osrm_motorbike_url: str | None = None
+    # OSRM tính thời gian theo đường thông thoáng (~40 km/h nội đô) → nhân hệ số kẹt xe.
+    osrm_duration_factor: float = 1.8
     # Chạy tác vụ nền ngay trong tiến trình gọi (test / dev không chạy worker).
     tasks_eager: bool = False
     # Giới hạn trên thời gian chạy bộ giải (giây), bất kể cấu hình công ty (test đặt nhỏ).

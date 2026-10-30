@@ -606,6 +606,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{trip_id}/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trip Route
+         * @description Tuyến theo đường thực tế (OSRM); chưa có OSRM thì trả đường thẳng nối các điểm.
+         */
+        get: operations["trip_route_api_v1_trips__trip_id__route_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{trip_id}/picking-list": {
         parameters: {
             query?: never;
@@ -2941,6 +2961,19 @@ export interface components {
             warnings: string[];
         };
         /**
+         * TripRouteOut
+         * @description Đường đi của lệnh trên bản đồ, [kinh độ, vĩ độ]; `road=False` → nối thẳng các điểm.
+         */
+        TripRouteOut: {
+            /** Road */
+            road: boolean;
+            /** Coordinates */
+            coordinates: [
+                number,
+                number
+            ][];
+        };
+        /**
          * TripSource
          * @enum {string}
          */
@@ -4865,6 +4898,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trip_route_api_v1_trips__trip_id__route_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripRouteOut"];
                 };
             };
             /** @description Validation Error */

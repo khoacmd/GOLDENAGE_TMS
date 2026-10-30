@@ -1,9 +1,12 @@
 """Ma trận khoảng cách/thời gian giữa các điểm: OSRM tự host (có cache Redis) hoặc ước lượng.
 
 Ước lượng (khi chưa dựng OSRM hoặc OSRM lỗi): đường chim bay x hệ số đường vòng, tốc độ trung bình
-nội đô theo loại xe.
+nội đô theo loại xe. Đo trên dữ liệu demo Hà Nội: quãng đường OSRM / đường chim bay trung vị 1,32;
+tốc độ OSRM (đường thông thoáng) ~43 km/h → thời gian OSRM được nhân `osrm_duration_factor`.
 """
 
+import hashlib
+import json
 import logging
 import math
 from enum import StrEnum
@@ -103,20 +106,66 @@ async def _osrm_table(url: str, points: list[Point]) -> Matrix:
     )
 
 
+def _with_traffic(m: Matrix) -> Matrix:
+    factor = get_settings().osrm_duration_factor
+    return Matrix(
+        distance_m=m.distance_m,
+        duration_s=[[round(d * factor) for d in row] for row in m.duration_s],
+    )
+
+
 async def matrix(points: list[Point], profile: Profile) -> tuple[Matrix, str]:
-    """Trả (ma trận, nguồn: "osrm" | "cache" | "estimate")."""
+    """Trả (ma trận, nguồn: "osrm" | "cache" | "estimate"). Cache lưu số liệu gốc của OSRM."""
     url = _osrm_url(profile)
     if not url or len(points) < 2:
         return estimate(points, profile), "estimate"
     if (hit := await _cached(profile, points)) is not None:
-        return hit, "cache"
+        return _with_traffic(hit), "cache"
     try:
         result = await _osrm_table(url, points)
     except (httpx.HTTPError, RuntimeError, KeyError, ValueError) as e:
         log.warning("OSRM %s lỗi, dùng ước lượng: %s", profile, e)
         return estimate(points, profile), "estimate"
     await _store(profile, points, result)
-    return result, "osrm"
+    return _with_traffic(result), "osrm"
+
+
+async def geometry(points: list[Point], profile: Profile) -> list[tuple[float, float]] | None:
+    """Đường đi thực tế qua lần lượt `points` (OSRM `/route`), dạng [(kinh độ, vĩ độ)].
+    Chưa cấu hình OSRM / lỗi → None (vẽ đường thẳng)."""
+    url = _osrm_url(profile)
+    if not url or len(points) < 2:
+        return None
+    coords = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in points)
+    key = f"tms:geom:{profile}:{hashlib.sha1(coords.encode()).hexdigest()}"
+    try:
+        async with aioredis.from_url(get_settings().redis_url) as r:
+            if (hit := await r.get(key)) is not None:
+                return [(c[0], c[1]) for c in json.loads(hit)]
+    except aioredis.RedisError:
+        pass
+    try:
+        async with httpx.AsyncClient(timeout=OSRM_TIMEOUT_S) as client:
+            resp = await client.get(
+                f"{url.rstrip('/')}/route/v1/driving/{coords}",
+                params={"overview": "full", "geometries": "geojson", "steps": "false"},
+            )
+        resp.raise_for_status()
+        body = resp.json()
+        if body.get("code") != "Ok":
+            raise RuntimeError(f"OSRM: {body.get('code')} {body.get('message', '')}")
+        line = [
+            (round(c[0], 6), round(c[1], 6)) for c in body["routes"][0]["geometry"]["coordinates"]
+        ]
+    except (httpx.HTTPError, RuntimeError, KeyError, IndexError, ValueError) as e:
+        log.warning("OSRM %s /route lỗi: %s", profile, e)
+        return None
+    try:
+        async with aioredis.from_url(get_settings().redis_url) as r:
+            await r.set(key, json.dumps(line), ex=CACHE_TTL_S)
+    except aioredis.RedisError:
+        log.warning("Không ghi được cache đường đi")
+    return line
 
 
 async def route_distance_m(points: list[Point], profile: Profile) -> int:

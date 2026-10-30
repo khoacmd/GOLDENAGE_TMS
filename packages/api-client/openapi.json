@@ -2740,6 +2740,55 @@
         }
       }
     },
+    "/api/v1/trips/{trip_id}/route": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Trip Route",
+        "description": "Tuyến theo đường thực tế (OSRM); chưa có OSRM thì trả đường thẳng nối các điểm.",
+        "operationId": "trip_route_api_v1_trips__trip_id__route_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripRouteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips/{trip_id}/picking-list": {
       "get": {
         "tags": [
@@ -9496,6 +9545,38 @@
           "stops"
         ],
         "title": "TripOut"
+      },
+      "TripRouteOut": {
+        "properties": {
+          "road": {
+            "type": "boolean",
+            "title": "Road"
+          },
+          "coordinates": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Coordinates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "road",
+          "coordinates"
+        ],
+        "title": "TripRouteOut",
+        "description": "Đường đi của lệnh trên bản đồ, [kinh độ, vĩ độ]; `road=False` → nối thẳng các điểm."
       },
       "TripSource": {
         "type": "string",

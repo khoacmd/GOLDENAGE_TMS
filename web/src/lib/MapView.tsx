@@ -13,6 +13,7 @@ export interface MapRoute {
   id: string
   color: string
   coords: [number, number][] // [lng, lat]
+  dashed?: boolean // nét đứt = nối thẳng giữa các điểm (chưa có tuyến theo đường)
 }
 
 export interface MapMarker {
@@ -72,7 +73,8 @@ const styleReady: Promise<maplibregl.StyleSpecification> = (async () => {
 const HANOI: [number, number] = [105.83, 21.02]
 
 /**
- * Bản đồ hiển thị điểm (đánh số) + đường nối theo thứ tự `route`/`routes` (đường thẳng giữa các điểm).
+ * Bản đồ hiển thị điểm (đánh số) + đường nối theo thứ tự `route`/`routes` (thẳng nét đứt, hoặc theo
+ * đường thực tế khi `dashed: false` - xem `useTripRoads`).
  * `onPick` bật chế độ chọn tọa độ bằng click.
  */
 export function MapView({
@@ -150,7 +152,7 @@ export function MapView({
         type: 'FeatureCollection',
         features: lines.map((r) => ({
           type: 'Feature',
-          properties: { color: r.color },
+          properties: { color: r.color, dashed: r.dashed ?? true },
           geometry: { type: 'LineString', coordinates: r.coords },
         })),
       }
@@ -158,11 +160,21 @@ export function MapView({
       if (source) source.setData(data)
       else {
         m.addSource('route', { type: 'geojson', data })
+        // line-dasharray không nhận biểu thức theo feature → 2 lớp lọc theo `dashed`.
         m.addLayer({
           id: 'route',
           type: 'line',
           source: 'route',
+          filter: ['==', ['get', 'dashed'], true],
           paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [2, 1] },
+        })
+        m.addLayer({
+          id: 'route-road',
+          type: 'line',
+          source: 'route',
+          filter: ['==', ['get', 'dashed'], false],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': ['get', 'color'], 'line-width': 4, 'line-opacity': 0.85 },
         })
       }
     }

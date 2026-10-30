@@ -35,7 +35,8 @@ import {
   fmtDateTime,
   fmtNumber,
 } from '../../lib/labels'
-import { MapView } from '../../lib/MapView'
+import { MapView, type MapMarker } from '../../lib/MapView'
+import { useTripRoads } from '../../lib/roads'
 import { TripCostCard } from './TripCostCard'
 
 type Item = components['schemas']['TripItemOut']
@@ -241,7 +242,7 @@ export function TripDetailPage() {
         </Col>
         <Col xs={24} xl={10}>
           <Card title="Bản đồ" style={{ marginBottom: 16 }}>
-            <MapView markers={markers} route={route} height={360} />
+            <TripMap tripId={trip.id} markers={markers} route={route} />
           </Card>
           {(trip.order_status === 'DISPATCHED' || trip.order_status === 'CLOSED') && <TripCostCard trip={trip} />}
           {(confirmations.data?.length ?? 0) > 0 && (
@@ -327,4 +328,9 @@ export function TripDetailPage() {
       </Modal>
     </Space>
   )
+}
+
+function TripMap({ tripId, markers, route }: { tripId: string; markers: MapMarker[]; route: [number, number][] }) {
+  const routes = useTripRoads([{ id: tripId, color: '#1677ff', coords: route }])
+  return <MapView markers={markers} routes={routes} height={360} />
 }

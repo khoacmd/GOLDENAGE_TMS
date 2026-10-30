@@ -69,7 +69,7 @@
 ## M4 – Lập kế hoạch tự động
 - [x] Service ma trận khoảng cách: OSRM `/table` + cache Redis, dự phòng ước lượng đường chim bay
 - [x] OSRM: script `infra/osrm/prepare-vietnam.sh` (profile ô tô + xe máy), service `osrm-car`/`osrm-motorbike` (compose profile `routing`)
-- [ ] Dữ liệu OSRM Việt Nam đã dựng xong, bật `TMS_OSRM_*_URL` và so sánh kết quả với ước lượng (đang tải dữ liệu OSM - làm tiếp khi xong)
+- [x] Dữ liệu OSRM Việt Nam đã dựng xong (ô tô + xe máy), bật `TMS_OSRM_*_URL` và so sánh với ước lượng (quãng đường +5,6%; thời gian nhân hệ số kẹt xe D28)
 - [x] Kiểm tra khả thi từng phần đơn + lý do không xếp được
 - [x] Phân bổ kho theo tồn kho (giữ chỗ = lệnh chưa xuất kho)
 - [x] Bộ giải OR-Tools: đa kho, đa lượt/xe, tải trọng, ca làm việc, tương thích xe–hàng–khách
@@ -78,7 +78,7 @@
 - [x] Màn hình xem kế hoạch trên bản đồ, kéo thả điều chỉnh, so sánh chi phí
 - [x] Danh sách đơn không xếp được + cảnh báo
 - [x] Sửa: phần đơn giao thất bại xếp lại được vào lệnh mới (D25)
-- [ ] Vẽ tuyến theo đường thực tế (OSRM `/route`) thay cho đường thẳng trên bản đồ
+- [x] Vẽ tuyến theo đường thực tế (OSRM `/route`) thay cho đường thẳng trên bản đồ
 - [ ] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6)
 
 ## M5 – Chi phí & báo cáo

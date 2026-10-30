@@ -38,6 +38,7 @@ from app.modules.orders.models import (
     SalesOrderLine,
     TempGroup,
 )
+from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
 
 # Phần đơn có thể xếp lệnh: chưa lập kế hoạch hoặc lần giao trước thất bại.
@@ -93,6 +94,23 @@ async def get_trip(session: AsyncSession, trip_id: uuid.UUID) -> Trip:
     if trip is None:
         raise NotFoundError("Không tìm thấy lệnh giao")
     return trip
+
+
+def stop_point(stop: TripStop) -> Point:
+    point = stop.delivery_point
+    if point is not None:
+        return (float(point.latitude), float(point.longitude))
+    return (float(stop.latitude or 0), float(stop.longitude or 0))
+
+
+def trip_path(trip: Trip) -> list[Point]:
+    """Kho → các điểm dừng theo thứ tự → kho."""
+    depot = (float(trip.warehouse.latitude), float(trip.warehouse.longitude))
+    return [depot, *(stop_point(s) for s in trip.stops), depot]
+
+
+def vehicle_profile(vehicle: Vehicle) -> Profile:
+    return Profile.MOTORBIKE if vehicle.vehicle_type == VehicleType.MOTORBIKE else Profile.CAR
 
 
 def items_of(trip: Trip) -> list[TripItem]:

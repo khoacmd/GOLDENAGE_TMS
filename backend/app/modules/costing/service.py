@@ -12,10 +12,10 @@ from app.core.errors import AppError
 from app.modules.audit import service as audit
 from app.modules.costing.models import CostAllocation, DistanceSource, TripCost
 from app.modules.costing.schemas import TripCostIn
+from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import ItemStatus, Trip, TripItem, TripOrderStatus, TripStop
-from app.modules.master_data.models import CostAllocationMethod, VehicleType
+from app.modules.master_data.models import CostAllocationMethod
 from app.modules.routing import service as routing
-from app.modules.routing.service import Point, Profile
 
 # Chỉ ghi nhận chi phí cho chuyến đã chạy.
 COSTABLE = (TripOrderStatus.DISPATCHED, TripOrderStatus.CLOSED)
@@ -36,17 +36,6 @@ def split(total: Decimal, bases: list[Decimal]) -> list[Decimal]:
     for i in sorted(range(len(raw)), key=lambda i: raw[i] - amounts[i], reverse=True)[:remainder]:
         amounts[i] += 1
     return amounts
-
-
-def _stop_point(stop: TripStop) -> Point:
-    point = stop.delivery_point
-    if point is not None:
-        return (float(point.latitude), float(point.longitude))
-    return (float(stop.latitude or 0), float(stop.longitude or 0))
-
-
-def _profile(trip: Trip) -> Profile:
-    return Profile.MOTORBIKE if trip.vehicle.vehicle_type == VehicleType.MOTORBIKE else Profile.CAR
 
 
 def charged_items(trip: Trip) -> list[tuple[TripStop, TripItem]]:
@@ -84,7 +73,7 @@ def bases(trip: Trip, method: CostAllocationMethod) -> list[Decimal]:
         stop_count[stop.id] += 1
     result = []
     for stop, item in rows:
-        distance = Decimal(str(round(routing.haversine_m(depot, _stop_point(stop)))))
+        distance = Decimal(str(round(routing.haversine_m(depot, dispatch.stop_point(stop)))))
         share = (
             item.weight_kg / stop_weight[stop.id]
             if stop_weight[stop.id] > 0
@@ -95,9 +84,9 @@ def bases(trip: Trip, method: CostAllocationMethod) -> list[Decimal]:
 
 
 async def estimated_distance_km(trip: Trip) -> Decimal:
-    depot = (float(trip.warehouse.latitude), float(trip.warehouse.longitude))
-    points = [depot, *(_stop_point(s) for s in trip.stops), depot]
-    meters = await routing.route_distance_m(points, _profile(trip))
+    meters = await routing.route_distance_m(
+        dispatch.trip_path(trip), dispatch.vehicle_profile(trip.vehicle)
+    )
     return (Decimal(meters) / 1000).quantize(Decimal("0.01"))
 
 
