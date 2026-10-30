@@ -1,27 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import * as ImagePicker from 'expo-image-picker'
-import * as Location from 'expo-location'
 import { useState } from 'react'
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 
 import { api } from '../api'
 import { TEMP_GROUP, fmtNumber } from '../lib/format'
+import { currentPosition } from '../lib/location'
 import { Button, Card, Header, colors } from '../lib/ui'
 import { enqueue } from '../queue'
 import type { Item, Stop, Trip } from './TripScreen'
 
 const REASONS = ['Khách vắng nhà / đóng cửa', 'Khách từ chối nhận', 'Sai hàng / thiếu hàng', 'Không liên lạc được khách']
-
-async function currentPosition() {
-  const perm = await Location.requestForegroundPermissionsAsync()
-  if (perm.status !== 'granted') return null
-  try {
-    return await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
-  } catch (e) {
-    console.warn('Không lấy được vị trí hiện tại', e)
-    return Location.getLastKnownPositionAsync().catch(() => null)
-  }
-}
 
 export function ConfirmScreen({ trip, stop, item, onDone }: { trip: Trip; stop: Stop; item: Item; onDone: () => void }) {
   const [status, setStatus] = useState<'SUCCESS' | 'FAILED'>('SUCCESS')
@@ -57,9 +46,9 @@ export function ConfirmScreen({ trip, stop, item, onDone }: { trip: Trip; stop: 
           status,
           reason: status === 'FAILED' ? reason.trim() : null,
           device_time: new Date().toISOString(),
-          latitude: pos?.coords.latitude ?? null,
-          longitude: pos?.coords.longitude ?? null,
-          accuracy_m: pos?.coords.accuracy ?? null,
+          latitude: pos?.latitude ?? null,
+          longitude: pos?.longitude ?? null,
+          accuracy_m: pos?.accuracy ?? null,
           is_mock_location: pos?.mocked ?? false,
         },
         photoUris: photos,

@@ -44,3 +44,7 @@ class CompanySettings(TimestampMixin, Base):
     photo_required_failed: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     # Thao tác ghi nhận khi mất mạng được gửi muộn tối đa bao lâu.
     offline_max_delay_minutes: Mapped[int] = mapped_column(default=240, server_default=text("240"))
+    # Điện thoại mới đăng ký phải được admin công ty duyệt trước khi xác nhận giao.
+    require_device_approval: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )

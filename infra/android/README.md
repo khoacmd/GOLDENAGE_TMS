@@ -15,7 +15,7 @@
 
 Lưu ý:
 - Không chạy Metro với `CI=1` khi cần fast refresh/log từ app. Sau khi sửa module không phải component (vd. `src/queue.ts`), nên khởi động lại app (`am force-stop host.exp.exponent`) để tránh 2 bản module cùng tồn tại.
-- Redroid **không có Google Play Services** → `expo-location` không lấy được vị trí. Để test luồng xác nhận giao, tạm tắt "Kiểm tra vị trí" ở màn hình Cấu hình (logic vị trí đã có test backend).
+- Redroid **không có Google Play Services** → trong Expo Go `expo-location` không lấy được vị trí; để test luồng xác nhận giao, tạm tắt "Kiểm tra vị trí" ở màn hình Cấu hình. Bản APK (workflow Mobile APK) có định vị dự phòng: cài bằng `... install -r /apk/<file>.apk` như bước 4, đặt vị trí giả lập bằng `adb shell cmd location set-location-enabled true` + `cmd location providers add-test-provider gps` / `set-test-provider-location gps --location <lat>,<lng>`.
 - Redroid không có camera → bản dev có nút "Chọn ảnh có sẵn". Đưa ảnh vào máy: `adb push anh.png /sdcard/Pictures/` rồi
   `adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/anh.png`.
 - Giả lập mất mạng tới server: `adb reverse --remove tcp:8000`, nối lại: `adb reverse tcp:8000 tcp:8000`.

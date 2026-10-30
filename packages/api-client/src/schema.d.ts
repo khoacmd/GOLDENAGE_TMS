@@ -409,6 +409,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Devices */
+        get: operations["list_devices_api_v1_devices_get"];
+        put?: never;
+        /** Create Device */
+        post: operations["create_device_api_v1_devices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Device */
+        delete: operations["delete_device_api_v1_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Device */
+        patch: operations["update_device_api_v1_devices__device_id__patch"];
+        trace?: never;
+    };
     "/api/v1/trips/available-parts": {
         parameters: {
             query?: never;
@@ -632,6 +668,26 @@ export interface paths {
         get: operations["rules_api_v1_driver_rules_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register Device
+         * @description App gọi khi đăng nhập / mở app; trả trạng thái duyệt của thiết bị.
+         */
+        post: operations["register_device_api_v1_driver_device_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1076,6 +1132,8 @@ export interface components {
             photo_required_failed: boolean;
             /** Offline Max Delay Minutes */
             offline_max_delay_minutes: number;
+            /** Require Device Approval */
+            require_device_approval: boolean;
             /** Working Weekdays */
             working_weekdays: number[];
             /**
@@ -1122,6 +1180,8 @@ export interface components {
             photo_required_failed?: boolean | null;
             /** Offline Max Delay Minutes */
             offline_max_delay_minutes?: number | null;
+            /** Require Device Approval */
+            require_device_approval?: boolean | null;
         };
         /** CompanyUpdate */
         CompanyUpdate: {
@@ -1214,6 +1274,11 @@ export interface components {
              * @default []
              */
             photo_keys: string[];
+            /**
+             * Device Id
+             * @description Mã cài đặt của app (đã đăng ký thiết bị)
+             */
+            device_id?: string | null;
         };
         /** ConfirmationOut */
         ConfirmationOut: {
@@ -1237,6 +1302,8 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+            /** Device Id */
+            device_id: string | null;
             status: components["schemas"]["ItemStatus"];
             /** Reason */
             reason: string | null;
@@ -1428,6 +1495,112 @@ export interface components {
             photo_required_failed: boolean;
             /** Offline Max Delay Minutes */
             offline_max_delay_minutes: number;
+            /** Require Device Approval */
+            require_device_approval: boolean;
+        };
+        /** DeviceCreate */
+        DeviceCreate: {
+            /** Identifier */
+            identifier?: string | null;
+            /** @default ACTIVE */
+            status: components["schemas"]["DeviceStatus"];
+            /** Warehouse Id */
+            warehouse_id?: string | null;
+            /** User Id */
+            user_id?: string | null;
+            connection?: components["schemas"]["PrinterConnection"] | null;
+            /** Address */
+            address?: string | null;
+            paper_size?: components["schemas"]["PaperSize"] | null;
+            /** Note */
+            note?: string | null;
+            device_type: components["schemas"]["DeviceType"];
+            /** Name */
+            name: string;
+        };
+        /** DeviceOut */
+        DeviceOut: {
+            /** Identifier */
+            identifier?: string | null;
+            /** @default ACTIVE */
+            status: components["schemas"]["DeviceStatus"];
+            /** Warehouse Id */
+            warehouse_id?: string | null;
+            /** User Id */
+            user_id?: string | null;
+            connection?: components["schemas"]["PrinterConnection"] | null;
+            /** Address */
+            address?: string | null;
+            paper_size?: components["schemas"]["PaperSize"] | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            device_type: components["schemas"]["DeviceType"];
+            /** Name */
+            name: string;
+            /** Platform */
+            platform: string | null;
+            /** Model */
+            model: string | null;
+            /** Os Version */
+            os_version: string | null;
+            /** App Version */
+            app_version: string | null;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * DeviceRegister
+         * @description App mobile tự đăng ký khi đăng nhập / mở app.
+         */
+        DeviceRegister: {
+            /** Identifier */
+            identifier: string;
+            /** Platform */
+            platform?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Os Version */
+            os_version?: string | null;
+            /** App Version */
+            app_version?: string | null;
+        };
+        /**
+         * DeviceStatus
+         * @enum {string}
+         */
+        DeviceStatus: "ACTIVE" | "PENDING" | "BLOCKED";
+        /**
+         * DeviceType
+         * @enum {string}
+         */
+        DeviceType: "PC" | "MOBILE" | "PRINTER";
+        /** DeviceUpdate */
+        DeviceUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Identifier */
+            identifier?: string | null;
+            status?: components["schemas"]["DeviceStatus"] | null;
+            /** Warehouse Id */
+            warehouse_id?: string | null;
+            /** User Id */
+            user_id?: string | null;
+            connection?: components["schemas"]["PrinterConnection"] | null;
+            /** Address */
+            address?: string | null;
+            paper_size?: components["schemas"]["PaperSize"] | null;
+            /** Note */
+            note?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1762,6 +1935,13 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** Page[DeviceOut] */
+        Page_DeviceOut_: {
+            /** Items */
+            items: components["schemas"]["DeviceOut"][];
+            /** Total */
+            total: number;
+        };
         /** Page[ImportJobOut] */
         Page_ImportJobOut_: {
             /** Items */
@@ -1804,6 +1984,11 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * PaperSize
+         * @enum {string}
+         */
+        PaperSize: "A4" | "A5" | "K80";
         /** PersonOut */
         PersonOut: {
             /**
@@ -1845,6 +2030,11 @@ export interface components {
             /** Adhoc Items */
             adhoc_items: string[];
         };
+        /**
+         * PrinterConnection
+         * @enum {string}
+         */
+        PrinterConnection: "NETWORK" | "USB" | "BLUETOOTH";
         /** ProductCreate */
         ProductCreate: {
             /** Code */
@@ -1897,6 +2087,17 @@ export interface components {
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** RegisteredDevice */
+        RegisteredDevice: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            status: components["schemas"]["DeviceStatus"];
         };
         /** RolesUpdate */
         RolesUpdate: {
@@ -3444,6 +3645,139 @@ export interface operations {
             };
         };
     };
+    list_devices_api_v1_devices_get: {
+        parameters: {
+            query?: {
+                device_type?: components["schemas"]["DeviceType"] | null;
+                status?: components["schemas"]["DeviceStatus"] | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DeviceOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_device_api_v1_devices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_device_api_v1_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_device_api_v1_devices__device_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     available_parts_api_v1_trips_available_parts_get: {
         parameters: {
             query: {
@@ -3910,6 +4244,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeliveryRules"];
+                };
+            };
+        };
+    };
+    register_device_api_v1_driver_device_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceRegister"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredDevice"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

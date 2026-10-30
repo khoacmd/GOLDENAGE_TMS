@@ -34,7 +34,7 @@
 - [x] Template chuẩn 6 loại dữ liệu + `docs/IMPORT_TEMPLATES.md` (sinh tự động) + dữ liệu mẫu `docs/samples/`
 - [x] API key cho hệ thống ngoài (`/api/v1/integration/{loại}`)
 - [x] Bản đồ: chọn tọa độ trên bản đồ (làm ở M2)
-- [ ] Cấu hình thiết bị (PC/mobile/máy in) - chuyển sang M3 cùng đăng ký thiết bị mobile
+- [x] Cấu hình thiết bị (PC/mobile/máy in) - làm ở M3 cùng đăng ký thiết bị mobile
 - [x] Quy tắc xác nhận giao (thời gian, bán kính tọa độ) - làm ở M3
 
 ## M2 – Lập lệnh thủ công & kho
@@ -58,10 +58,12 @@
 - [x] Chuyến tự chuyển "Kết thúc" khi không còn đơn pending, kèm thống kê thành công/thất bại/hủy
 - [x] Quản lý hủy đơn pending trong chuyến (có lý do, audit); đơn thất bại/bị hủy quay về PENDING
 - [x] Web: cấu hình quy tắc xác nhận giao; xem lịch sử xác nhận + ảnh trong chi tiết chuyến
-- [ ] Định vị dự phòng khi máy không có Google Play Services (expo-location dùng Fused Location)
-- [ ] Build APK cài đặt (EAS Build hoặc CI x86-64) để phát cho lái xe
-- [ ] Đăng ký thiết bị mobile / máy in (chuyển từ M1)
-- [ ] Bản đồ tự host: chạy `infra/tiles/fetch-vietnam.sh`, phục vụ PMTiles + style trên web
+- [x] Định vị dự phòng khi máy không có Google Play Services: module native `mobile/modules/tms-location` (LocationManager), chỉ có trong bản APK
+- [x] Workflow build APK trên GitHub Actions x86-64 (`.github/workflows/mobile-apk.yml`, chạy tay, nhập URL API)
+- [ ] Kiểm tra APK trên điện thoại thật (GPS dự phòng, camera); keystore phát hành riêng
+- [x] Thiết bị: admin quản lý PC/máy in, điện thoại tự đăng ký khi mở app, tùy chọn bắt buộc duyệt, khóa máy → từ chối xác nhận giao
+- [x] Bản đồ tự host trên web: PMTiles + style Protomaps (tiếng Việt), service `tiles` (nginx), tự quay về tile OSM nếu chưa có dữ liệu
+- [ ] Tải xong dữ liệu `infra/tiles/fetch-vietnam.sh` và kiểm tra hiển thị
 - [ ] Pilot với công ty đầu tiên (2 kho, 4 xe)
 
 ## M4 – Lập kế hoạch tự động

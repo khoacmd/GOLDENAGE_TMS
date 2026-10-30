@@ -49,6 +49,7 @@ class DeliveryRules(BaseModel):
     photo_required_success: bool
     photo_required_failed: bool
     offline_max_delay_minutes: int = Field(ge=5, le=24 * 60)
+    require_device_approval: bool
 
 
 class CompanySettingsOut(DeliveryRules):
@@ -76,6 +77,7 @@ class CompanySettingsUpdate(BaseModel):
     photo_required_success: bool | None = None
     photo_required_failed: bool | None = None
     offline_max_delay_minutes: int | None = Field(default=None, ge=5, le=24 * 60)
+    require_device_approval: bool | None = None
 
     @field_validator("working_weekdays")
     @classmethod

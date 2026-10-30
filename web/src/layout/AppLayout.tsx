@@ -7,6 +7,7 @@ import {
   ImportOutlined,
   InboxOutlined,
   LogoutOutlined,
+  MobileOutlined,
   SettingOutlined,
   TeamOutlined,
 } from '@ant-design/icons'
@@ -52,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { path: '/imports', label: 'Import dữ liệu', icon: <ImportOutlined />, access: ['company_admin', 'manager'] },
   { path: '/users', label: 'Người dùng', icon: <TeamOutlined />, access: ['company_admin'] },
+  { path: '/devices', label: 'Thiết bị', icon: <MobileOutlined />, access: ['company_admin'] },
   { path: '/settings', label: 'Cấu hình', icon: <SettingOutlined />, access: ['company_admin'] },
   { path: '/companies', label: 'Công ty', icon: <ApartmentOutlined />, access: ['system'] },
 ]

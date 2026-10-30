@@ -41,6 +41,15 @@ services:
       - ./data/seaweedfs:/data
       - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
 
+  # Bản đồ tự host (PMTiles). Tải dữ liệu trước: infra/tiles/fetch-vietnam.sh
+  tiles:
+    image: nginx:1.27-alpine
+    ports:
+      - "${TILES_PORT:-58080}:80"
+    volumes:
+      - ./data/tiles:/srv:ro
+      - ./tiles/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
   # Android giả lập cho app mobile (chỉ chạy khi cần: --profile mobile).
   # Yêu cầu: sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
   redroid:

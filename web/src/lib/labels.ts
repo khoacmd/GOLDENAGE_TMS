@@ -52,6 +52,30 @@ export const ROLE: Record<S['CompanyRole'], string> = {
   driver: 'Nhân viên giao hàng',
 }
 
+export const DEVICE_TYPE: Record<S['DeviceType'], string> = {
+  MOBILE: 'Điện thoại',
+  PC: 'Máy tính',
+  PRINTER: 'Máy in',
+}
+
+export const DEVICE_STATUS: Record<S['DeviceStatus'], { label: string; color: string }> = {
+  ACTIVE: { label: 'Đang dùng', color: 'green' },
+  PENDING: { label: 'Chờ duyệt', color: 'orange' },
+  BLOCKED: { label: 'Đã khóa', color: 'red' },
+}
+
+export const PRINTER_CONNECTION: Record<S['PrinterConnection'], string> = {
+  NETWORK: 'Mạng (LAN/Wi-Fi)',
+  USB: 'USB',
+  BLUETOOTH: 'Bluetooth',
+}
+
+export const PAPER_SIZE: Record<S['PaperSize'], string> = {
+  A4: 'A4',
+  A5: 'A5',
+  K80: 'Giấy nhiệt 80 mm',
+}
+
 export const IMPORT_STATUS: Record<S['ImportStatus'], { label: string; color: string }> = {
   VALIDATED: { label: 'Đã kiểm tra', color: 'blue' },
   SUCCEEDED: { label: 'Thành công', color: 'green' },

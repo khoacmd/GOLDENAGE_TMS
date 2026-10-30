@@ -120,7 +120,7 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
 
 ### Dữ liệu gốc
 - `companies`, `company_settings`
-- `users`, `user_roles(company_id, user_id, role, warehouse_id?)`, `devices(type: pc/mobile/printer, ...)`
+- `users`, `user_roles(company_id, user_id, role, warehouse_id?)`, `devices(device_type: PC|MOBILE|PRINTER, name, identifier, status: ACTIVE|PENDING|BLOCKED, warehouse_id?, user_id?, model/os/app_version, connection/address/paper_size (máy in), last_seen_at)`
 - `warehouses(code, name, address, location geography(Point))`
 - `vehicles(code, name, plate_no, vehicle_type: CAR|MOTORBIKE, capacity_kg, cost_per_km, requires_assistant, cargo_class: DRY_ONLY|COLD_ONLY|ANY, cost_allocation_method: ORDER_VALUE|DISTANCE|WEIGHT|PER_TRIP, active)`
 - `vehicle_warehouses(vehicle_id, warehouse_id)` – kho xe được phép lấy hàng
@@ -216,7 +216,9 @@ Kích hoạt: job định kỳ (lịch theo `company_settings`) hoặc lệnh ma
 - **Mọi lần xác nhận đều lưu** `delivery_confirmations` (+ `delivery_photos`), kể cả bị từ chối (`accepted=false`, `violations`, `rule_check`); chỉ lần hợp lệ mới cập nhật trạng thái mục hàng. App hiển thị lý do bị từ chối để lái xe xác nhận lại.
 - `delivered_at` = giờ thao tác trên thiết bị; quản lý có thể sửa thủ công trên web (ghi audit).
 - Ảnh: app upload qua API (`POST /driver/photos`, JPEG/PNG/WebP ≤ 8MB, key theo `company_id/`), server lưu S3 (SeaweedFS khi tự host); web xem bằng URL ký sẵn (`TMS_S3_PUBLIC_ENDPOINT`).
-- Lưu ý thiết bị: `expo-location` trên Android dùng Fused Location của Google Play Services → máy không có Play Services (Redroid, một số máy Huawei) không lấy được vị trí → bị từ chối nếu bật kiểm tra vị trí. Cần phương án dự phòng trước pilot nếu đội xe dùng máy như vậy.
+- Định vị: `expo-location` (Fused Location của Google Play Services) trước; lỗi thì dùng module native `mobile/modules/tms-location` (LocationManager GPS/mạng, không cần Play Services, bỏ vị trí cũ hơn 5 phút). Module này chỉ có trong bản APK, không có trong Expo Go.
+- Thiết bị: app sinh mã cài đặt (SecureStore), tự đăng ký `POST /driver/device` khi mở app và gửi kèm `device_id` trong mỗi xác nhận. Thiết bị `BLOCKED` (hoặc `PENDING`/chưa đăng ký khi công ty bật `require_device_approval`) → xác nhận bị từ chối (vẫn lưu). PC/máy in do admin công ty khai báo; in vẫn qua trình duyệt (D17).
+- Build APK: GitHub Actions x86-64 (`mobile-apk.yml`), `expo prebuild` + Gradle; URL API gắn vào bản build; HTTP thường chỉ bật khi URL là `http://` (`app.config.ts`). Bản pilot ký bằng debug keystore của template.
 
 ## 12. Triển khai
 
@@ -264,5 +266,6 @@ Ghi nhận khi dựng M0 trên Spark:
 | D17 | In phiếu soạn hàng / giao hàng bằng trang in của trình duyệt (In / Lưu PDF), chưa sinh PDF phía server | Chốt (M2) |
 | D18 | Chỉ quản lý lập/duyệt/cập nhật lệnh; admin công ty chỉ xem kế hoạch | Chốt |
 | D19 | Hoàn trả kho sau xuất kho, giới hạn thủ kho theo kho: để phase sau | Chốt |
-| D20 | Bản đồ tự host bằng PMTiles (Protomaps, vùng Việt Nam + Hoàng Sa, Trường Sa) phục vụ tĩnh | Chốt - chờ tải dữ liệu |
+| D20 | Bản đồ tự host bằng PMTiles (Protomaps, vùng Việt Nam + Hoàng Sa, Trường Sa) phục vụ tĩnh qua nginx (`/tiles`); chưa có dữ liệu thì dùng tile OSM | Chốt (M3) |
 | D21 | Xác nhận giao vi phạm quy tắc vẫn được lưu (để kiểm tra), không cập nhật trạng thái | Chốt (M3) |
+| D22 | Thiết bị mobile tự đăng ký; duyệt trước khi dùng là tùy chọn theo công ty; khóa thiết bị chặn xác nhận giao | Chốt (M3) |

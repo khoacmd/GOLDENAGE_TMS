@@ -9,6 +9,8 @@ from app.core.auth import CurrentUser, OfficeStaffDep, require_roles
 from app.core.db import DbSession
 from app.modules.delivery import service
 from app.modules.delivery.schemas import ConfirmationOut, ConfirmIn, UploadedPhoto
+from app.modules.devices import service as devices
+from app.modules.devices.schemas import DeviceRegister, RegisteredDevice
 from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import TripOrderStatus
 from app.modules.dispatch.router import summary_out, trip_out
@@ -33,6 +35,25 @@ VISIBLE_TO_DRIVER = [
 async def rules(user: DriverDep, session: DbSession) -> DeliveryRules:
     settings = await session.get(CompanySettings, user.cid)
     return DeliveryRules.model_validate(settings, from_attributes=True)
+
+
+@driver_router.post("/device")
+async def register_device(
+    body: DeviceRegister, user: DriverDep, session: DbSession
+) -> RegisteredDevice:
+    """App gọi khi đăng nhập / mở app; trả trạng thái duyệt của thiết bị."""
+    settings = await session.get(CompanySettings, user.cid)
+    assert settings is not None
+    device = await devices.register_mobile(
+        session,
+        user.cid,
+        user.id,
+        user.username,
+        body,
+        require_approval=settings.require_device_approval,
+    )
+    await session.commit()
+    return RegisteredDevice.model_validate(device)
 
 
 @driver_router.get("/trips")

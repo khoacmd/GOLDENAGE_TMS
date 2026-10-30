@@ -2,7 +2,9 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 
 import * as maplibregl from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { useEffect, useRef } from 'react'
+import { layers, namedFlavor } from '@protomaps/basemaps'
+import { Protocol } from 'pmtiles'
+import { useEffect, useRef, useState } from 'react'
 
 // MapLibre tự tính URL worker từ import.meta.url của chính nó - sai khi Vite đóng gói lại.
 maplibregl.setWorkerUrl(workerUrl)
@@ -16,15 +18,51 @@ export interface MapMarker {
   title?: string
 }
 
-// Tile OSM công cộng chỉ dùng cho dev; production cấu hình VITE_MAP_TILE_URL (MapTiler, tự host...).
-const TILE_URL = import.meta.env.VITE_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-const STYLE: maplibregl.StyleSpecification = {
+const TILES_BASE = import.meta.env.VITE_MAP_TILES_BASE ?? '/tiles'
+const OSM_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    base: { type: 'raster', tiles: [TILE_URL], tileSize: 256, attribution: '© OpenStreetMap' },
+    base: {
+      type: 'raster',
+      tiles: [import.meta.env.VITE_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap',
+    },
   },
   layers: [{ id: 'base', type: 'raster', source: 'base' }],
 }
+
+maplibregl.addProtocol('pmtiles', new Protocol().tile)
+
+/**
+ * Bản đồ tự host (PMTiles Việt Nam, xem infra/tiles); chưa có dữ liệu thì dùng tile OSM công cộng.
+ * `VITE_MAP_TILE_URL` (tile raster) buộc dùng nguồn raster đó.
+ */
+const styleReady: Promise<maplibregl.StyleSpecification> = (async () => {
+  if (import.meta.env.VITE_MAP_TILE_URL) return OSM_STYLE
+  const base = new URL(TILES_BASE, window.location.href).href.replace(/\/$/, '')
+  const ok = await fetch(`${base}/vietnam.pmtiles`, { method: 'HEAD' })
+    .then((r) => r.ok && !r.headers.get('content-type')?.includes('text/html'))
+    .catch(() => false)
+  if (!ok) {
+    console.warn('Chưa có bản đồ tự host, dùng tile OSM công cộng')
+    return OSM_STYLE
+  }
+  return {
+    version: 8,
+    glyphs: `${base}/fonts/{fontstack}/{range}.pbf`,
+    sprite: `${base}/sprites/v4/light`,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: `pmtiles://${base}/vietnam.pmtiles`,
+        attribution: '© OpenStreetMap',
+      },
+    },
+    layers: layers('protomaps', namedFlavor('light'), { lang: 'vi' }),
+  }
+})()
+
 const HANOI: [number, number] = [105.83, 21.02]
 
 /**
@@ -46,18 +84,30 @@ export function MapView({
   const map = useRef<maplibregl.Map | null>(null)
   const markerRefs = useRef<maplibregl.Marker[]>([])
   const pickRef = useRef(onPick)
+  const [style, setStyle] = useState<maplibregl.StyleSpecification | null>(null)
   useEffect(() => {
     pickRef.current = onPick
   }, [onPick])
+  useEffect(() => {
+    let active = true
+    void styleReady.then((s) => active && setStyle(s))
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!container.current) return
-    const m = new maplibregl.Map({ container: container.current, style: STYLE, center: HANOI, zoom: 11 })
+    if (!style) return
+    const m = new maplibregl.Map({ container: container.current, style, center: HANOI, zoom: 11 })
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     m.on('click', (e: maplibregl.MapMouseEvent) => pickRef.current?.(e.lngLat.lat, e.lngLat.lng))
     map.current = m
-    return () => m.remove()
-  }, [])
+    return () => {
+      m.remove()
+      map.current = null
+    }
+  }, [style])
 
   useEffect(() => {
     const m = map.current
@@ -108,7 +158,7 @@ export function MapView({
       markers.forEach((mk) => bounds.extend([mk.lng, mk.lat]))
       m.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 0 })
     }
-  }, [markers, route])
+  }, [markers, route, style])
 
   return <div ref={container} style={{ height, width: '100%', borderRadius: 8, overflow: 'hidden' }} />
 }

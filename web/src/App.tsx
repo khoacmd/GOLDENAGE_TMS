@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 
 import { AppLayout } from './layout/AppLayout'
 import { CompaniesPage } from './pages/CompaniesPage'
+import { DevicesPage } from './pages/DevicesPage'
 import { HomePage } from './pages/HomePage'
 import { ImportPage } from './pages/ImportPage'
 import { LoginPage } from './pages/LoginPage'
@@ -43,6 +44,7 @@ export default function App() {
         </Route>
         <Route path="imports" element={<ImportPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="devices" element={<DevicesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="companies" element={<CompaniesPage />} />
       </Route>

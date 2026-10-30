@@ -8,6 +8,7 @@ import { Directory, File, Paths } from 'expo-file-system'
 import Storage from 'expo-sqlite/kv-store'
 
 import { API_URL, loadStoredTokens, refreshSession, tokenStore } from './api'
+import { getInstallationId } from './device'
 
 type ConfirmIn = components['schemas']['ConfirmIn']
 type ConfirmationOut = components['schemas']['ConfirmationOut']
@@ -17,7 +18,7 @@ export interface QueueEntry {
   tripId: string
   itemId: string
   label: string
-  body: Omit<ConfirmIn, 'client_id' | 'photo_keys'>
+  body: Omit<ConfirmIn, 'client_id' | 'photo_keys' | 'device_id'>
   photoUris: string[]
   photoKeys: string[]
   state: 'pending' | 'rejected' | 'error'
@@ -153,7 +154,12 @@ async function send(entry: QueueEntry): Promise<void> {
   const resp = await request(`/api/v1/driver/trips/${entry.tripId}/items/${entry.itemId}/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...entry.body, client_id: entry.clientId, photo_keys: keys }),
+    body: JSON.stringify({
+      ...entry.body,
+      client_id: entry.clientId,
+      photo_keys: keys,
+      device_id: await getInstallationId(),
+    }),
   })
   if (resp.status === 401) throw new NetworkError('Phiên đăng nhập hết hạn')
   if (!resp.ok) {

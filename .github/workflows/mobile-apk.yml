@@ -1,0 +1,60 @@
+name: Mobile APK
+
+# Build APK cho nhân viên giao hàng trên máy x86-64 (hermesc không có bản ARM64 nên không build trên Spark).
+# Chạy tay: Actions → Mobile APK → Run workflow, nhập URL API mà app sẽ gọi.
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: URL backend (vd. https://tms.congty.vn hoặc http://192.168.1.10:8000)
+        required: true
+      version:
+        description: Phiên bản hiển thị (mặc định theo app.json)
+        required: false
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_API_URL: ${{ inputs.api_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pnpm install --frozen-lockfile
+      - name: Đặt phiên bản
+        if: inputs.version != ''
+        working-directory: mobile
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node -e "const j=require('./app.json');j.expo.version=process.env.VERSION;require('fs').writeFileSync('app.json',JSON.stringify(j,null,2))"
+      - name: Sinh project Android
+        working-directory: mobile
+        run: npx expo prebuild --platform android --no-install
+      - name: Build APK
+        working-directory: mobile/android
+        # Bản pilot ký bằng debug keystore của template Expo (giống nhau giữa các lần build →
+        # cài đè được). Phát hành chính thức: thay bằng keystore riêng lưu trong secrets.
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Đặt tên file
+        id: apk
+        working-directory: mobile
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          name="tms-giao-hang-${version}-${GITHUB_RUN_NUMBER}.apk"
+          mv android/app/build/outputs/apk/release/app-release.apk "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: mobile/${{ steps.apk.outputs.name }}
+          retention-days: 30

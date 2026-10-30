@@ -1890,6 +1890,258 @@
         }
       }
     },
+    "/api/v1/devices": {
+      "get": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "List Devices",
+        "operationId": "list_devices_api_v1_devices_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DeviceType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Device Type"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DeviceStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm theo mã/tên",
+              "title": "Q"
+            },
+            "description": "Tìm theo mã/tên"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_DeviceOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Create Device",
+        "operationId": "create_device_api_v1_devices_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/devices/{device_id}": {
+      "patch": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Update Device",
+        "operationId": "update_device_api_v1_devices__device_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Delete Device",
+        "operationId": "delete_device_api_v1_devices__device_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips/available-parts": {
       "get": {
         "tags": [
@@ -2654,6 +2906,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeliveryRules"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/driver/device": {
+      "post": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "Register Device",
+        "description": "App gọi khi đăng nhập / mở app; trả trạng thái duyệt của thiết bị.",
+        "operationId": "register_device_api_v1_driver_device_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRegister"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisteredDevice"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3842,6 +4141,10 @@
             "minimum": 5.0,
             "title": "Offline Max Delay Minutes"
           },
+          "require_device_approval": {
+            "type": "boolean",
+            "title": "Require Device Approval"
+          },
           "working_weekdays": {
             "items": {
               "type": "integer"
@@ -3878,6 +4181,7 @@
           "photo_required_success",
           "photo_required_failed",
           "offline_max_delay_minutes",
+          "require_device_approval",
           "working_weekdays",
           "shift_start",
           "shift_end",
@@ -4034,6 +4338,17 @@
               }
             ],
             "title": "Offline Max Delay Minutes"
+          },
+          "require_device_approval": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Require Device Approval"
           }
         },
         "type": "object",
@@ -4347,6 +4662,19 @@
             "maxItems": 5,
             "title": "Photo Keys",
             "default": []
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id",
+            "description": "Mã cài đặt của app (đã đăng ký thiết bị)"
           }
         },
         "type": "object",
@@ -4379,6 +4707,18 @@
             "type": "string",
             "format": "uuid",
             "title": "User Id"
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
           },
           "status": {
             "$ref": "#/components/schemas/ItemStatus"
@@ -4478,6 +4818,7 @@
           "client_id",
           "item_id",
           "user_id",
+          "device_id",
           "status",
           "reason",
           "device_time",
@@ -5056,6 +5397,10 @@
             "maximum": 1440.0,
             "minimum": 5.0,
             "title": "Offline Max Delay Minutes"
+          },
+          "require_device_approval": {
+            "type": "boolean",
+            "title": "Require Device Approval"
           }
         },
         "type": "object",
@@ -5066,10 +5411,479 @@
           "confirm_radius_m",
           "photo_required_success",
           "photo_required_failed",
-          "offline_max_delay_minutes"
+          "offline_max_delay_minutes",
+          "require_device_approval"
         ],
         "title": "DeliveryRules",
         "description": "Điều kiện cho nhân viên giao hàng xác nhận kết quả giao."
+      },
+      "DeviceCreate": {
+        "properties": {
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeviceStatus",
+            "default": "ACTIVE"
+          },
+          "warehouse_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warehouse Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "connection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrinterConnection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "paper_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaperSize"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "device_type": {
+            "$ref": "#/components/schemas/DeviceType"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_type",
+          "name"
+        ],
+        "title": "DeviceCreate"
+      },
+      "DeviceOut": {
+        "properties": {
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeviceStatus",
+            "default": "ACTIVE"
+          },
+          "warehouse_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warehouse Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "connection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrinterConnection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "paper_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaperSize"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "device_type": {
+            "$ref": "#/components/schemas/DeviceType"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "os_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Version"
+          },
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "device_type",
+          "name",
+          "platform",
+          "model",
+          "os_version",
+          "app_version",
+          "last_seen_at",
+          "created_at"
+        ],
+        "title": "DeviceOut"
+      },
+      "DeviceRegister": {
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Identifier"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "os_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Version"
+          },
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identifier"
+        ],
+        "title": "DeviceRegister",
+        "description": "App mobile tự đăng ký khi đăng nhập / mở app."
+      },
+      "DeviceStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "PENDING",
+          "BLOCKED"
+        ],
+        "title": "DeviceStatus"
+      },
+      "DeviceType": {
+        "type": "string",
+        "enum": [
+          "PC",
+          "MOBILE",
+          "PRINTER"
+        ],
+        "title": "DeviceType"
+      },
+      "DeviceUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warehouse_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warehouse Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "connection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrinterConnection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "paper_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaperSize"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "DeviceUpdate"
       },
       "HTTPValidationError": {
         "properties": {
@@ -5851,6 +6665,27 @@
         ],
         "title": "Page[CustomerOut]"
       },
+      "Page_DeviceOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "Page[DeviceOut]"
+      },
       "Page_ImportJobOut_": {
         "properties": {
           "items": {
@@ -5977,6 +6812,15 @@
         ],
         "title": "Page[WarehouseOut]"
       },
+      "PaperSize": {
+        "type": "string",
+        "enum": [
+          "A4",
+          "A5",
+          "K80"
+        ],
+        "title": "PaperSize"
+      },
       "PersonOut": {
         "properties": {
           "id": {
@@ -6090,6 +6934,15 @@
           "adhoc_items"
         ],
         "title": "PickingListOut"
+      },
+      "PrinterConnection": {
+        "type": "string",
+        "enum": [
+          "NETWORK",
+          "USB",
+          "BLUETOOTH"
+        ],
+        "title": "PrinterConnection"
       },
       "ProductCreate": {
         "properties": {
@@ -6265,6 +7118,29 @@
           "refresh_token"
         ],
         "title": "RefreshRequest"
+      },
+      "RegisteredDevice": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeviceStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
+        "title": "RegisteredDevice"
       },
       "RolesUpdate": {
         "properties": {

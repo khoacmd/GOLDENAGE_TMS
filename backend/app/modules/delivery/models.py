@@ -24,6 +24,9 @@ class DeliveryConfirmation(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Bas
     )
     item_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("trip_items.id", ondelete="CASCADE"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    device_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL")
+    )
     status: Mapped[ItemStatus] = mapped_column(enum_type(ItemStatus))
     reason: Mapped[str | None] = mapped_column(String(500))
     device_time: Mapped[datetime]

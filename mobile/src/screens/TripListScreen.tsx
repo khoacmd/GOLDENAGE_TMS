@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 
 import { api } from '../api'
+import { registerDevice } from '../device'
 import { TRIP_STATUS, fmtDate, fmtNumber, shiftDate, todayISO } from '../lib/format'
 import { Badge, Button, Card, Header, colors } from '../lib/ui'
 import { useQueue } from '../lib/useQueue'
@@ -24,6 +25,9 @@ export function TripListScreen({ me, onOpen, onLogout }: { me: Me; onOpen: (id: 
       return data
     },
   })
+  // Đăng ký thiết bị mỗi lần mở app; admin công ty có thể yêu cầu duyệt hoặc khóa máy.
+  const device = useQuery({ queryKey: ['device'], enabled: isDriver, queryFn: registerDevice, staleTime: 5 * 60_000 })
+  const deviceStatus = device.data?.status
   const waiting = queue.filter((q) => q.state === 'pending').length
   const problems = queue.filter((q) => q.state !== 'pending').length
 
@@ -41,6 +45,18 @@ export function TripListScreen({ me, onOpen, onLogout }: { me: Me; onOpen: (id: 
             <Text style={styles.date}>{date === todayISO() ? `Hôm nay ${fmtDate(date)}` : fmtDate(date)}</Text>
             <Button kind="outline" title="›" onPress={() => setDate(shiftDate(date, 1))} style={styles.dateBtn} />
           </View>
+          {(deviceStatus === 'PENDING' || deviceStatus === 'BLOCKED') && (
+            <Card style={{ backgroundColor: '#fff1f0' }}>
+              <Text style={{ color: colors.danger }}>
+                {deviceStatus === 'PENDING'
+                  ? 'Điện thoại này đang chờ admin công ty duyệt - chưa xác nhận giao được.'
+                  : 'Điện thoại này đã bị khóa - liên hệ admin công ty.'}
+              </Text>
+              <Text onPress={() => void device.refetch()} style={{ color: colors.primary, marginTop: 4 }}>
+                Kiểm tra lại
+              </Text>
+            </Card>
+          )}
           {(waiting > 0 || problems > 0) && (
             <Card style={{ backgroundColor: '#fff7e6' }}>
               {waiting > 0 && <Text>{waiting} xác nhận đang chờ gửi (sẽ tự gửi khi có mạng)</Text>}

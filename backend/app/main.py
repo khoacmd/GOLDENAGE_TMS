@@ -6,6 +6,7 @@ from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import register_error_handlers
 from app.modules.delivery.router import confirmations_router, driver_router
+from app.modules.devices.router import router as devices_router
 from app.modules.dispatch.router import router as dispatch_router
 from app.modules.identity.router import router as auth_router
 from app.modules.identity.router import staff_router, users_router
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
         master_data_router,
         orders_router,
         inventory_router,
+        devices_router,
         dispatch_router,
         confirmations_router,
         driver_router,

@@ -15,6 +15,7 @@ from app.core.errors import AppError, NotFoundError, PermissionDeniedError
 from app.core.storage import get_storage
 from app.modules.delivery.models import DeliveryConfirmation, DeliveryPhoto
 from app.modules.delivery.schemas import ConfirmationOut, ConfirmIn, PhotoOut
+from app.modules.devices import service as devices
 from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import ItemStatus, Trip, TripOrderStatus, TripStop
 from app.modules.tenancy.models import CompanySettings
@@ -169,12 +170,18 @@ async def confirm(
     violations, check, distance = await check_rules(
         rules, trip, stop, data, received_at, company_id
     )
+    device, device_violation = await devices.check_mobile(
+        session, data.device_id, require_approval=rules.require_device_approval
+    )
+    if device_violation:
+        violations.append(device_violation)
     confirmation = DeliveryConfirmation(
         company_id=company_id,
         client_id=data.client_id,
         trip_id=trip.id,
         item_id=item_id,
         user_id=user_id,
+        device_id=device.id if device else None,
         status=data.status,
         reason=data.reason,
         device_time=data.device_time,

@@ -3,6 +3,7 @@
 from app.core.models import Base
 from app.modules.audit import models as audit_models
 from app.modules.delivery import models as delivery_models
+from app.modules.devices import models as devices_models
 from app.modules.dispatch import models as dispatch_models
 from app.modules.identity import models as identity_models
 from app.modules.integration import models as integration_models
@@ -15,6 +16,7 @@ __all__ = [
     "Base",
     "audit_models",
     "delivery_models",
+    "devices_models",
     "dispatch_models",
     "identity_models",
     "integration_models",

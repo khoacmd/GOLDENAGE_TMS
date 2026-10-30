@@ -19,6 +19,9 @@ class ConfirmIn(BaseModel):
     accuracy_m: Decimal | None = Field(default=None, ge=0)
     is_mock_location: bool = False
     photo_keys: list[str] = Field(default=[], max_length=5)
+    device_id: str | None = Field(
+        default=None, max_length=128, description="Mã cài đặt của app (đã đăng ký thiết bị)"
+    )
 
 
 class PhotoOut(BaseModel):
@@ -33,6 +36,7 @@ class ConfirmationOut(BaseModel):
     client_id: uuid.UUID
     item_id: uuid.UUID
     user_id: uuid.UUID
+    device_id: uuid.UUID | None
     status: ItemStatus
     reason: str | None
     device_time: datetime

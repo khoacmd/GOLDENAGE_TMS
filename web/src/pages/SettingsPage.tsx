@@ -167,6 +167,14 @@ function DeliveryRulesSettings() {
         >
           <InputNumber min={5} max={1440} />
         </Form.Item>
+        <Form.Item
+          name="require_device_approval"
+          label="Duyệt điện thoại trước khi dùng"
+          valuePropName="checked"
+          extra="Điện thoại mới đăng nhập app phải được duyệt ở màn hình Thiết bị mới xác nhận giao được. Thiết bị bị khóa luôn bị từ chối."
+        >
+          <Switch />
+        </Form.Item>
         <Button type="primary" htmlType="submit" loading={save.isPending}>
           Lưu
         </Button>
