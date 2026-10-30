@@ -35,7 +35,7 @@
 - [x] API key cho hệ thống ngoài (`/api/v1/integration/{loại}`)
 - [x] Bản đồ: chọn tọa độ trên bản đồ (làm ở M2)
 - [ ] Cấu hình thiết bị (PC/mobile/máy in) - chuyển sang M3 cùng đăng ký thiết bị mobile
-- [ ] Quy tắc xác nhận giao (thời gian, bán kính tọa độ) - chuyển sang M3
+- [x] Quy tắc xác nhận giao (thời gian, bán kính tọa độ) - làm ở M3
 
 ## M2 – Lập lệnh thủ công & kho
 - [x] Kế hoạch ngày, tạo lệnh giao (chuyến) thủ công: chọn xe, kho, đơn hoặc điểm dừng tự do
@@ -46,17 +46,22 @@
 - [x] In phiếu soạn hàng / phiếu giao hàng (trang in trình duyệt → PDF)
 - [x] Quản lý cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến
 - [x] Bản đồ (MapLibre): chọn tọa độ kho/điểm giao, xem điểm dừng của lệnh
-- [ ] Thủ kho giới hạn theo kho được phân công (`user_roles.warehouse_id`)
-- [ ] Hoàn trả kho / hủy lệnh sau khi đã xuất kho
+- [ ] (Phase sau) Thủ kho giới hạn theo kho được phân công (`user_roles.warehouse_id`)
+- [ ] (Phase sau) Hoàn trả kho / hủy lệnh sau khi đã xuất kho
 
 ## M3 – Mobile cho nhân viên giao hàng (→ pilot vận hành thủ công)
-- [ ] Danh sách chuyến được gán, chi tiết điểm dừng, mở chỉ đường
-- [ ] Nhận chuyến (DISPATCHED)
-- [ ] Xác nhận giao thành công/không thành công + lý do + ảnh chứng từ
-- [ ] Server kiểm tra điều kiện thời gian & tọa độ (bán kính dung sai)
-- [ ] Hàng đợi offline + đồng bộ idempotent
-- [ ] Chuyến tự chuyển "Kết thúc" khi không còn đơn pending, kèm thống kê thành công/thất bại/hủy
-- [ ] Quản lý hủy đơn pending trong chuyến (có lý do, audit); đơn thất bại/bị hủy quay về PENDING
+- [x] Danh sách chuyến được gán, chi tiết điểm dừng, mở chỉ đường (Google Maps)
+- [x] Nhận hàng & xuất phát (DISPATCHED)
+- [x] Xác nhận giao thành công/không thành công + lý do + ảnh chứng từ (S3/SeaweedFS)
+- [x] Server kiểm tra điều kiện thời gian & tọa độ (bán kính dung sai), ảnh bắt buộc, vị trí giả lập, độ trễ offline
+- [x] Hàng đợi offline (SQLite + ảnh lưu trong app) + đồng bộ idempotent (client_id), tự làm mới token
+- [x] Chuyến tự chuyển "Kết thúc" khi không còn đơn pending, kèm thống kê thành công/thất bại/hủy
+- [x] Quản lý hủy đơn pending trong chuyến (có lý do, audit); đơn thất bại/bị hủy quay về PENDING
+- [x] Web: cấu hình quy tắc xác nhận giao; xem lịch sử xác nhận + ảnh trong chi tiết chuyến
+- [ ] Định vị dự phòng khi máy không có Google Play Services (expo-location dùng Fused Location)
+- [ ] Build APK cài đặt (EAS Build hoặc CI x86-64) để phát cho lái xe
+- [ ] Đăng ký thiết bị mobile / máy in (chuyển từ M1)
+- [ ] Bản đồ tự host: chạy `infra/tiles/fetch-vietnam.sh`, phục vụ PMTiles + style trên web
 - [ ] Pilot với công ty đầu tiên (2 kho, 4 xe)
 
 ## M4 – Lập kế hoạch tự động

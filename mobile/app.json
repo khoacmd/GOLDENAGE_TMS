@@ -24,7 +24,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ứng dụng ghi nhận vị trí khi xác nhận giao hàng."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Ứng dụng dùng camera để chụp chứng từ giao nhận.",
+          "photosPermission": "Ứng dụng cần truy cập ảnh để đính kèm chứng từ."
+        }
+      ]
     ]
   }
 }

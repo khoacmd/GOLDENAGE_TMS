@@ -58,7 +58,7 @@
 | Job/queue | Redis + Dramatiq, APScheduler (job định kỳ theo cấu hình công ty) |
 | Tối ưu | Google OR-Tools (Routing Solver) |
 | Routing / khoảng cách | OSRM tự host (OSM Việt Nam) – ma trận khoảng cách/thời gian theo profile ô tô & xe máy |
-| Lưu file | S3-compatible: SeaweedFS khi tự host (image MinIO trên Docker Hub không còn truy cập được), S3 của nhà cung cấp cloud ở production |
+| Lưu file | S3-compatible qua boto3: SeaweedFS khi tự host (image MinIO trên Docker Hub không còn truy cập được), S3 của nhà cung cấp cloud ở production; test dùng bộ nhớ (`TMS_STORAGE_BACKEND=memory`) |
 | Web | React 19 + TypeScript + Vite, Ant Design, React Router, TanStack Query, MapLibre GL (từ M1) |
 | Mobile | React Native (Expo SDK 58), TypeScript, expo-secure-store (token); từ M3: SQLite offline queue, expo-location, expo-camera |
 | Dùng chung TS | pnpm workspace; client/type sinh tự động từ OpenAPI (`openapi-typescript`) |
@@ -209,12 +209,14 @@ Kích hoạt: job định kỳ (lịch theo `company_settings`) hoặc lệnh ma
 
 ## 11. Mobile & xác nhận giao hàng
 
-- App lưu hàng đợi thao tác trong SQLite, gửi khi có mạng; mỗi thao tác có `client_id` (UUID) để server xử lý idempotent.
-- Mỗi xác nhận gửi kèm: GPS, độ chính xác, giờ thiết bị, ảnh chứng từ.
-- **Server là nơi quyết định** điều kiện: đúng người, đúng trạng thái lệnh, trong cửa sổ thời gian, khoảng cách tới điểm giao ≤ bán kính (PostGIS `ST_DWithin`). Kết quả kiểm tra lưu trong `rule_check`.
-- Phát hiện giả lập vị trí (mock location) ở mức thiết bị → gắn cờ.
-- `delivered_at` mặc định = thời điểm cập nhật, có thể chỉnh sửa (ghi audit).
-- Ảnh: upload trực tiếp lên object storage qua presigned URL, nén phía client.
+- App (Expo SDK 58) lưu hàng đợi xác nhận trong SQLite (`expo-sqlite/kv-store`), ảnh chép vào thư mục document của app; gửi khi có mạng (NetInfo), khi mở lại app và mỗi 30 giây. Mỗi thao tác có `client_id` (UUID) → server idempotent (`UNIQUE(company_id, client_id)`).
+- Request trong hàng đợi: tự nạp token từ SecureStore, gặp 401 thì làm mới token rồi thử lại; timeout 30 giây bằng `Promise.race` (fetch của Expo không luôn tôn trọng abort); lượt gửi treo quá 2 phút bị bỏ qua.
+- Mỗi xác nhận gửi kèm: GPS, độ chính xác, cờ vị trí giả lập (`mocked`), giờ thiết bị, khóa ảnh đã upload.
+- **Server là nơi quyết định** (`app/modules/delivery`): đúng người (lái xe/phụ xe của chuyến), chuyến `DISPATCHED`, mục còn `PENDING`, giờ thiết bị trong [ca − dung sai, ca + dung sai] của ngày giao, khoảng cách tới điểm giao ≤ bán kính (haversine), không dùng vị trí giả lập, có ảnh nếu bắt buộc, gửi không quá `offline_max_delay_minutes` sau thao tác (thiết bị nhanh hơn server tối đa 5 phút).
+- **Mọi lần xác nhận đều lưu** `delivery_confirmations` (+ `delivery_photos`), kể cả bị từ chối (`accepted=false`, `violations`, `rule_check`); chỉ lần hợp lệ mới cập nhật trạng thái mục hàng. App hiển thị lý do bị từ chối để lái xe xác nhận lại.
+- `delivered_at` = giờ thao tác trên thiết bị; quản lý có thể sửa thủ công trên web (ghi audit).
+- Ảnh: app upload qua API (`POST /driver/photos`, JPEG/PNG/WebP ≤ 8MB, key theo `company_id/`), server lưu S3 (SeaweedFS khi tự host); web xem bằng URL ký sẵn (`TMS_S3_PUBLIC_ENDPOINT`).
+- Lưu ý thiết bị: `expo-location` trên Android dùng Fused Location của Google Play Services → máy không có Play Services (Redroid, một số máy Huawei) không lấy được vị trí → bị từ chối nếu bật kiểm tra vị trí. Cần phương án dự phòng trước pilot nếu đội xe dùng máy như vậy.
 
 ## 12. Triển khai
 
@@ -260,3 +262,7 @@ Ghi nhận khi dựng M0 trên Spark:
 | D15 | Không có bảng kế hoạch ngày riêng: kế hoạch = các lệnh cùng `plan_date` | Chốt (M2) |
 | D16 | Bản đồ: MapLibre + tile OSM công cộng khi dev; production cấu hình `VITE_MAP_TILE_URL` (nhà cung cấp tile/tự host) | Chốt (M2) |
 | D17 | In phiếu soạn hàng / giao hàng bằng trang in của trình duyệt (In / Lưu PDF), chưa sinh PDF phía server | Chốt (M2) |
+| D18 | Chỉ quản lý lập/duyệt/cập nhật lệnh; admin công ty chỉ xem kế hoạch | Chốt |
+| D19 | Hoàn trả kho sau xuất kho, giới hạn thủ kho theo kho: để phase sau | Chốt |
+| D20 | Bản đồ tự host bằng PMTiles (Protomaps, vùng Việt Nam + Hoàng Sa, Trường Sa) phục vụ tĩnh | Chốt - chờ tải dữ liệu |
+| D21 | Xác nhận giao vi phạm quy tắc vẫn được lưu (để kiểm tra), không cập nhật trạng thái | Chốt (M3) |

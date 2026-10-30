@@ -9,6 +9,7 @@ import {
   Col,
   Descriptions,
   Form,
+  Image,
   Input,
   Modal,
   Popconfirm,
@@ -57,6 +58,10 @@ export function TripDetailPage() {
   const history = useQuery({
     queryKey: ['trip', tripId, 'history'],
     queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}/history', path)),
+  })
+  const confirmations = useQuery({
+    queryKey: ['trip', tripId, 'confirmations'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}/confirmations', path)),
   })
   const refresh = () => queryClient.invalidateQueries()
   const action = useMutation({
@@ -237,6 +242,46 @@ export function TripDetailPage() {
           <Card title="Bản đồ" style={{ marginBottom: 16 }}>
             <MapView markers={markers} route={route} height={360} />
           </Card>
+          {(confirmations.data?.length ?? 0) > 0 && (
+            <Card title="Xác nhận từ nhân viên giao hàng" style={{ marginBottom: 16 }}>
+              {confirmations.data?.map((c) => {
+                  const item = trip.stops.flatMap((st) => st.items).find((i) => i.id === c.item_id)
+                  return (
+                    <div key={c.id} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                      <Space orientation="vertical" size={2} style={{ width: '100%' }}>
+                        <Space wrap>
+                          <Tag color={c.accepted ? ITEM_STATUS[c.status].color : 'orange'}>
+                            {c.accepted ? ITEM_STATUS[c.status].label : 'Bị từ chối'}
+                          </Tag>
+                          <span>{item?.external_ref ?? item?.description}</span>
+                          <span style={{ color: '#888' }}>{fmtDateTime(c.device_time)}</span>
+                        </Space>
+                        <span style={{ fontSize: 12, color: '#666' }}>
+                          {c.distance_m !== null ? `Cách điểm giao ${fmtNumber(c.distance_m)} m` : 'Không có GPS'}
+                          {c.accuracy_m !== null && ` (sai số ${fmtNumber(c.accuracy_m)} m)`}
+                          {c.is_mock_location && ' · vị trí giả lập'}
+                          {c.reason && ` · ${c.reason}`}
+                        </span>
+                        {c.violations.map((v) => (
+                          <span key={v} style={{ fontSize: 12, color: '#cf1322' }}>
+                            {v}
+                          </span>
+                        ))}
+                        {c.photos.length > 0 && (
+                          <Image.PreviewGroup>
+                            <Space>
+                              {c.photos.map((p) => (
+                                <Image key={p.key} src={p.url} width={64} height={64} style={{ objectFit: 'cover' }} />
+                              ))}
+                            </Space>
+                          </Image.PreviewGroup>
+                        )}
+                      </Space>
+                    </div>
+                  )
+                })}
+            </Card>
+          )}
           <Card title="Lịch sử">
             <Timeline
               items={history.data?.map((h) => ({

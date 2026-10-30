@@ -28,6 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Sau mỗi lần đổi API backend: `pnpm api:generate` (sinh lại `packages/api-client/src/schema.d.ts`, CI kiểm tra file này khớp).
 - Mobile: `cd mobile && EXPO_PUBLIC_API_URL=http://<ip-máy>:8000 pnpm start`. Giả lập Android trên Spark (Redroid + Expo Go): xem `infra/android/README.md`.
 - `packages/api-client`: middleware của openapi-fetch phải trả `undefined` khi không thay request/response (React Native từ chối object Response gốc).
+- Mobile (Expo SDK 58): upload file bằng `FormData.append('file', new File(uri))` (`expo-file-system`), không dùng `{uri, name, type}` kiểu cũ. Gọi `fetch` trực tiếp phải tự lo token (nạp từ SecureStore, làm mới khi 401) và timeout.
 - Máy dev/test là DGX Spark **ARM64 (aarch64)**: mọi Docker image phải hỗ trợ `linux/arm64`. Production chạy trên cloud VPS.
 - Quy ước code backend:
   - Bảng theo công ty dùng `TenantMixin`; migration tạo bảng đó PHẢI gọi `enable_tenant_rls()` (`app/core/rls.py`). Test `test_every_tenant_table_has_forced_rls` sẽ fail nếu quên.

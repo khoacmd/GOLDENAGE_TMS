@@ -23,3 +23,12 @@ export async function loadStoredTokens(): Promise<void> {
 }
 
 export const api = createApiClient(API_URL, tokenStore)
+
+/** Làm mới access token bằng refresh token (dùng cho request gọi fetch trực tiếp). */
+export async function refreshSession(): Promise<boolean> {
+  const current = tokenStore.get()
+  if (!current) return false
+  const { data } = await api.POST('/api/v1/auth/refresh', { body: { refresh_token: current.refresh_token } })
+  if (data) tokenStore.set(data)
+  return Boolean(data)
+}

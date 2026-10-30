@@ -12,7 +12,6 @@ import {
   Form,
   Input,
   InputNumber,
-  List,
   Modal,
   Progress,
   Row,
@@ -391,21 +390,13 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
             {stops.length === 0 ? (
               <Empty description="Chọn phần đơn ở bảng bên dưới để thêm điểm dừng" />
             ) : (
-              <List
-                dataSource={stops}
-                renderItem={(s, index) => (
-                  <List.Item
-                    actions={[
-                      <Button key="up" size="small" icon={<ArrowUpOutlined />} disabled={index === 0} onClick={() => move(index, -1)} />,
-                      <Button key="down" size="small" icon={<ArrowDownOutlined />} disabled={index === stops.length - 1} onClick={() => move(index, 1)} />,
-                      <Button key="del" size="small" danger icon={<DeleteOutlined />} onClick={() => setStops((p) => p.filter((x) => x.key !== s.key))} />,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={`${index + 1}. ${s.title}`}
-                      description={
-                        <>
-                          <div>{s.address}</div>
+              stops.map((s, index) => (
+                <div key={s.key} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ flex: 1 }}>
+                    <Typography.Text strong>{`${index + 1}. ${s.title}`}</Typography.Text>
+                    <div>
+                      <Typography.Text type="secondary">{s.address}</Typography.Text>
+                    </div>
                           {s.partIds.map((id) => {
                             const p = partInfo[id]
                             return (
@@ -419,12 +410,14 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
                               {i.description} · {fmtNumber(i.weight_kg)} kg
                             </Tag>
                           ))}
-                        </>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                  </div>
+                  <Space align="start">
+                    <Button size="small" icon={<ArrowUpOutlined />} disabled={index === 0} onClick={() => move(index, -1)} />
+                    <Button size="small" icon={<ArrowDownOutlined />} disabled={index === stops.length - 1} onClick={() => move(index, 1)} />
+                    <Button size="small" danger icon={<DeleteOutlined />} onClick={() => setStops((p) => p.filter((x) => x.key !== s.key))} />
+                  </Space>
+                </div>
+              ))
             )}
           </Card>
         </Col>
