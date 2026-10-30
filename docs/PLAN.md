@@ -69,7 +69,7 @@
 ## M4 – Lập kế hoạch tự động
 - [x] Service ma trận khoảng cách: OSRM `/table` + cache Redis, dự phòng ước lượng đường chim bay
 - [x] OSRM: script `infra/osrm/prepare-vietnam.sh` (profile ô tô + xe máy), service `osrm-car`/`osrm-motorbike` (compose profile `routing`)
-- [ ] Dữ liệu OSRM Việt Nam đã dựng xong, bật `TMS_OSRM_*_URL` và so sánh kết quả với ước lượng
+- [ ] Dữ liệu OSRM Việt Nam đã dựng xong, bật `TMS_OSRM_*_URL` và so sánh kết quả với ước lượng (đang tải dữ liệu OSM - làm tiếp khi xong)
 - [x] Kiểm tra khả thi từng phần đơn + lý do không xếp được
 - [x] Phân bổ kho theo tồn kho (giữ chỗ = lệnh chưa xuất kho)
 - [x] Bộ giải OR-Tools: đa kho, đa lượt/xe, tải trọng, ca làm việc, tương thích xe–hàng–khách
@@ -82,10 +82,12 @@
 - [ ] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6)
 
 ## M5 – Chi phí & báo cáo
-- [ ] Ghi nhận km/chi phí thực tế của chuyến
-- [ ] Phân bổ chi phí chuyến về đơn theo phương pháp của xe (giá trị đơn/khoảng cách/khối lượng/chuyến)
-- [ ] Báo cáo: tỷ lệ giao thành công, đơn giao lại, km, % tải trọng sử dụng, chi phí/đơn, chi phí/kg
-- [ ] Xuất Excel
+- [x] Ghi nhận km/chi phí thực tế của chuyến (công-tơ-mét / số km / km kế hoạch / ước lượng + chi phí phát sinh), tự ghi nhận khi kết thúc chuyến
+- [x] Phân bổ chi phí chuyến về đơn theo phương pháp của xe (giá trị đơn/khoảng cách/khối lượng/chuyến)
+- [x] Báo cáo: tỷ lệ giao thành công, đơn giao lại, km, % tải trọng sử dụng, chi phí/đơn, chi phí/kg; theo xe/ngày/khách hàng/lý do thất bại
+- [x] Xuất Excel (6 sheet, gồm chi tiết từng đơn)
+- [ ] (Tùy chọn) Lái xe nhập số công-tơ-mét lúc xuất phát / kết thúc trên app mobile
+- [ ] (Tùy chọn) Biểu đồ xu hướng theo ngày trên trang báo cáo
 
 ## M6 – Hoàn thiện & mở rộng
 - [ ] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền)

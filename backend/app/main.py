@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import register_error_handlers
+from app.modules.costing.router import router as costing_router
 from app.modules.delivery.router import confirmations_router, driver_router
 from app.modules.devices.router import router as devices_router
 from app.modules.dispatch.router import router as dispatch_router
@@ -15,6 +16,7 @@ from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_data_router
 from app.modules.orders.router import router as orders_router
 from app.modules.planning.router import router as planning_router
+from app.modules.reporting.router import router as reporting_router
 from app.modules.tenancy.router import admin_router, company_router
 
 
@@ -46,7 +48,9 @@ def create_app() -> FastAPI:
         inventory_router,
         devices_router,
         dispatch_router,
+        costing_router,
         planning_router,
+        reporting_router,
         confirmations_router,
         driver_router,
         imports_router,

@@ -2,6 +2,7 @@
 
 from app.core.models import Base
 from app.modules.audit import models as audit_models
+from app.modules.costing import models as costing_models
 from app.modules.delivery import models as delivery_models
 from app.modules.devices import models as devices_models
 from app.modules.dispatch import models as dispatch_models
@@ -16,6 +17,7 @@ from app.modules.tenancy import models as tenancy_models
 __all__ = [
     "Base",
     "audit_models",
+    "costing_models",
     "delivery_models",
     "devices_models",
     "dispatch_models",

@@ -139,7 +139,7 @@ export function PlanningRunPage() {
           </Card>
           <Card
             title="Các chuyến"
-            extra={canEdit && <Typography.Text type="secondary">Kéo thả điểm dừng để chuyển chuyến / đổi thứ tự</Typography.Text>}
+            extra={canEdit && <Typography.Text type="secondary">Kéo thả điểm dừng để chuyển sang chuyến cùng kho / đổi thứ tự</Typography.Text>}
           >
             {trips.length === 0 ? <Empty description="Không có chuyến nào" /> : <TripBoard trips={trips} color={color} canEdit={canEdit} runId={r.id} />}
           </Card>
@@ -211,7 +211,7 @@ function TripBoard({
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const [dragging, setDragging] = useState<{ tripId: string; stopId: string } | null>(null)
+  const [dragging, setDragging] = useState<{ tripId: string; stopId: string; warehouseId: string } | null>(null)
   const [over, setOver] = useState<string | null>(null)
   const move = useMutation({
     mutationFn: async (body: components['schemas']['MoveStopIn']) =>
@@ -240,7 +240,8 @@ function TripBoard({
           <div
             key={t.id}
             onDragOver={(e) => {
-              if (!canEdit || !dragging) return
+              // Chỉ chuyển giữa các chuyến cùng kho xuất (kho chọn theo kho gần nhất).
+              if (!canEdit || !dragging || dragging.warehouseId !== t.warehouse_id) return
               e.preventDefault()
               setOver(t.id)
             }}
@@ -276,9 +277,9 @@ function TripBoard({
               <div
                 key={st.id}
                 draggable={canEdit}
-                onDragStart={() => setDragging({ tripId: t.id, stopId: st.id })}
+                onDragStart={() => setDragging({ tripId: t.id, stopId: st.id, warehouseId: t.warehouse_id })}
                 onDragEnd={() => setDragging(null)}
-                onDragOver={(e) => canEdit && dragging && e.preventDefault()}
+                onDragOver={(e) => canEdit && dragging?.warehouseId === t.warehouse_id && e.preventDefault()}
                 onDrop={drop(t.id, index)}
                 style={{
                   background: '#fff',

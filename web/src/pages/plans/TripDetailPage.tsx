@@ -36,6 +36,7 @@ import {
   fmtNumber,
 } from '../../lib/labels'
 import { MapView } from '../../lib/MapView'
+import { TripCostCard } from './TripCostCard'
 
 type Item = components['schemas']['TripItemOut']
 type ItemStatus = components['schemas']['ItemStatus']
@@ -242,6 +243,7 @@ export function TripDetailPage() {
           <Card title="Bản đồ" style={{ marginBottom: 16 }}>
             <MapView markers={markers} route={route} height={360} />
           </Card>
+          {(trip.order_status === 'DISPATCHED' || trip.order_status === 'CLOSED') && <TripCostCard trip={trip} />}
           {(confirmations.data?.length ?? 0) > 0 && (
             <Card title="Xác nhận từ nhân viên giao hàng" style={{ marginBottom: 16 }}>
               {confirmations.data?.map((c) => {

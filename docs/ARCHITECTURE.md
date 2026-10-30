@@ -152,6 +152,10 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
 - `delivery_photos(confirmation_id, object_key)`
 - `audit_logs(entity, entity_id, action, data jsonb, user_id, created_at)` – mọi thay đổi trạng thái lệnh & cập nhật giao hàng (đã có từ M2).
 
+### Chi phí (M5)
+- `trip_costs(trip_id unique, odometer_start/end, distance_km, distance_source: ODOMETER|MANUAL|PLANNED|ESTIMATE, cost_per_km, distance_cost, extra_cost, total_cost, allocation_method, note, recorded_by/at)` – đơn giá & phương pháp chụp lại lúc ghi nhận.
+- `cost_allocations(trip_cost_id, trip_item_id, order_id, basis, amount)` – phần chi phí của từng mục hàng.
+
 ## 8. Luồng trạng thái & nguyên tắc vận hành
 
 ```
@@ -202,6 +206,19 @@ Chi tiết triển khai:
 - Ma trận khoảng cách (`app/modules/routing`): OSRM `/table` (cache Redis theo cặp điểm, 30 ngày) → lỗi/chưa cấu hình thì ước lượng đường chim bay × 1,35, ô tô 22 km/h, xe máy 25 km/h. Profile xe máy (`infra/osrm/motorbike.lua`): không đi cao tốc, tối đa 50 km/h.
 - Bộ giải (`optimization/vrp.py`): mỗi xe nhân thành `max_trips × số kho` xe ảo, chuỗi thời gian `start(k+1) ≥ end(k) + quay đầu × active(k)`; phần đơn cùng điểm + nhóm nhiệt độ + kho gộp 1 node (vượt tải xe lớn nhất thì chia nhiều node, không tách phần đơn); OR-Tools `PATH_CHEAPEST_ARC` + `GUIDED_LOCAL_SEARCH`. (OR-Tools 9.15: `SetAllowedVehiclesForIndex` lỗi binding Python → dùng `VehicleVar(i).SetValues([-1, ...])`.)
 - Điều chỉnh: kéo thả điểm dừng giữa các chuyến / đổi thứ tự (`POST /planning/move-stop`, 1 transaction, kiểm tra ràng buộc như lập tay); trang kết quả so chi phí hiện tại với phương án tối ưu.
+
+## 9b. Chi phí & báo cáo (module `costing`, `reporting`)
+
+- **Ghi nhận** (`PUT /trips/{id}/cost`, quản lý, chuyến `DISPATCHED`/`CLOSED`): km = công-tơ-mét về − đi (ưu tiên) → số km nhập tay → km kế hoạch → ước lượng theo tuyến điểm dừng. Tổng = km × đơn giá/km của xe + chi phí phát sinh (cầu đường, bến bãi). **Kết thúc chuyến** tự ghi nhận nếu chưa có và tính lại phân bổ (D26).
+- **Phân bổ** về mục hàng **đã giao thành công hoặc thất bại** (lượt thất bại cũng tốn chi phí; mục bị hủy không chịu), làm tròn đồng, phần dư cho phần lẻ lớn nhất:
+  - `ORDER_VALUE`: theo giá trị phần đơn; `WEIGHT`: theo khối lượng;
+  - `DISTANCE`: theo khoảng cách đường chim bay kho → điểm dừng, trong 1 điểm chia theo khối lượng;
+  - `PER_TRIP` ("chuyến hàng"): mỗi đơn của chuyến bằng nhau.
+- **Báo cáo** (`GET /reports/summary`, `/reports/export` → Excel 6 sheet), lọc khoảng ngày giao (≤ 366 ngày), xe, kho; chỉ tính chuyến `DISPATCHED`/`CLOSED`:
+  - tỷ lệ thành công = thành công / (thành công + thất bại); **giao lại** = lượt giao phần đơn đã có lượt thất bại trước đó;
+  - % tải = Σ khối lượng chuyến / Σ trọng tải xe; km lấy theo chi phí đã ghi nhận, chưa có thì km kế hoạch / ước lượng;
+  - chi phí, chi phí/đơn, chi phí/kg chỉ tính trên chuyến đã ghi nhận chi phí; chia theo xe, ngày, khách hàng (chi phí phân bổ), lý do thất bại.
+- `reporting` là module **chỉ đọc**, được truy vấn trực tiếp bảng của module khác (ngoại lệ có chủ đích của quy tắc module).
 
 ## 10. Tích hợp
 
@@ -280,3 +297,5 @@ Ghi nhận khi dựng M0 trên Spark:
 | D23 | Giữ chỗ tồn = lệnh chưa xuất kho (không có bảng `inventory_reservations` riêng) | Chốt (M4) |
 | D24 | Kho xuất chọn trước bằng heuristic rồi mới giải VRP; đưa chọn kho vào bộ giải ở phase sau | Chốt (M4) |
 | D25 | Phần đơn giao thất bại được xếp lại: unique "phần đơn đang hiệu lực" chỉ tính item `PENDING`/`SUCCESS` | Chốt (M4) |
+| D26 | Chi phí chuyến phân bổ cho cả lượt giao thất bại; kết thúc chuyến tự ghi nhận chi phí theo km kế hoạch/ước lượng nếu quản lý chưa nhập | Chốt (M5) |
+| D27 | Giai đoạn này chỉ kéo thả điểm dừng giữa các chuyến cùng kho xuất (kho chọn theo kho gần nhất) | Chốt (M5) |

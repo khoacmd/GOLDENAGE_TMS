@@ -8,6 +8,7 @@ from app.core.auth import CurrentUser, OfficeStaffDep, require_roles
 from app.core.db import DbSession
 from app.core.errors import PermissionDeniedError
 from app.modules.audit import service as audit
+from app.modules.costing import service as costing
 from app.modules.dispatch import service
 from app.modules.dispatch.models import Trip, TripOrderStatus
 from app.modules.dispatch.schemas import (
@@ -171,6 +172,8 @@ async def update_item(
 @router.post("/{trip_id}/close")
 async def close_trip(trip_id: uuid.UUID, user: ManagerDep, session: DbSession) -> TripOut:
     trip = await service.close(session, await service.get_trip(session, trip_id), user.id)
+    # Chưa ghi nhận chi phí thì tính theo km kế hoạch/ước lượng để báo cáo luôn đủ số liệu.
+    await costing.ensure(session, trip, user.id)
     await session.commit()
     return trip_out(trip)
 

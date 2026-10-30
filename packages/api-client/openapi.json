@@ -2840,6 +2840,120 @@
         }
       }
     },
+    "/api/v1/trips/{trip_id}/cost": {
+      "get": {
+        "tags": [
+          "costing"
+        ],
+        "summary": "Get Cost",
+        "description": "`null` nếu chuyến chưa ghi nhận chi phí.",
+        "operationId": "get_cost_api_v1_trips__trip_id__cost_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TripCostOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Cost Api V1 Trips  Trip Id  Cost Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "costing"
+        ],
+        "summary": "Record Cost",
+        "description": "Quản lý ghi nhận km thực tế + chi phí phát sinh; hệ thống tính và phân bổ về đơn.",
+        "operationId": "record_cost_api_v1_trips__trip_id__cost_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TripCostIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripCostOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/planning/runs": {
       "post": {
         "tags": [
@@ -3037,6 +3151,194 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/reports/summary": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Summary",
+        "operationId": "summary_api_v1_reports_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Từ ngày giao (gồm)",
+              "title": "Date From"
+            },
+            "description": "Từ ngày giao (gồm)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Đến ngày giao (gồm)",
+              "title": "Date To"
+            },
+            "description": "Đến ngày giao (gồm)"
+          },
+          {
+            "name": "vehicle_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vehicle Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/export": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Export",
+        "operationId": "export_api_v1_reports_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Từ ngày giao (gồm)",
+              "title": "Date From"
+            },
+            "description": "Từ ngày giao (gồm)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Đến ngày giao (gồm)",
+              "title": "Date To"
+            },
+            "description": "Đến ngày giao (gồm)"
+          },
+          {
+            "name": "vehicle_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vehicle Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File Excel báo cáo",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/trips/{trip_id}/confirmations": {
@@ -3819,6 +4121,61 @@
           "description"
         ],
         "title": "AdhocItemIn"
+      },
+      "AllocationOut": {
+        "properties": {
+          "trip_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Trip Item Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "external_ref": {
+            "type": "string",
+            "title": "External Ref"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "weight_kg": {
+            "type": "string",
+            "title": "Weight Kg"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip_item_id",
+          "order_id",
+          "external_ref",
+          "customer_code",
+          "customer_name",
+          "weight_kg",
+          "value",
+          "basis",
+          "amount"
+        ],
+        "title": "AllocationOut"
       },
       "ApiKeyCreate": {
         "properties": {
@@ -5428,6 +5785,67 @@
         ],
         "title": "CustomerOut"
       },
+      "CustomerRow": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders"
+          },
+          "items_success": {
+            "type": "integer",
+            "title": "Items Success"
+          },
+          "items_failed": {
+            "type": "integer",
+            "title": "Items Failed"
+          },
+          "delivered_kg": {
+            "type": "number",
+            "title": "Delivered Kg"
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost"
+          },
+          "cost_per_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "customer_code",
+          "customer_name",
+          "orders",
+          "items_success",
+          "items_failed",
+          "delivered_kg",
+          "cost",
+          "cost_per_kg"
+        ],
+        "title": "CustomerRow"
+      },
       "CustomerUpdate": {
         "properties": {
           "address": {
@@ -5571,6 +5989,119 @@
         },
         "type": "object",
         "title": "CustomerUpdate"
+      },
+      "DayRow": {
+        "properties": {
+          "trips": {
+            "type": "integer",
+            "title": "Trips",
+            "default": 0
+          },
+          "trips_closed": {
+            "type": "integer",
+            "title": "Trips Closed",
+            "default": 0
+          },
+          "trips_without_cost": {
+            "type": "integer",
+            "title": "Trips Without Cost",
+            "default": 0
+          },
+          "items_success": {
+            "type": "integer",
+            "title": "Items Success",
+            "default": 0
+          },
+          "items_failed": {
+            "type": "integer",
+            "title": "Items Failed",
+            "default": 0
+          },
+          "items_cancelled": {
+            "type": "integer",
+            "title": "Items Cancelled",
+            "default": 0
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Rate"
+          },
+          "redeliveries": {
+            "type": "integer",
+            "title": "Redeliveries",
+            "default": 0
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders",
+            "default": 0
+          },
+          "delivered_kg": {
+            "type": "number",
+            "title": "Delivered Kg",
+            "default": 0
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km",
+            "default": 0
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost",
+            "default": 0
+          },
+          "load_utilization": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Load Utilization"
+          },
+          "cost_per_order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Order"
+          },
+          "cost_per_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Kg"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_date"
+        ],
+        "title": "DayRow"
       },
       "DeliveryPointIn": {
         "properties": {
@@ -6223,6 +6754,16 @@
         },
         "type": "object",
         "title": "DeviceUpdate"
+      },
+      "DistanceSource": {
+        "type": "string",
+        "enum": [
+          "ODOMETER",
+          "MANUAL",
+          "PLANNED",
+          "ESTIMATE"
+        ],
+        "title": "DistanceSource"
       },
       "HTTPValidationError": {
         "properties": {
@@ -7509,6 +8050,24 @@
         "type": "object",
         "title": "ProductUpdate"
       },
+      "ReasonRow": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "count"
+        ],
+        "title": "ReasonRow"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -7544,6 +8103,62 @@
           "status"
         ],
         "title": "RegisteredDevice"
+      },
+      "ReportOut": {
+        "properties": {
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          },
+          "by_vehicle": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleRow"
+            },
+            "type": "array",
+            "title": "By Vehicle"
+          },
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/DayRow"
+            },
+            "type": "array",
+            "title": "By Day"
+          },
+          "by_customer": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerRow"
+            },
+            "type": "array",
+            "title": "By Customer"
+          },
+          "failure_reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReasonRow"
+            },
+            "type": "array",
+            "title": "Failure Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "totals",
+          "by_vehicle",
+          "by_day",
+          "by_customer",
+          "failure_reasons"
+        ],
+        "title": "ReportOut"
       },
       "RolesUpdate": {
         "properties": {
@@ -8085,6 +8700,299 @@
           "refresh_token"
         ],
         "title": "TokenPair"
+      },
+      "Totals": {
+        "properties": {
+          "trips": {
+            "type": "integer",
+            "title": "Trips",
+            "default": 0
+          },
+          "trips_closed": {
+            "type": "integer",
+            "title": "Trips Closed",
+            "default": 0
+          },
+          "trips_without_cost": {
+            "type": "integer",
+            "title": "Trips Without Cost",
+            "default": 0
+          },
+          "items_success": {
+            "type": "integer",
+            "title": "Items Success",
+            "default": 0
+          },
+          "items_failed": {
+            "type": "integer",
+            "title": "Items Failed",
+            "default": 0
+          },
+          "items_cancelled": {
+            "type": "integer",
+            "title": "Items Cancelled",
+            "default": 0
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Rate"
+          },
+          "redeliveries": {
+            "type": "integer",
+            "title": "Redeliveries",
+            "default": 0
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders",
+            "default": 0
+          },
+          "delivered_kg": {
+            "type": "number",
+            "title": "Delivered Kg",
+            "default": 0
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km",
+            "default": 0
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost",
+            "default": 0
+          },
+          "load_utilization": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Load Utilization"
+          },
+          "cost_per_order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Order"
+          },
+          "cost_per_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Kg"
+          }
+        },
+        "type": "object",
+        "title": "Totals"
+      },
+      "TripCostIn": {
+        "properties": {
+          "odometer_start": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometer Start"
+          },
+          "odometer_end": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometer End"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "extra_cost": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Extra Cost",
+            "description": "Cầu đường, bến bãi…",
+            "default": "0"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "TripCostIn",
+        "description": "Km thực tế: số công-tơ-mét (ưu tiên) hoặc số km; để trống → km kế hoạch / ước lượng."
+      },
+      "TripCostOut": {
+        "properties": {
+          "trip_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Trip Id"
+          },
+          "odometer_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometer Start"
+          },
+          "odometer_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometer End"
+          },
+          "distance_km": {
+            "type": "string",
+            "title": "Distance Km"
+          },
+          "distance_source": {
+            "$ref": "#/components/schemas/DistanceSource"
+          },
+          "cost_per_km": {
+            "type": "string",
+            "title": "Cost Per Km"
+          },
+          "distance_cost": {
+            "type": "string",
+            "title": "Distance Cost"
+          },
+          "extra_cost": {
+            "type": "string",
+            "title": "Extra Cost"
+          },
+          "total_cost": {
+            "type": "string",
+            "title": "Total Cost"
+          },
+          "allocation_method": {
+            "$ref": "#/components/schemas/CostAllocationMethod"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recorded_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded By"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationOut"
+            },
+            "type": "array",
+            "title": "Allocations",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip_id",
+          "odometer_start",
+          "odometer_end",
+          "distance_km",
+          "distance_source",
+          "cost_per_km",
+          "distance_cost",
+          "extra_cost",
+          "total_cost",
+          "allocation_method",
+          "note",
+          "recorded_by",
+          "recorded_at"
+        ],
+        "title": "TripCostOut"
       },
       "TripDeliveryStatus": {
         "type": "string",
@@ -9191,6 +10099,129 @@
         ],
         "title": "VehicleRequirement",
         "description": "Yêu cầu loại xe của khách hàng."
+      },
+      "VehicleRow": {
+        "properties": {
+          "trips": {
+            "type": "integer",
+            "title": "Trips",
+            "default": 0
+          },
+          "trips_closed": {
+            "type": "integer",
+            "title": "Trips Closed",
+            "default": 0
+          },
+          "trips_without_cost": {
+            "type": "integer",
+            "title": "Trips Without Cost",
+            "default": 0
+          },
+          "items_success": {
+            "type": "integer",
+            "title": "Items Success",
+            "default": 0
+          },
+          "items_failed": {
+            "type": "integer",
+            "title": "Items Failed",
+            "default": 0
+          },
+          "items_cancelled": {
+            "type": "integer",
+            "title": "Items Cancelled",
+            "default": 0
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Rate"
+          },
+          "redeliveries": {
+            "type": "integer",
+            "title": "Redeliveries",
+            "default": 0
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders",
+            "default": 0
+          },
+          "delivered_kg": {
+            "type": "number",
+            "title": "Delivered Kg",
+            "default": 0
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km",
+            "default": 0
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost",
+            "default": 0
+          },
+          "load_utilization": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Load Utilization"
+          },
+          "cost_per_order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Order"
+          },
+          "cost_per_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Kg"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehicle Id"
+          },
+          "vehicle_code": {
+            "type": "string",
+            "title": "Vehicle Code"
+          },
+          "vehicle_name": {
+            "type": "string",
+            "title": "Vehicle Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vehicle_id",
+          "vehicle_code",
+          "vehicle_name"
+        ],
+        "title": "VehicleRow"
       },
       "VehicleType": {
         "type": "string",

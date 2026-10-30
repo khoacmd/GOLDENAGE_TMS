@@ -1,5 +1,6 @@
 import {
   ApartmentOutlined,
+  BarChartOutlined,
   CarOutlined,
   DatabaseOutlined,
   FileTextOutlined,
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
       { path: '/master-data/vehicles', label: 'Đội xe', access: OFFICE },
     ],
   },
+  { path: '/reports', label: 'Báo cáo', icon: <BarChartOutlined />, access: ['manager', 'company_admin'] },
   { path: '/imports', label: 'Import dữ liệu', icon: <ImportOutlined />, access: ['company_admin', 'manager'] },
   { path: '/users', label: 'Người dùng', icon: <TeamOutlined />, access: ['company_admin'] },
   { path: '/devices', label: 'Thiết bị', icon: <MobileOutlined />, access: ['company_admin'] },

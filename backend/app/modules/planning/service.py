@@ -622,6 +622,11 @@ async def move_stop(
         return [trip], reorder_warnings
 
     target = await dispatch.get_trip(session, to_trip_id)
+    if target.warehouse_id != source.warehouse_id:
+        # Giai đoạn này kho xuất cố định theo kho gần nhất (D24) → chỉ chuyển trong cùng kho.
+        raise AppError(
+            "Chỉ chuyển điểm dừng giữa các chuyến cùng kho xuất", code="different_warehouse"
+        )
     target_in = dispatch.trip_input(target)
     # Gộp vào điểm dừng cùng điểm giao nếu lệnh đích đã có.
     same = next(

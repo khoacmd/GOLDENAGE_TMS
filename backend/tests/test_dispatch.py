@@ -209,7 +209,8 @@ async def test_full_lifecycle(client: AsyncClient, env: Env) -> None:
         "approved",
         "updated_reopened",
     ]
-    assert history[-1]["action"] == "closed"
+    # Kết thúc chuyến tự ghi nhận chi phí (M5).
+    assert [h["action"] for h in history][-2:] == ["closed", "cost_recorded"]
 
 
 async def test_cancel_releases_parts(client: AsyncClient, env: Env) -> None:

@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Trạng thái dự án
 - Đã chốt kiến trúc & tech stack (FastAPI + PostgreSQL/PostGIS + OR-Tools + OSRM; web React/TS; mobile React Native/Expo) trong `docs/ARCHITECTURE.md`. Lộ trình trong `docs/PLAN.md`.
-- Đã xong M0–M4 (xem `docs/PLAN.md`); tiếp theo M5 (chi phí & báo cáo).
+- Đã xong M0–M5 (xem `docs/PLAN.md`); còn lại của M4 (OSRM) làm khi tải xong dữ liệu OSM; tiếp theo M6.
 - Tài liệu yêu cầu gốc: `Mô tả yêu cầu1.odt`. Phần "Nghiệp vụ" bên dưới là bản mới hơn, ưu tiên dùng bản này.
 
 ## Lệnh phát triển

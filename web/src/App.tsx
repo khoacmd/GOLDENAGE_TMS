@@ -18,6 +18,7 @@ import { DeliveryNotesPrint, PickingListPrint } from './pages/plans/PrintPages'
 import { TripDetailPage } from './pages/plans/TripDetailPage'
 import { TripEditor } from './pages/plans/TripEditor'
 import { WarehousePage } from './pages/WarehousePage'
+import { ReportsPage } from './pages/ReportsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { UsersPage } from './pages/UsersPage'
 
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="warehouses" element={<WarehousesPage />} />
           <Route path="vehicles" element={<VehiclesPage />} />
         </Route>
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="imports" element={<ImportPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="devices" element={<DevicesPage />} />

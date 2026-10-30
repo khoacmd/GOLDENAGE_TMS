@@ -157,3 +157,21 @@ async def test_failed_delivery_is_replanned(client: AsyncClient, env: Env) -> No
         for i in s["items"]
     }
     assert part_id in planned
+
+
+async def test_move_stop_rejects_other_warehouse(client: AsyncClient, env: Env) -> None:
+    run = await plan(client, env)
+    by_wh: dict[str, list[dict[str, Any]]] = {}
+    for t in run["trips"]:
+        by_wh.setdefault(t["warehouse_id"], []).append(t)
+    if len(by_wh) < 2:
+        pytest.skip("Dữ liệu mẫu chỉ sinh chuyến ở 1 kho")
+    a, b = (group[0] for group in list(by_wh.values())[:2])
+    detail = (await client.get(f"/api/v1/trips/{a['id']}", headers=auth(env.manager))).json()
+    resp = await client.post(
+        "/api/v1/planning/move-stop",
+        headers=auth(env.manager),
+        json={"from_trip_id": a["id"], "stop_id": detail["stops"][0]["id"], "to_trip_id": b["id"]},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "different_warehouse"

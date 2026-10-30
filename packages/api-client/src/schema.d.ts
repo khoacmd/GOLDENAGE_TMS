@@ -640,6 +640,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{trip_id}/cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cost
+         * @description `null` nếu chuyến chưa ghi nhận chi phí.
+         */
+        get: operations["get_cost_api_v1_trips__trip_id__cost_get"];
+        /**
+         * Record Cost
+         * @description Quản lý ghi nhận km thực tế + chi phí phát sinh; hệ thống tính và phân bổ về đơn.
+         */
+        put: operations["record_cost_api_v1_trips__trip_id__cost_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/planning/runs": {
         parameters: {
             query?: never;
@@ -692,6 +716,40 @@ export interface paths {
          * @description Kéo thả: chuyển điểm dừng sang lệnh khác hoặc đổi thứ tự trong lệnh.
          */
         post: operations["move_stop_api_v1_planning_move_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary */
+        get: operations["summary_api_v1_reports_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export */
+        get: operations["export_api_v1_reports_export_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -959,6 +1017,33 @@ export interface components {
              * @default 0
              */
             weight_kg: number | string;
+        };
+        /** AllocationOut */
+        AllocationOut: {
+            /**
+             * Trip Item Id
+             * Format: uuid
+             */
+            trip_item_id: string;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** External Ref */
+            external_ref: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Weight Kg */
+            weight_kg: string;
+            /** Value */
+            value: string;
+            /** Basis */
+            basis: string;
+            /** Amount */
+            amount: string;
         };
         /** ApiKeyCreate */
         ApiKeyCreate: {
@@ -1501,6 +1586,30 @@ export interface components {
             /** Delivery Points */
             delivery_points: components["schemas"]["DeliveryPointOut"][];
         };
+        /** CustomerRow */
+        CustomerRow: {
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Orders */
+            orders: number;
+            /** Items Success */
+            items_success: number;
+            /** Items Failed */
+            items_failed: number;
+            /** Delivered Kg */
+            delivered_kg: number;
+            /** Cost */
+            cost: number;
+            /** Cost Per Kg */
+            cost_per_kg: number | null;
+        };
         /** CustomerUpdate */
         CustomerUpdate: {
             /** Address */
@@ -1524,6 +1633,77 @@ export interface components {
             is_active?: boolean | null;
             /** Delivery Points */
             delivery_points?: components["schemas"]["DeliveryPointIn"][] | null;
+        };
+        /** DayRow */
+        DayRow: {
+            /**
+             * Trips
+             * @default 0
+             */
+            trips: number;
+            /**
+             * Trips Closed
+             * @default 0
+             */
+            trips_closed: number;
+            /**
+             * Trips Without Cost
+             * @default 0
+             */
+            trips_without_cost: number;
+            /**
+             * Items Success
+             * @default 0
+             */
+            items_success: number;
+            /**
+             * Items Failed
+             * @default 0
+             */
+            items_failed: number;
+            /**
+             * Items Cancelled
+             * @default 0
+             */
+            items_cancelled: number;
+            /** Success Rate */
+            success_rate?: number | null;
+            /**
+             * Redeliveries
+             * @default 0
+             */
+            redeliveries: number;
+            /**
+             * Orders
+             * @default 0
+             */
+            orders: number;
+            /**
+             * Delivered Kg
+             * @default 0
+             */
+            delivered_kg: number;
+            /**
+             * Distance Km
+             * @default 0
+             */
+            distance_km: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Load Utilization */
+            load_utilization?: number | null;
+            /** Cost Per Order */
+            cost_per_order?: number | null;
+            /** Cost Per Kg */
+            cost_per_kg?: number | null;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
         };
         /** DeliveryPointIn */
         DeliveryPointIn: {
@@ -1696,6 +1876,11 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * DistanceSource
+         * @enum {string}
+         */
+        DistanceSource: "ODOMETER" | "MANUAL" | "PLANNED" | "ESTIMATE";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2210,6 +2395,13 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** ReasonRow */
+        ReasonRow: {
+            /** Reason */
+            reason: string;
+            /** Count */
+            count: number;
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
@@ -2225,6 +2417,28 @@ export interface components {
             /** Name */
             name: string;
             status: components["schemas"]["DeviceStatus"];
+        };
+        /** ReportOut */
+        ReportOut: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            totals: components["schemas"]["Totals"];
+            /** By Vehicle */
+            by_vehicle: components["schemas"]["VehicleRow"][];
+            /** By Day */
+            by_day: components["schemas"]["DayRow"][];
+            /** By Customer */
+            by_customer: components["schemas"]["CustomerRow"][];
+            /** Failure Reasons */
+            failure_reasons: components["schemas"]["ReasonRow"][];
         };
         /** RolesUpdate */
         RolesUpdate: {
@@ -2444,6 +2658,130 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /** Totals */
+        Totals: {
+            /**
+             * Trips
+             * @default 0
+             */
+            trips: number;
+            /**
+             * Trips Closed
+             * @default 0
+             */
+            trips_closed: number;
+            /**
+             * Trips Without Cost
+             * @default 0
+             */
+            trips_without_cost: number;
+            /**
+             * Items Success
+             * @default 0
+             */
+            items_success: number;
+            /**
+             * Items Failed
+             * @default 0
+             */
+            items_failed: number;
+            /**
+             * Items Cancelled
+             * @default 0
+             */
+            items_cancelled: number;
+            /** Success Rate */
+            success_rate?: number | null;
+            /**
+             * Redeliveries
+             * @default 0
+             */
+            redeliveries: number;
+            /**
+             * Orders
+             * @default 0
+             */
+            orders: number;
+            /**
+             * Delivered Kg
+             * @default 0
+             */
+            delivered_kg: number;
+            /**
+             * Distance Km
+             * @default 0
+             */
+            distance_km: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Load Utilization */
+            load_utilization?: number | null;
+            /** Cost Per Order */
+            cost_per_order?: number | null;
+            /** Cost Per Kg */
+            cost_per_kg?: number | null;
+        };
+        /**
+         * TripCostIn
+         * @description Km thực tế: số công-tơ-mét (ưu tiên) hoặc số km; để trống → km kế hoạch / ước lượng.
+         */
+        TripCostIn: {
+            /** Odometer Start */
+            odometer_start?: number | string | null;
+            /** Odometer End */
+            odometer_end?: number | string | null;
+            /** Distance Km */
+            distance_km?: number | string | null;
+            /**
+             * Extra Cost
+             * @description Cầu đường, bến bãi…
+             * @default 0
+             */
+            extra_cost: number | string;
+            /** Note */
+            note?: string | null;
+        };
+        /** TripCostOut */
+        TripCostOut: {
+            /**
+             * Trip Id
+             * Format: uuid
+             */
+            trip_id: string;
+            /** Odometer Start */
+            odometer_start: string | null;
+            /** Odometer End */
+            odometer_end: string | null;
+            /** Distance Km */
+            distance_km: string;
+            distance_source: components["schemas"]["DistanceSource"];
+            /** Cost Per Km */
+            cost_per_km: string;
+            /** Distance Cost */
+            distance_cost: string;
+            /** Extra Cost */
+            extra_cost: string;
+            /** Total Cost */
+            total_cost: string;
+            allocation_method: components["schemas"]["CostAllocationMethod"];
+            /** Note */
+            note: string | null;
+            /** Recorded By */
+            recorded_by: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /**
+             * Allocations
+             * @default []
+             */
+            allocations: components["schemas"]["AllocationOut"][];
         };
         /**
          * TripDeliveryStatus
@@ -2813,6 +3151,81 @@ export interface components {
          * @enum {string}
          */
         VehicleRequirement: "CAR" | "MOTORBIKE" | "ANY";
+        /** VehicleRow */
+        VehicleRow: {
+            /**
+             * Trips
+             * @default 0
+             */
+            trips: number;
+            /**
+             * Trips Closed
+             * @default 0
+             */
+            trips_closed: number;
+            /**
+             * Trips Without Cost
+             * @default 0
+             */
+            trips_without_cost: number;
+            /**
+             * Items Success
+             * @default 0
+             */
+            items_success: number;
+            /**
+             * Items Failed
+             * @default 0
+             */
+            items_failed: number;
+            /**
+             * Items Cancelled
+             * @default 0
+             */
+            items_cancelled: number;
+            /** Success Rate */
+            success_rate?: number | null;
+            /**
+             * Redeliveries
+             * @default 0
+             */
+            redeliveries: number;
+            /**
+             * Orders
+             * @default 0
+             */
+            orders: number;
+            /**
+             * Delivered Kg
+             * @default 0
+             */
+            delivered_kg: number;
+            /**
+             * Distance Km
+             * @default 0
+             */
+            distance_km: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /** Load Utilization */
+            load_utilization?: number | null;
+            /** Cost Per Order */
+            cost_per_order?: number | null;
+            /** Cost Per Kg */
+            cost_per_kg?: number | null;
+            /**
+             * Vehicle Id
+             * Format: uuid
+             */
+            vehicle_id: string;
+            /** Vehicle Code */
+            vehicle_code: string;
+            /** Vehicle Name */
+            vehicle_name: string;
+        };
         /**
          * VehicleType
          * @enum {string}
@@ -4527,6 +4940,72 @@ export interface operations {
             };
         };
     };
+    get_cost_api_v1_trips__trip_id__cost_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripCostOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_cost_api_v1_trips__trip_id__cost_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TripCostIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripCostOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_runs_api_v1_planning_runs_get: {
         parameters: {
             query?: {
@@ -4642,6 +5121,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MoveStopOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_api_v1_reports_summary_get: {
+        parameters: {
+            query: {
+                /** @description Từ ngày giao (gồm) */
+                date_from: string;
+                /** @description Đến ngày giao (gồm) */
+                date_to: string;
+                vehicle_id?: string | null;
+                warehouse_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_api_v1_reports_export_get: {
+        parameters: {
+            query: {
+                /** @description Từ ngày giao (gồm) */
+                date_from: string;
+                /** @description Đến ngày giao (gồm) */
+                date_to: string;
+                vehicle_id?: string | null;
+                warehouse_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File Excel báo cáo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
                 };
             };
             /** @description Validation Error */
