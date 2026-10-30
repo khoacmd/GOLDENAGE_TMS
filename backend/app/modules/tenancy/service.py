@@ -8,7 +8,7 @@ from app.core.errors import AppError, ConflictError, NotFoundError
 from app.modules.identity import service as identity_service
 from app.modules.identity.models import CompanyRole
 from app.modules.tenancy.models import Company, CompanySettings
-from app.modules.tenancy.schemas import CompanyCreate, CompanyUpdate
+from app.modules.tenancy.schemas import CompanyCreate, CompanySettingsUpdate, CompanyUpdate
 
 
 async def list_companies(session: AsyncSession) -> list[Company]:
@@ -49,6 +49,7 @@ async def create_company(
             password=data.admin.password,
             full_name=data.admin.full_name,
             email=data.admin.email,
+            home_company_id=company.id,
         )
     await identity_service.grant_role(
         session, company_id=company.id, user_id=admin.id, role=CompanyRole.COMPANY_ADMIN
@@ -71,4 +72,16 @@ async def get_settings(session: AsyncSession, company_id: uuid.UUID) -> CompanyS
     settings = await session.get(CompanySettings, company_id)
     if settings is None:
         raise NotFoundError("Chưa có cấu hình cho công ty")
+    return settings
+
+
+async def update_settings(
+    session: AsyncSession, company_id: uuid.UUID, data: CompanySettingsUpdate
+) -> CompanySettings:
+    settings = await get_settings(session, company_id)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(settings, field, value)
+    if settings.shift_start >= settings.shift_end:
+        raise AppError("Giờ bắt đầu ca phải trước giờ kết thúc", code="invalid_shift")
+    await session.flush()
     return settings

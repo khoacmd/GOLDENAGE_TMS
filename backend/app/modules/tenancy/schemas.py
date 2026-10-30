@@ -1,7 +1,9 @@
 import uuid
+import zoneinfo
 from datetime import datetime, time
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class CompanyAdminInput(BaseModel):
@@ -45,3 +47,25 @@ class CompanySettingsOut(BaseModel):
     shift_end: time
     cutover_time: time
     timezone: str
+
+
+class CompanySettingsUpdate(BaseModel):
+    working_weekdays: list[Annotated[int, Field(ge=1, le=7)]] | None = Field(
+        default=None, min_length=1
+    )
+    shift_start: time | None = None
+    shift_end: time | None = None
+    cutover_time: time | None = None
+    timezone: str | None = None
+
+    @field_validator("working_weekdays")
+    @classmethod
+    def _dedupe(cls, value: list[int] | None) -> list[int] | None:
+        return sorted(set(value)) if value is not None else None
+
+    @field_validator("timezone")
+    @classmethod
+    def _valid_tz(cls, value: str | None) -> str | None:
+        if value is not None and value not in zoneinfo.available_timezones():
+            raise ValueError("Múi giờ không hợp lệ")
+        return value

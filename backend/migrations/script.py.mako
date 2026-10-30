@@ -8,6 +8,7 @@ Create Date: ${create_date}
 from typing import Sequence, Union
 
 from alembic import op
+import geoalchemy2  # noqa: F401  (cột geography do autogenerate sinh ra)
 import sqlalchemy as sa
 ${imports if imports else ""}
 

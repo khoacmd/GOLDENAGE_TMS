@@ -72,6 +72,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["list_users_api_v1_users_get"];
+        put?: never;
+        /** Create User */
+        post: operations["create_user_api_v1_users_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update User */
+        patch: operations["update_user_api_v1_users__user_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set User Roles */
+        put: operations["set_user_roles_api_v1_users__user_id__roles_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/companies": {
         parameters: {
             query?: never;
@@ -116,8 +168,324 @@ export interface paths {
         };
         /** Get Company Settings */
         get: operations["get_company_settings_api_v1_company_settings_get"];
+        /** Update Company Settings */
+        put: operations["update_company_settings_api_v1_company_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/warehouses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Warehouses */
+        get: operations["list_warehouses_api_v1_warehouses_get"];
+        put?: never;
+        /** Create Warehouse */
+        post: operations["create_warehouse_api_v1_warehouses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/warehouses/{warehouse_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Warehouse */
+        get: operations["get_warehouse_api_v1_warehouses__warehouse_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Warehouse */
+        patch: operations["update_warehouse_api_v1_warehouses__warehouse_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/vehicles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Vehicles */
+        get: operations["list_vehicles_api_v1_vehicles_get"];
+        put?: never;
+        /** Create Vehicle */
+        post: operations["create_vehicle_api_v1_vehicles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vehicles/{vehicle_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Vehicle */
+        get: operations["get_vehicle_api_v1_vehicles__vehicle_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Vehicle */
+        patch: operations["update_vehicle_api_v1_vehicles__vehicle_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Customers */
+        get: operations["list_customers_api_v1_customers_get"];
+        put?: never;
+        /** Create Customer */
+        post: operations["create_customer_api_v1_customers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{customer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Customer */
+        get: operations["get_customer_api_v1_customers__customer_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Customer */
+        patch: operations["update_customer_api_v1_customers__customer_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Products */
+        get: operations["list_products_api_v1_products_get"];
+        put?: never;
+        /** Create Product */
+        post: operations["create_product_api_v1_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Product */
+        get: operations["get_product_api_v1_products__product_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Product */
+        patch: operations["update_product_api_v1_products__product_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Orders */
+        get: operations["list_orders_api_v1_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Order */
+        get: operations["get_order_api_v1_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Order */
+        post: operations["cancel_order_api_v1_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/specs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Specs */
+        get: operations["list_specs_api_v1_imports_specs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/templates/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Template */
+        get: operations["download_template_api_v1_imports_templates__kind__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import File */
+        post: operations["import_file_api_v1_imports__kind__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Jobs */
+        get: operations["list_jobs_api_v1_imports_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Api Keys */
+        get: operations["list_api_keys_api_v1_api_keys_get"];
+        put?: never;
+        /** Create Api Key */
+        post: operations["create_api_key_api_v1_api_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/api-keys/{key_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Api Key */
+        post: operations["revoke_api_key_api_v1_api_keys__key_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integration/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Integration Import */
+        post: operations["integration_import_api_v1_integration__kind__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -128,6 +496,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiKeyCreate */
+        ApiKeyCreate: {
+            /** Name */
+            name: string;
+        };
+        /** ApiKeyCreated */
+        ApiKeyCreated: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Key Prefix */
+            key_prefix: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Used At */
+            last_used_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Api Key */
+            api_key: string;
+        };
+        /** ApiKeyOut */
+        ApiKeyOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Key Prefix */
+            key_prefix: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Used At */
+            last_used_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** Body_import_file_api_v1_imports__kind__post */
+        Body_import_file_api_v1_imports__kind__post: {
+            /**
+             * File
+             * @description File .xlsx hoặc .csv theo template
+             */
+            file: string;
+        };
+        /**
+         * CargoClass
+         * @description Loại hàng ưu tiên của xe.
+         * @enum {string}
+         */
+        CargoClass: "DRY_ONLY" | "COLD_ONLY" | "ANY";
+        /** ColumnOut */
+        ColumnOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            /** Example */
+            example: unknown;
+            /** Description */
+            description: string;
+        };
         /**
          * CompanyAdminInput
          * @description Admin công ty: dùng tài khoản có sẵn theo username, hoặc tạo mới.
@@ -210,6 +654,19 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** CompanySettingsUpdate */
+        CompanySettingsUpdate: {
+            /** Working Weekdays */
+            working_weekdays?: number[] | null;
+            /** Shift Start */
+            shift_start?: string | null;
+            /** Shift End */
+            shift_end?: string | null;
+            /** Cutover Time */
+            cutover_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
         /** CompanyUpdate */
         CompanyUpdate: {
             /** Name */
@@ -217,10 +674,285 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** CompanyUserCreate */
+        CompanyUserCreate: {
+            /** Username */
+            username: string;
+            /** Full Name */
+            full_name: string;
+            /** Password */
+            password: string;
+            /** Email */
+            email?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Roles */
+            roles: components["schemas"]["CompanyRole"][];
+        };
+        /** CompanyUserOut */
+        CompanyUserOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Username */
+            username: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Roles */
+            roles: components["schemas"]["CompanyRole"][];
+        };
+        /** CompanyUserUpdate */
+        CompanyUserUpdate: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Password */
+            password?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /**
+         * CostAllocationMethod
+         * @description Cách phân bổ chi phí chuyến về từng đơn.
+         * @enum {string}
+         */
+        CostAllocationMethod: "ORDER_VALUE" | "DISTANCE" | "WEIGHT" | "PER_TRIP";
+        /** CustomerCreate */
+        CustomerCreate: {
+            /** Address */
+            address?: string | null;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Sales Rep */
+            sales_rep?: string | null;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** @default ANY */
+            required_vehicle_type: components["schemas"]["VehicleRequirement"];
+            /**
+             * Delivery Weekdays
+             * @default []
+             */
+            delivery_weekdays: number[];
+            /** Deliveries Per Week */
+            deliveries_per_week?: number | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Delivery Points */
+            delivery_points: components["schemas"]["DeliveryPointIn"][];
+        };
+        /** CustomerOut */
+        CustomerOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Email */
+            email: string | null;
+            required_vehicle_type: components["schemas"]["VehicleRequirement"];
+            /** Sales Rep */
+            sales_rep: string | null;
+            /** Delivery Weekdays */
+            delivery_weekdays: number[];
+            /** Deliveries Per Week */
+            deliveries_per_week: number | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Delivery Points */
+            delivery_points: components["schemas"]["DeliveryPointOut"][];
+        };
+        /** CustomerUpdate */
+        CustomerUpdate: {
+            /** Address */
+            address?: string | null;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Sales Rep */
+            sales_rep?: string | null;
+            /** Name */
+            name?: string | null;
+            required_vehicle_type?: components["schemas"]["VehicleRequirement"] | null;
+            /** Delivery Weekdays */
+            delivery_weekdays?: number[] | null;
+            /** Deliveries Per Week */
+            deliveries_per_week?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Delivery Points */
+            delivery_points?: components["schemas"]["DeliveryPointIn"][] | null;
+        };
+        /** DeliveryPointIn */
+        DeliveryPointIn: {
+            /** Code */
+            code: string;
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: number | string;
+            /** Longitude */
+            longitude: number | string;
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** DeliveryPointOut */
+        DeliveryPointOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string | null;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Is Default */
+            is_default: boolean;
+            /** Is Active */
+            is_active: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImportJobOut */
+        ImportJobOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["ImportKind"];
+            source: components["schemas"]["ImportSource"];
+            /** Filename */
+            filename: string | null;
+            /** Dry Run */
+            dry_run: boolean;
+            status: components["schemas"]["ImportStatus"];
+            /** Total Rows */
+            total_rows: number;
+            /** Created Count */
+            created_count: number;
+            /** Updated Count */
+            updated_count: number;
+            /** Error Count */
+            error_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ImportKind
+         * @enum {string}
+         */
+        ImportKind: "products" | "warehouses" | "vehicles" | "customers" | "orders" | "inventory";
+        /** ImportResultOut */
+        ImportResultOut: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            kind: components["schemas"]["ImportKind"];
+            status: components["schemas"]["ImportStatus"];
+            /** Dry Run */
+            dry_run: boolean;
+            /** Total Rows */
+            total_rows: number;
+            /** Created */
+            created: number;
+            /** Updated */
+            updated: number;
+            /** Errors */
+            errors: components["schemas"]["RowErrorOut"][];
+        };
+        /**
+         * ImportSource
+         * @enum {string}
+         */
+        ImportSource: "FILE" | "API";
+        /** ImportSpecOut */
+        ImportSpecOut: {
+            kind: components["schemas"]["ImportKind"];
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Columns */
+            columns: components["schemas"]["ColumnOut"][];
+        };
+        /**
+         * ImportStatus
+         * @enum {string}
+         */
+        ImportStatus: "VALIDATED" | "SUCCEEDED" | "FAILED";
+        /**
+         * IntegrationRequest
+         * @description Dữ liệu từ hệ thống ngoài: mỗi phần tử là 1 dòng, key theo cột template (vd. ma_hang).
+         */
+        IntegrationRequest: {
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Dry Run
+             * @default false
+             */
+            dry_run: boolean;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -256,11 +988,262 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["CompanyRole"][];
         };
+        /** OrderDetailOut */
+        OrderDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** External Ref */
+            external_ref: string;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /**
+             * Delivery Point Id
+             * Format: uuid
+             */
+            delivery_point_id: string;
+            /**
+             * Order Date
+             * Format: date
+             */
+            order_date: string;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            /** Order Value */
+            order_value: string;
+            /** Note */
+            note: string | null;
+            status: components["schemas"]["OrderStatus"];
+            source: components["schemas"]["OrderSource"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Parts */
+            parts: components["schemas"]["OrderPartOut"][];
+            /** Lines */
+            lines: components["schemas"]["OrderLineOut"][];
+        };
+        /** OrderLineOut */
+        OrderLineOut: {
+            /** Line No */
+            line_no: number;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Qty */
+            qty: string;
+            /** Weight Kg */
+            weight_kg: string;
+            /** Amount */
+            amount: string | null;
+            temp_group: components["schemas"]["TempGroup"];
+        };
+        /** OrderOut */
+        OrderOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** External Ref */
+            external_ref: string;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /**
+             * Delivery Point Id
+             * Format: uuid
+             */
+            delivery_point_id: string;
+            /**
+             * Order Date
+             * Format: date
+             */
+            order_date: string;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            /** Order Value */
+            order_value: string;
+            /** Note */
+            note: string | null;
+            status: components["schemas"]["OrderStatus"];
+            source: components["schemas"]["OrderSource"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Parts */
+            parts: components["schemas"]["OrderPartOut"][];
+        };
+        /** OrderPartOut */
+        OrderPartOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Weight Kg */
+            weight_kg: string;
+            /** Value */
+            value: string;
+            status: components["schemas"]["OrderPartStatus"];
+            /** Attempt Count */
+            attempt_count: number;
+        };
+        /**
+         * OrderPartStatus
+         * @enum {string}
+         */
+        OrderPartStatus: "PENDING" | "PLANNED" | "DELIVERED" | "FAILED" | "CANCELLED";
+        /**
+         * OrderSource
+         * @enum {string}
+         */
+        OrderSource: "FILE" | "API" | "MANUAL";
+        /**
+         * OrderStatus
+         * @enum {string}
+         */
+        OrderStatus: "OPEN" | "COMPLETED" | "CANCELLED";
+        /** Page[CustomerOut] */
+        Page_CustomerOut_: {
+            /** Items */
+            items: components["schemas"]["CustomerOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[ImportJobOut] */
+        Page_ImportJobOut_: {
+            /** Items */
+            items: components["schemas"]["ImportJobOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[OrderOut] */
+        Page_OrderOut_: {
+            /** Items */
+            items: components["schemas"]["OrderOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[ProductOut] */
+        Page_ProductOut_: {
+            /** Items */
+            items: components["schemas"]["ProductOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[VehicleOut] */
+        Page_VehicleOut_: {
+            /** Items */
+            items: components["schemas"]["VehicleOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[WarehouseOut] */
+        Page_WarehouseOut_: {
+            /** Items */
+            items: components["schemas"]["WarehouseOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ProductCreate */
+        ProductCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            temp_class: components["schemas"]["TempClass"];
+            /** Uom */
+            uom: string;
+            /** Weight Kg */
+            weight_kg: number | string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** ProductOut */
+        ProductOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            temp_class: components["schemas"]["TempClass"];
+            /** Uom */
+            uom: string;
+            /** Weight Kg */
+            weight_kg: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** ProductUpdate */
+        ProductUpdate: {
+            /** Name */
+            name?: string | null;
+            temp_class?: components["schemas"]["TempClass"] | null;
+            /** Uom */
+            uom?: string | null;
+            /** Weight Kg */
+            weight_kg?: number | string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RolesUpdate */
+        RolesUpdate: {
+            /** Roles */
+            roles: components["schemas"]["CompanyRole"][];
+        };
+        /** RowErrorOut */
+        RowErrorOut: {
+            /** Row */
+            row: number;
+            /** Column */
+            column: string | null;
+            /** Message */
+            message: string;
+        };
+        /**
+         * TempClass
+         * @enum {string}
+         */
+        TempClass: "DRY" | "CHILLED" | "FROZEN";
+        /**
+         * TempGroup
+         * @description Nhóm nhiệt độ để tách đơn: hàng khô / hàng lạnh + đông.
+         * @enum {string}
+         */
+        TempGroup: "DRY" | "COLD";
         /** TokenPair */
         TokenPair: {
             /** Access Token */
@@ -285,6 +1268,145 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VehicleCreate */
+        VehicleCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Plate No */
+            plate_no: string;
+            vehicle_type: components["schemas"]["VehicleType"];
+            /** Capacity Kg */
+            capacity_kg: number | string;
+            /** Cost Per Km */
+            cost_per_km: number | string;
+            /**
+             * Requires Assistant
+             * @default false
+             */
+            requires_assistant: boolean;
+            /** @default ANY */
+            cargo_class: components["schemas"]["CargoClass"];
+            /** @default WEIGHT */
+            cost_allocation_method: components["schemas"]["CostAllocationMethod"];
+            /** Warehouse Ids */
+            warehouse_ids: string[];
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** VehicleOut */
+        VehicleOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Plate No */
+            plate_no: string;
+            vehicle_type: components["schemas"]["VehicleType"];
+            /** Capacity Kg */
+            capacity_kg: string;
+            /** Cost Per Km */
+            cost_per_km: string;
+            /** Requires Assistant */
+            requires_assistant: boolean;
+            cargo_class: components["schemas"]["CargoClass"];
+            cost_allocation_method: components["schemas"]["CostAllocationMethod"];
+            /** Warehouse Ids */
+            warehouse_ids: string[];
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * VehicleRequirement
+         * @description Yêu cầu loại xe của khách hàng.
+         * @enum {string}
+         */
+        VehicleRequirement: "CAR" | "MOTORBIKE" | "ANY";
+        /**
+         * VehicleType
+         * @enum {string}
+         */
+        VehicleType: "CAR" | "MOTORBIKE";
+        /** VehicleUpdate */
+        VehicleUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Plate No */
+            plate_no?: string | null;
+            vehicle_type?: components["schemas"]["VehicleType"] | null;
+            /** Capacity Kg */
+            capacity_kg?: number | string | null;
+            /** Cost Per Km */
+            cost_per_km?: number | string | null;
+            /** Requires Assistant */
+            requires_assistant?: boolean | null;
+            cargo_class?: components["schemas"]["CargoClass"] | null;
+            cost_allocation_method?: components["schemas"]["CostAllocationMethod"] | null;
+            /** Warehouse Ids */
+            warehouse_ids?: string[] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** WarehouseCreate */
+        WarehouseCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: number | string;
+            /** Longitude */
+            longitude: number | string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** WarehouseOut */
+        WarehouseOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** WarehouseUpdate */
+        WarehouseUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Latitude */
+            latitude?: number | string | null;
+            /** Longitude */
+            longitude?: number | string | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
     };
     responses: never;
@@ -403,6 +1525,129 @@ export interface operations {
             };
         };
     };
+    list_users_api_v1_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"][];
+                };
+            };
+        };
+    };
+    create_user_api_v1_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyUserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_api_v1_users__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyUserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_roles_api_v1_users__user_id__roles_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_companies_api_v1_admin_companies_get: {
         parameters: {
             query?: never;
@@ -507,6 +1752,921 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompanySettingsOut"];
+                };
+            };
+        };
+    };
+    update_company_settings_api_v1_company_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanySettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanySettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_warehouses_api_v1_warehouses_get: {
+        parameters: {
+            query?: {
+                /** @description Lọc theo trạng thái hoạt động */
+                active?: boolean | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_WarehouseOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_warehouse_api_v1_warehouses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WarehouseCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_warehouse_api_v1_warehouses__warehouse_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                warehouse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_warehouse_api_v1_warehouses__warehouse_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                warehouse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WarehouseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_vehicles_api_v1_vehicles_get: {
+        parameters: {
+            query?: {
+                /** @description Lọc theo trạng thái hoạt động */
+                active?: boolean | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_VehicleOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_vehicle_api_v1_vehicles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VehicleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_vehicle_api_v1_vehicles__vehicle_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_vehicle_api_v1_vehicles__vehicle_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VehicleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_customers_api_v1_customers_get: {
+        parameters: {
+            query?: {
+                /** @description Lọc theo trạng thái hoạt động */
+                active?: boolean | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CustomerOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_customer_api_v1_customers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_customer_api_v1_customers__customer_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_customer_api_v1_customers__customer_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_v1_products_get: {
+        parameters: {
+            query?: {
+                /** @description Lọc theo trạng thái hoạt động */
+                active?: boolean | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ProductOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_api_v1_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_product_api_v1_products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_api_v1_products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_orders_api_v1_orders_get: {
+        parameters: {
+            query?: {
+                requested_from?: string | null;
+                requested_to?: string | null;
+                status?: components["schemas"]["OrderStatus"] | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_OrderOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_api_v1_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_api_v1_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_specs_api_v1_imports_specs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSpecOut"][];
+                };
+            };
+        };
+    };
+    download_template_api_v1_imports_templates__kind__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["ImportKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_file_api_v1_imports__kind__post: {
+        parameters: {
+            query?: {
+                /** @description Chỉ kiểm tra, không ghi dữ liệu */
+                dry_run?: boolean;
+            };
+            header?: never;
+            path: {
+                kind: components["schemas"]["ImportKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_file_api_v1_imports__kind__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_jobs_api_v1_imports_jobs_get: {
+        parameters: {
+            query?: {
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ImportJobOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_api_keys_api_v1_api_keys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyOut"][];
+                };
+            };
+        };
+    };
+    create_api_key_api_v1_api_keys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_api_key_api_v1_api_keys__key_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    integration_import_api_v1_integration__kind__post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description API key do admin công ty cấp */
+                "x-api-key": string;
+            };
+            path: {
+                kind: components["schemas"]["ImportKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

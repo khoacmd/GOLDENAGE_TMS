@@ -29,6 +29,13 @@ class CurrentUser:
     def has_any_role(self, *roles: CompanyRole) -> bool:
         return not self.roles.isdisjoint(roles)
 
+    @property
+    def cid(self) -> uuid.UUID:
+        """Công ty đang làm việc; chỉ dùng sau `require_roles` (đã bảo đảm có công ty)."""
+        if self.company_id is None:
+            raise PermissionDeniedError("Cần đăng nhập vào một công ty")
+        return self.company_id
+
 
 async def get_current_user(
     session: DbSession,
@@ -90,3 +97,15 @@ def require_roles(
 
 
 SystemAdminDep = Annotated[CurrentUser, Depends(require_system_admin)]
+
+CompanyAdminDep = Annotated[CurrentUser, Depends(require_roles(CompanyRole.COMPANY_ADMIN))]
+ManagerOrAdminDep = Annotated[
+    CurrentUser, Depends(require_roles(CompanyRole.COMPANY_ADMIN, CompanyRole.MANAGER))
+]
+# Đọc dữ liệu gốc: mọi vai trò văn phòng (không gồm lái xe).
+OfficeStaffDep = Annotated[
+    CurrentUser,
+    Depends(
+        require_roles(CompanyRole.COMPANY_ADMIN, CompanyRole.MANAGER, CompanyRole.WAREHOUSE_KEEPER)
+    ),
+]

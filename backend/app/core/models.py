@@ -1,8 +1,11 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
+from enum import Enum as PyEnum
 from typing import Any, ClassVar
 
-from sqlalchemy import DateTime, ForeignKey, MetaData, func
+from geoalchemy2 import Geography
+from sqlalchemy import Computed, DateTime, Enum, ForeignKey, MetaData, Numeric, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 NAMING_CONVENTION = {
@@ -34,3 +37,31 @@ class TenantMixin:
     @declared_attr
     def company_id(cls) -> Mapped[uuid.UUID]:
         return mapped_column(ForeignKey("companies.id", ondelete="RESTRICT"), index=True)
+
+
+def enum_type(enum_cls: type[PyEnum]) -> Enum:
+    """Lưu enum dạng VARCHAR + CHECK (dễ thêm giá trị mới hơn enum native của Postgres)."""
+    return Enum(
+        enum_cls,
+        native_enum=False,
+        create_constraint=True,
+        length=32,
+        values_callable=lambda cls: [m.value for m in cls],
+        name=enum_cls.__name__.lower(),
+    )
+
+
+class GeoPointMixin:
+    """Tọa độ nhập dạng vĩ độ/kinh độ; cột `location` (geography) sinh tự động cho truy vấn
+    khoảng cách (PostGIS). Cần index GiST: `Index(..., "location", postgresql_using="gist")`."""
+
+    latitude: Mapped[Decimal] = mapped_column(Numeric(9, 6))
+    longitude: Mapped[Decimal] = mapped_column(Numeric(9, 6))
+    location: Mapped[Any] = mapped_column(
+        Geography("POINT", srid=4326, spatial_index=False),
+        Computed(
+            "ST_SetSRID(ST_MakePoint(longitude::float8, latitude::float8), 4326)::geography",
+            persisted=True,
+        ),
+        deferred=True,
+    )

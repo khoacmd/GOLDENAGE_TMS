@@ -27,6 +27,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     phone: Mapped[str | None] = mapped_column(String(32))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
     is_system_admin: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Công ty sở hữu tài khoản: chỉ admin công ty này được đổi mật khẩu/khóa tài khoản.
+    home_company_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("companies.id", ondelete="SET NULL")
+    )
 
 
 class UserRole(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):

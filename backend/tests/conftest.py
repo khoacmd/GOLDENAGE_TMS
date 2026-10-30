@@ -12,6 +12,7 @@ os.environ.setdefault(
 
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from alembic import command
@@ -101,3 +102,28 @@ async def login(client: AsyncClient, username: str, password: str, **extra: str)
     assert resp.status_code == 200, resp.text
     token: str = resp.json()["access_token"]
     return token
+
+
+@pytest.fixture
+async def admin_token(client: AsyncClient, sysadmin_token: str) -> str:
+    """Token admin của công ty NPP01."""
+    await create_company(client, sysadmin_token, "NPP01", "admin01")
+    return await login(client, "admin01", "admin-pass-123")
+
+
+WAREHOUSE = {
+    "code": "KHO01",
+    "name": "Kho Hà Đông",
+    "address": "Hà Đông, Hà Nội",
+    "latitude": "20.971000",
+    "longitude": "105.776000",
+}
+
+
+async def create_warehouse(client: AsyncClient, token: str, **overrides: str) -> dict[str, Any]:
+    resp = await client.post(
+        "/api/v1/warehouses", headers=auth(token), json={**WAREHOUSE, **overrides}
+    )
+    assert resp.status_code == 201, resp.text
+    body: dict[str, Any] = resp.json()
+    return body

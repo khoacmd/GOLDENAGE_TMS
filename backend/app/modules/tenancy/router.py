@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from app.core.auth import CurrentUser, SystemAdminDep, require_roles
+from app.core.auth import CompanyAdminDep, CurrentUser, SystemAdminDep, require_roles
 from app.core.db import DbSession
 from app.modules.identity.models import CompanyRole
 from app.modules.tenancy import service
@@ -11,6 +11,7 @@ from app.modules.tenancy.schemas import (
     CompanyCreate,
     CompanyOut,
     CompanySettingsOut,
+    CompanySettingsUpdate,
     CompanyUpdate,
 )
 
@@ -49,6 +50,14 @@ async def get_company_settings(
     ],
     session: DbSession,
 ) -> CompanySettingsOut:
-    assert current.company_id is not None
-    settings = await service.get_settings(session, current.company_id)
+    settings = await service.get_settings(session, current.cid)
+    return CompanySettingsOut.model_validate(settings)
+
+
+@company_router.put("/settings")
+async def update_company_settings(
+    body: CompanySettingsUpdate, current: CompanyAdminDep, session: DbSession
+) -> CompanySettingsOut:
+    settings = await service.update_settings(session, current.cid, body)
+    await session.commit()
     return CompanySettingsOut.model_validate(settings)

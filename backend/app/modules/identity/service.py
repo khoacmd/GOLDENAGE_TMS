@@ -5,7 +5,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import set_tenant_context
-from app.core.errors import AppError, AuthenticationError, ConflictError
+from app.core.errors import (
+    AppError,
+    AuthenticationError,
+    ConflictError,
+    NotFoundError,
+    PermissionDeniedError,
+)
 from app.core.security import create_token, decode_token, hash_password, verify_password
 from app.modules.identity.models import CompanyRole, User, UserRole
 from app.modules.identity.schemas import CompanyRef, Membership, TokenPair
@@ -102,6 +108,7 @@ async def create_user(
     email: str | None = None,
     phone: str | None = None,
     is_system_admin: bool = False,
+    home_company_id: uuid.UUID | None = None,
 ) -> User:
     if await get_user_by_username(session, username) is not None:
         raise ConflictError(f"Tên đăng nhập '{username}' đã tồn tại")
@@ -112,6 +119,7 @@ async def create_user(
         email=email,
         phone=phone,
         is_system_admin=is_system_admin,
+        home_company_id=home_company_id,
     )
     session.add(user)
     await session.flush()
@@ -130,3 +138,67 @@ async def grant_role(
     if exists is None:
         session.add(UserRole(company_id=company_id, user_id=user_id, role=role))
         await session.flush()
+
+
+# --- Quản lý user trong công ty (admin công ty) ---------------------------------------
+
+
+async def list_company_users(
+    session: AsyncSession, company_id: uuid.UUID
+) -> list[tuple[User, list[CompanyRole]]]:
+    rows = await session.execute(
+        select(User, UserRole.role)
+        .join(UserRole, UserRole.user_id == User.id)
+        .where(UserRole.company_id == company_id)
+        .order_by(User.username)
+    )
+    users: dict[uuid.UUID, User] = {}
+    roles: defaultdict[uuid.UUID, list[CompanyRole]] = defaultdict(list)
+    for user, role in rows:
+        users[user.id] = user
+        roles[user.id].append(CompanyRole(role))
+    return [(user, sorted(roles[uid])) for uid, user in users.items()]
+
+
+async def get_company_user(
+    session: AsyncSession, company_id: uuid.UUID, user_id: uuid.UUID
+) -> tuple[User, list[CompanyRole]]:
+    user = await session.get(User, user_id)
+    roles = await session.scalars(
+        select(UserRole.role).where(UserRole.company_id == company_id, UserRole.user_id == user_id)
+    )
+    role_list = sorted(CompanyRole(r) for r in roles)
+    if user is None or not role_list:
+        raise NotFoundError("Không tìm thấy người dùng trong công ty")
+    return user, role_list
+
+
+async def set_roles(
+    session: AsyncSession,
+    company_id: uuid.UUID,
+    user_id: uuid.UUID,
+    roles: set[CompanyRole],
+    *,
+    actor_id: uuid.UUID,
+) -> None:
+    if user_id == actor_id and CompanyRole.COMPANY_ADMIN not in roles:
+        raise AppError("Không thể tự bỏ quyền admin công ty của chính mình", code="self_lockout")
+    current = {
+        CompanyRole(r.role): r
+        for r in await session.scalars(
+            select(UserRole).where(UserRole.company_id == company_id, UserRole.user_id == user_id)
+        )
+    }
+    for role, row in current.items():
+        if role not in roles:
+            await session.delete(row)
+    for role in roles - set(current):
+        session.add(UserRole(company_id=company_id, user_id=user_id, role=role))
+    await session.flush()
+
+
+def ensure_home_company(user: User, company_id: uuid.UUID) -> None:
+    if user.home_company_id != company_id:
+        raise PermissionDeniedError(
+            "Tài khoản thuộc quản lý của công ty khác, không thể đổi mật khẩu/khóa"
+        )
