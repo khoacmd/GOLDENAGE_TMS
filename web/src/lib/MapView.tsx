@@ -9,6 +9,12 @@ import { useEffect, useRef, useState } from 'react'
 // MapLibre tự tính URL worker từ import.meta.url của chính nó - sai khi Vite đóng gói lại.
 maplibregl.setWorkerUrl(workerUrl)
 
+export interface MapRoute {
+  id: string
+  color: string
+  coords: [number, number][] // [lng, lat]
+}
+
 export interface MapMarker {
   id: string
   lat: number
@@ -66,17 +72,20 @@ const styleReady: Promise<maplibregl.StyleSpecification> = (async () => {
 const HANOI: [number, number] = [105.83, 21.02]
 
 /**
- * Bản đồ hiển thị điểm (đánh số) + đường nối theo thứ tự `route` (đường thẳng; định tuyến thật ở M4).
+ * Bản đồ hiển thị điểm (đánh số) + đường nối theo thứ tự `route`/`routes` (đường thẳng giữa các điểm).
  * `onPick` bật chế độ chọn tọa độ bằng click.
  */
 export function MapView({
   markers,
   route,
+  routes,
   height = 420,
   onPick,
 }: {
   markers: MapMarker[]
   route?: [number, number][]
+  /** Nhiều tuyến, mỗi tuyến 1 màu (vd. các chuyến của kế hoạch ngày). */
+  routes?: MapRoute[]
   height?: number
   onPick?: (lat: number, lng: number) => void
 }) {
@@ -103,7 +112,11 @@ export function MapView({
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     m.on('click', (e: maplibregl.MapMouseEvent) => pickRef.current?.(e.lngLat.lat, e.lngLat.lng))
     map.current = m
+    // Khung chứa có thể đổi kích thước sau khi tạo (card/tab vừa hiện) → vẽ lại cho đúng.
+    const observer = new ResizeObserver(() => m.resize())
+    observer.observe(container.current)
     return () => {
+      observer.disconnect()
       m.remove()
       map.current = null
     }
@@ -132,10 +145,14 @@ export function MapView({
     })
 
     const drawRoute = () => {
+      const lines = routes ?? (route ? [{ id: 'route', color: '#1677ff', coords: route }] : [])
       const data: maplibregl.GeoJSONSourceSpecification['data'] = {
-        type: 'Feature',
-        properties: {},
-        geometry: { type: 'LineString', coordinates: route ?? [] },
+        type: 'FeatureCollection',
+        features: lines.map((r) => ({
+          type: 'Feature',
+          properties: { color: r.color },
+          geometry: { type: 'LineString', coordinates: r.coords },
+        })),
       }
       const source = m.getSource('route') as maplibregl.GeoJSONSource | undefined
       if (source) source.setData(data)
@@ -145,7 +162,7 @@ export function MapView({
           id: 'route',
           type: 'line',
           source: 'route',
-          paint: { 'line-color': '#1677ff', 'line-width': 3, 'line-dasharray': [2, 1] },
+          paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [2, 1] },
         })
       }
     }
@@ -158,7 +175,7 @@ export function MapView({
       markers.forEach((mk) => bounds.extend([mk.lng, mk.lat]))
       m.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 0 })
     }
-  }, [markers, route, style])
+  }, [markers, route, routes, style])
 
   return <div ref={container} style={{ height, width: '100%', borderRadius: 8, overflow: 'hidden' }} />
 }

@@ -14,6 +14,7 @@ from app.modules.integration.router import api_keys_router, imports_router, inte
 from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_data_router
 from app.modules.orders.router import router as orders_router
+from app.modules.planning.router import router as planning_router
 from app.modules.tenancy.router import admin_router, company_router
 
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
         inventory_router,
         devices_router,
         dispatch_router,
+        planning_router,
         confirmations_router,
         driver_router,
         imports_router,

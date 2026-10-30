@@ -44,6 +44,15 @@ class CompanySettings(TimestampMixin, Base):
     photo_required_failed: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     # Thao tác ghi nhận khi mất mạng được gửi muộn tối đa bao lâu.
     offline_max_delay_minutes: Mapped[int] = mapped_column(default=240, server_default=text("240"))
+    # Lập kế hoạch tự động: chạy lúc cut-over cho ngày làm việc kế tiếp (nếu bật).
+    auto_plan_enabled: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    service_minutes: Mapped[int] = mapped_column(default=10, server_default=text("10"))
+    turnaround_minutes: Mapped[int] = mapped_column(default=30, server_default=text("30"))
+    max_trips_per_vehicle: Mapped[int] = mapped_column(default=3, server_default=text("3"))
+    # Chi phí cố định mỗi chuyến (đồng) để bộ tối ưu hạn chế số chuyến.
+    trip_fixed_cost: Mapped[int] = mapped_column(default=50_000, server_default=text("50000"))
+    planning_time_limit_s: Mapped[int] = mapped_column(default=15, server_default=text("15"))
+
     # Điện thoại mới đăng ký phải được admin công ty duyệt trước khi xác nhận giao.
     require_device_approval: Mapped[bool] = mapped_column(
         default=False, server_default=text("false")

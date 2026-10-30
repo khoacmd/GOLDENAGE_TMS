@@ -12,6 +12,7 @@ import { ProductsPage } from './pages/master/ProductsPage'
 import { VehiclesPage } from './pages/master/VehiclesPage'
 import { WarehousesPage } from './pages/master/WarehousesPage'
 import { OrdersPage } from './pages/OrdersPage'
+import { PlanningRunPage } from './pages/plans/PlanningRunPage'
 import { PlansPage } from './pages/plans/PlansPage'
 import { DeliveryNotesPrint, PickingListPrint } from './pages/plans/PrintPages'
 import { TripDetailPage } from './pages/plans/TripDetailPage'
@@ -30,6 +31,7 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="plans" element={<PlansPage />} />
+        <Route path="plans/runs/:runId" element={<PlanningRunPage />} />
         <Route path="trips/new" element={<TripEditor />} />
         <Route path="trips/:tripId" element={<TripDetailPage />} />
         <Route path="trips/:tripId/edit" element={<TripEditor key="edit" />} />

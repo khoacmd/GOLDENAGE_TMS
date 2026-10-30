@@ -5,16 +5,21 @@ description = "TMS – Quản lý & tối ưu vận chuyển giao hàng (backend
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
+    "apscheduler>=3.11.3",
     "asyncpg>=0.32.0",
     "boto3>=1.43.122",
+    "dramatiq[redis]>=2.2.1",
     "fastapi>=0.162.0",
     "geoalchemy2>=0.20.0",
+    "httpx>=0.28.1",
     "openpyxl>=3.1.5",
+    "ortools>=9.15.6755",
     "pwdlib[argon2]>=0.3.1",
     "pydantic-settings>=2.16.2",
     "pydantic[email]>=2.14.2",
     "pyjwt>=2.15.1",
     "python-multipart>=0.0.32",
+    "redis>=8.1.0",
     "sqlalchemy[asyncio]>=2.1.6",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -48,6 +53,11 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["ortools.*", "apscheduler.*", "dramatiq.brokers.*"]
+ignore_missing_imports = true
+follow_untyped_imports = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

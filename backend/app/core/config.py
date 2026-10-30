@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     max_photo_bytes: int = 8 * 1024 * 1024
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    redis_url: str = "redis://localhost:56379/0"
+    # OSRM tự host theo profile (infra/osrm). Để trống → ước lượng theo đường chim bay.
+    osrm_car_url: str | None = None
+    osrm_motorbike_url: str | None = None
+    # Chạy tác vụ nền ngay trong tiến trình gọi (test / dev không chạy worker).
+    tasks_eager: bool = False
+    # Giới hạn trên thời gian chạy bộ giải (giây), bất kể cấu hình công ty (test đặt nhỏ).
+    planning_time_cap_s: int | None = None
+
     @model_validator(mode="after")
     def _check_prod_secrets(self) -> "Settings":
         if self.env == "prod" and (self.jwt_secret == _DEV_JWT_SECRET or len(self.jwt_secret) < 32):

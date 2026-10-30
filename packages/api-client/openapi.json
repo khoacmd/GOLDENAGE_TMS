@@ -2840,6 +2840,205 @@
         }
       }
     },
+    "/api/v1/planning/runs": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Create Run",
+        "description": "Lập kế hoạch tự động (chạy nền); theo dõi kết quả qua GET /planning/runs/{id}.",
+        "operationId": "create_run_api_v1_planning_runs_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_v1_planning_runs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plan Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "title": "Response List Runs Api V1 Planning Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/planning/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Get Run",
+        "operationId": "get_run_api_v1_planning_runs__run_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/planning/move-stop": {
+      "post": {
+        "tags": [
+          "planning"
+        ],
+        "summary": "Move Stop",
+        "description": "Kéo thả: chuyển điểm dừng sang lệnh khác hoặc đổi thứ tự trong lệnh.",
+        "operationId": "move_stop_api_v1_planning_move_stop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveStopIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveStopOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/trips/{trip_id}/confirmations": {
       "get": {
         "tags": [
@@ -4107,6 +4306,40 @@
       },
       "CompanySettingsOut": {
         "properties": {
+          "auto_plan_enabled": {
+            "type": "boolean",
+            "title": "Auto Plan Enabled"
+          },
+          "service_minutes": {
+            "type": "integer",
+            "maximum": 240.0,
+            "minimum": 0.0,
+            "title": "Service Minutes"
+          },
+          "turnaround_minutes": {
+            "type": "integer",
+            "maximum": 240.0,
+            "minimum": 0.0,
+            "title": "Turnaround Minutes"
+          },
+          "max_trips_per_vehicle": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Trips Per Vehicle"
+          },
+          "trip_fixed_cost": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Trip Fixed Cost"
+          },
+          "planning_time_limit_s": {
+            "type": "integer",
+            "maximum": 300.0,
+            "minimum": 1.0,
+            "title": "Planning Time Limit S"
+          },
           "confirm_time_rule": {
             "type": "boolean",
             "title": "Confirm Time Rule"
@@ -4174,6 +4407,12 @@
         },
         "type": "object",
         "required": [
+          "auto_plan_enabled",
+          "service_minutes",
+          "turnaround_minutes",
+          "max_trips_per_vehicle",
+          "trip_fixed_cost",
+          "planning_time_limit_s",
           "confirm_time_rule",
           "confirm_grace_minutes",
           "confirm_geofence",
@@ -4349,6 +4588,82 @@
               }
             ],
             "title": "Require Device Approval"
+          },
+          "auto_plan_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Plan Enabled"
+          },
+          "service_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 240.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Minutes"
+          },
+          "turnaround_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 240.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turnaround Minutes"
+          },
+          "max_trips_per_vehicle": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Trips Per Vehicle"
+          },
+          "trip_fixed_cost": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trip Fixed Cost"
+          },
+          "planning_time_limit_s": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Time Limit S"
           }
         },
         "type": "object",
@@ -4843,6 +5158,30 @@
         ],
         "title": "CostAllocationMethod",
         "description": "Cách phân bổ chi phí chuyến về từng đơn."
+      },
+      "CurrentCost": {
+        "properties": {
+          "trips": {
+            "type": "integer",
+            "title": "Trips"
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km"
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trips",
+          "distance_km",
+          "cost"
+        ],
+        "title": "CurrentCost",
+        "description": "Chi phí hiện tại của các lệnh do lần chạy sinh ra (sau khi quản lý chỉnh tay)."
       },
       "CustomerCreate": {
         "properties": {
@@ -6306,6 +6645,70 @@
         ],
         "title": "Membership"
       },
+      "MoveStopIn": {
+        "properties": {
+          "from_trip_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "From Trip Id"
+          },
+          "stop_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Stop Id"
+          },
+          "to_trip_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "To Trip Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position",
+            "description": "Vị trí mới (mặc định: cuối)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_trip_id",
+          "stop_id",
+          "to_trip_id"
+        ],
+        "title": "MoveStopIn",
+        "description": "Chuyển 1 điểm dừng (mọi phần đơn tại điểm giao đó) sang lệnh khác."
+      },
+      "MoveStopOut": {
+        "properties": {
+          "trips": {
+            "items": {
+              "$ref": "#/components/schemas/TripSummaryOut"
+            },
+            "type": "array",
+            "title": "Trips"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trips",
+          "warnings"
+        ],
+        "title": "MoveStopOut"
+      },
       "OrderDetailOut": {
         "properties": {
           "id": {
@@ -7188,6 +7591,356 @@
         ],
         "title": "RowErrorOut"
       },
+      "RunCreate": {
+        "properties": {
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "replace_drafts": {
+            "type": "boolean",
+            "title": "Replace Drafts",
+            "description": "Hủy các lệnh nháp lập tự động trước đó của ngày rồi lập lại",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_date"
+        ],
+        "title": "RunCreate"
+      },
+      "RunDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "replace_drafts": {
+            "type": "boolean",
+            "title": "Replace Drafts"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "distance_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Source"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RunSummary"
+          },
+          "unassigned": {
+            "items": {
+              "$ref": "#/components/schemas/UnassignedPart"
+            },
+            "type": "array",
+            "title": "Unassigned"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "trips": {
+            "items": {
+              "$ref": "#/components/schemas/TripSummaryOut"
+            },
+            "type": "array",
+            "title": "Trips"
+          },
+          "current": {
+            "$ref": "#/components/schemas/CurrentCost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "plan_date",
+          "trigger",
+          "status",
+          "replace_drafts",
+          "requested_by",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "distance_source",
+          "summary",
+          "unassigned",
+          "warnings",
+          "error",
+          "trips",
+          "current"
+        ],
+        "title": "RunDetailOut"
+      },
+      "RunOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "replace_drafts": {
+            "type": "boolean",
+            "title": "Replace Drafts"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "distance_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Source"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/RunSummary"
+          },
+          "unassigned": {
+            "items": {
+              "$ref": "#/components/schemas/UnassignedPart"
+            },
+            "type": "array",
+            "title": "Unassigned"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "plan_date",
+          "trigger",
+          "status",
+          "replace_drafts",
+          "requested_by",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "distance_source",
+          "summary",
+          "unassigned",
+          "warnings",
+          "error"
+        ],
+        "title": "RunOut"
+      },
+      "RunStatus": {
+        "type": "string",
+        "enum": [
+          "QUEUED",
+          "RUNNING",
+          "SUCCEEDED",
+          "FAILED"
+        ],
+        "title": "RunStatus"
+      },
+      "RunSummary": {
+        "properties": {
+          "parts_total": {
+            "type": "integer",
+            "title": "Parts Total",
+            "default": 0
+          },
+          "parts_assigned": {
+            "type": "integer",
+            "title": "Parts Assigned",
+            "default": 0
+          },
+          "trips": {
+            "type": "integer",
+            "title": "Trips",
+            "default": 0
+          },
+          "stops": {
+            "type": "integer",
+            "title": "Stops",
+            "default": 0
+          },
+          "weight_kg": {
+            "type": "number",
+            "title": "Weight Kg",
+            "default": 0
+          },
+          "utilization": {
+            "type": "number",
+            "title": "Utilization",
+            "default": 0
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km",
+            "default": 0
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost",
+            "default": 0
+          },
+          "solve_seconds": {
+            "type": "number",
+            "title": "Solve Seconds",
+            "default": 0
+          },
+          "total_seconds": {
+            "type": "number",
+            "title": "Total Seconds",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "RunSummary"
+      },
+      "RunTrigger": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "SCHEDULED"
+        ],
+        "title": "RunTrigger"
+      },
       "StopIn": {
         "properties": {
           "delivery_point_id": {
@@ -7641,6 +8394,64 @@
             ],
             "title": "Note"
           },
+          "planning_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Run Id"
+          },
+          "planned_distance_km": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Distance Km"
+          },
+          "planned_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Cost"
+          },
+          "planned_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start"
+          },
+          "planned_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End"
+          },
           "warehouse_name": {
             "type": "string",
             "title": "Warehouse Name"
@@ -7760,6 +8571,11 @@
           "total_weight_kg",
           "total_value",
           "note",
+          "planning_run_id",
+          "planned_distance_km",
+          "planned_cost",
+          "planned_start",
+          "planned_end",
           "warehouse_name",
           "warehouse_latitude",
           "warehouse_longitude",
@@ -8012,6 +8828,64 @@
               }
             ],
             "title": "Note"
+          },
+          "planning_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Run Id"
+          },
+          "planned_distance_km": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Distance Km"
+          },
+          "planned_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Cost"
+          },
+          "planned_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start"
+          },
+          "planned_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End"
           }
         },
         "type": "object",
@@ -8033,9 +8907,69 @@
           "assistant",
           "total_weight_kg",
           "total_value",
-          "note"
+          "note",
+          "planning_run_id",
+          "planned_distance_km",
+          "planned_cost",
+          "planned_start",
+          "planned_end"
         ],
         "title": "TripSummaryOut"
+      },
+      "UnassignedPart": {
+        "properties": {
+          "order_part_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Part Id"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "external_ref": {
+            "type": "string",
+            "title": "External Ref"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "temp_group": {
+            "$ref": "#/components/schemas/TempGroup"
+          },
+          "weight_kg": {
+            "type": "number",
+            "title": "Weight Kg"
+          },
+          "requested_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Date"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_part_id",
+          "order_id",
+          "external_ref",
+          "customer_code",
+          "customer_name",
+          "temp_group",
+          "weight_kg",
+          "requested_date",
+          "reason"
+        ],
+        "title": "UnassignedPart"
       },
       "UploadedPhoto": {
         "properties": {

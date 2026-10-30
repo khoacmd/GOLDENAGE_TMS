@@ -63,18 +63,23 @@
 - [ ] Kiểm tra APK trên điện thoại thật (GPS dự phòng, camera); keystore phát hành riêng
 - [x] Thiết bị: admin quản lý PC/máy in, điện thoại tự đăng ký khi mở app, tùy chọn bắt buộc duyệt, khóa máy → từ chối xác nhận giao
 - [x] Bản đồ tự host trên web: PMTiles + style Protomaps (tiếng Việt), service `tiles` (nginx), tự quay về tile OSM nếu chưa có dữ liệu
-- [ ] Tải xong dữ liệu `infra/tiles/fetch-vietnam.sh` và kiểm tra hiển thị
+- [x] Tải dữ liệu bản đồ Việt Nam (zoom 0–14, 638 MB) và kiểm tra hiển thị
 - [ ] Pilot với công ty đầu tiên (2 kho, 4 xe)
 
 ## M4 – Lập kế hoạch tự động
-- [ ] Dựng OSRM (OSM Việt Nam) profile ô tô & xe máy, service ma trận khoảng cách có cache
-- [ ] Kiểm tra khả thi từng phần đơn + lý do không xếp được
-- [ ] Phân bổ kho theo tồn kho + giữ chỗ tồn
-- [ ] Bộ giải OR-Tools: đa kho, đa lượt/xe, tải trọng, ca làm việc, tương thích xe–hàng–khách
-- [ ] Bộ dữ liệu benchmark & test cho bộ giải
-- [ ] Chạy theo job định kỳ và lệnh manual (worker), lưu `planning_runs`
-- [ ] Màn hình xem kế hoạch trên bản đồ, kéo thả điều chỉnh, so sánh chi phí
-- [ ] Danh sách đơn không xếp được + cảnh báo
+- [x] Service ma trận khoảng cách: OSRM `/table` + cache Redis, dự phòng ước lượng đường chim bay
+- [x] OSRM: script `infra/osrm/prepare-vietnam.sh` (profile ô tô + xe máy), service `osrm-car`/`osrm-motorbike` (compose profile `routing`)
+- [ ] Dữ liệu OSRM Việt Nam đã dựng xong, bật `TMS_OSRM_*_URL` và so sánh kết quả với ước lượng
+- [x] Kiểm tra khả thi từng phần đơn + lý do không xếp được
+- [x] Phân bổ kho theo tồn kho (giữ chỗ = lệnh chưa xuất kho)
+- [x] Bộ giải OR-Tools: đa kho, đa lượt/xe, tải trọng, ca làm việc, tương thích xe–hàng–khách
+- [x] Bộ dữ liệu benchmark & test cho bộ giải (100 điểm, 2 kho, 4 xe)
+- [x] Chạy theo job định kỳ (cut-over → ngày làm việc kế tiếp) và lệnh manual (worker Dramatiq), lưu `planning_runs`
+- [x] Màn hình xem kế hoạch trên bản đồ, kéo thả điều chỉnh, so sánh chi phí
+- [x] Danh sách đơn không xếp được + cảnh báo
+- [x] Sửa: phần đơn giao thất bại xếp lại được vào lệnh mới (D25)
+- [ ] Vẽ tuyến theo đường thực tế (OSRM `/route`) thay cho đường thẳng trên bản đồ
+- [ ] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6)
 
 ## M5 – Chi phí & báo cáo
 - [ ] Ghi nhận km/chi phí thực tế của chuyến

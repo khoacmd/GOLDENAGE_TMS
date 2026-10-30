@@ -52,7 +52,18 @@ class DeliveryRules(BaseModel):
     require_device_approval: bool
 
 
-class CompanySettingsOut(DeliveryRules):
+class PlanningSettings(BaseModel):
+    """Tham số lập kế hoạch tự động."""
+
+    auto_plan_enabled: bool
+    service_minutes: int = Field(ge=0, le=240)
+    turnaround_minutes: int = Field(ge=0, le=240)
+    max_trips_per_vehicle: int = Field(ge=1, le=10)
+    trip_fixed_cost: int = Field(ge=0, le=100_000_000)
+    planning_time_limit_s: int = Field(ge=1, le=300)
+
+
+class CompanySettingsOut(DeliveryRules, PlanningSettings):
     model_config = ConfigDict(from_attributes=True)
 
     working_weekdays: list[int]
@@ -78,6 +89,12 @@ class CompanySettingsUpdate(BaseModel):
     photo_required_failed: bool | None = None
     offline_max_delay_minutes: int | None = Field(default=None, ge=5, le=24 * 60)
     require_device_approval: bool | None = None
+    auto_plan_enabled: bool | None = None
+    service_minutes: int | None = Field(default=None, ge=0, le=240)
+    turnaround_minutes: int | None = Field(default=None, ge=0, le=240)
+    max_trips_per_vehicle: int | None = Field(default=None, ge=1, le=10)
+    trip_fixed_cost: int | None = Field(default=None, ge=0, le=100_000_000)
+    planning_time_limit_s: int | None = Field(default=None, ge=1, le=300)
 
     @field_validator("working_weekdays")
     @classmethod

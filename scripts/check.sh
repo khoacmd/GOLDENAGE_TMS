@@ -9,7 +9,7 @@ echo "== backend"
   cd backend
   uv run ruff check .
   uv run ruff format --check .
-  uv run mypy app
+  uv run mypy app optimization worker
   uv run pytest -q
 )
 

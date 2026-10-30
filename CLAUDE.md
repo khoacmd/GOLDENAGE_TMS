@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Trạng thái dự án
 - Đã chốt kiến trúc & tech stack (FastAPI + PostgreSQL/PostGIS + OR-Tools + OSRM; web React/TS; mobile React Native/Expo) trong `docs/ARCHITECTURE.md`. Lộ trình trong `docs/PLAN.md`.
-- Đang ở M0 (nền tảng): đã có backend (tenancy/RLS, auth, RBAC), web & mobile skeleton, CI.
+- Đã xong M0–M4 (xem `docs/PLAN.md`); tiếp theo M5 (chi phí & báo cáo).
 - Tài liệu yêu cầu gốc: `Mô tả yêu cầu1.odt`. Phần "Nghiệp vụ" bên dưới là bản mới hơn, ưu tiên dùng bản này.
 
 ## Lệnh phát triển
@@ -29,6 +29,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Mobile: `cd mobile && EXPO_PUBLIC_API_URL=http://<ip-máy>:8000 pnpm start`. Giả lập Android trên Spark (Redroid + Expo Go): xem `infra/android/README.md`.
 - `packages/api-client`: middleware của openapi-fetch phải trả `undefined` khi không thay request/response (React Native từ chối object Response gốc).
 - Mobile: module native riêng ở `mobile/modules/` (Expo Modules, Kotlin) chỉ chạy trong bản APK → gọi qua `requireOptionalNativeModule` và có nhánh dự phòng cho Expo Go. Build APK: workflow GitHub Actions "Mobile APK" (chạy tay, nhập URL API).
+- Worker lập kế hoạch (trong `backend/`, cần Redis): `uv run dramatiq worker.tasks --threads 1` và lịch tự động `uv run python -m worker.scheduler`. Không chạy worker thì đặt `TMS_TASKS_EAGER=true` cho API (test đã đặt sẵn, kèm `TMS_PLANNING_TIME_CAP_S=1`).
+- OSRM (tùy chọn): `infra/osrm/prepare-vietnam.sh` → `docker compose -f infra/docker-compose.yml --profile routing up -d` → `TMS_OSRM_CAR_URL=http://localhost:55000 TMS_OSRM_MOTORBIKE_URL=http://localhost:55001`. Chưa có thì khoảng cách được ước lượng.
+- `backend/optimization/` là bộ giải thuần Python (không import `app`); mypy chạy `app optimization worker`.
 - Bản đồ tự host: `infra/tiles/fetch-vietnam.sh` rồi `docker compose -f infra/docker-compose.yml up -d tiles` (Vite proxy `/tiles` → :58080).
 - Mobile (Expo SDK 58): upload file bằng `FormData.append('file', new File(uri))` (`expo-file-system`), không dùng `{uri, name, type}` kiểu cũ. Gọi `fetch` trực tiếp phải tự lo token (nạp từ SecureStore, làm mới khi 401) và timeout.
 - Máy dev/test là DGX Spark **ARM64 (aarch64)**: mọi Docker image phải hỗ trợ `linux/arm64`. Production chạy trên cloud VPS.

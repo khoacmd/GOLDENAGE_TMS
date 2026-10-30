@@ -50,6 +50,25 @@ services:
       - ./data/tiles:/srv:ro
       - ./tiles/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
+  # Định tuyến OSRM (OSM Việt Nam). Dựng dữ liệu trước: infra/osrm/prepare-vietnam.sh
+  osrm-car:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    profiles: ["routing"]
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/vietnam.osrm
+    ports:
+      - "${OSRM_CAR_PORT:-55000}:5000"
+    volumes:
+      - ./data/osrm/car:/data:ro
+
+  osrm-motorbike:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    profiles: ["routing"]
+    command: osrm-routed --algorithm mld --max-table-size 1000 /data/vietnam.osrm
+    ports:
+      - "${OSRM_MOTORBIKE_PORT:-55001}:5000"
+    volumes:
+      - ./data/osrm/motorbike:/data:ro
+
   # Android giả lập cho app mobile (chỉ chạy khi cần: --profile mobile).
   # Yêu cầu: sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
   redroid:

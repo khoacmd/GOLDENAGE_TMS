@@ -640,6 +640,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planning/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_api_v1_planning_runs_get"];
+        put?: never;
+        /**
+         * Create Run
+         * @description Lập kế hoạch tự động (chạy nền); theo dõi kết quả qua GET /planning/runs/{id}.
+         */
+        post: operations["create_run_api_v1_planning_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/planning/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_v1_planning_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/planning/move-stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Stop
+         * @description Kéo thả: chuyển điểm dừng sang lệnh khác hoặc đổi thứ tự trong lệnh.
+         */
+        post: operations["move_stop_api_v1_planning_move_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{trip_id}/confirmations": {
         parameters: {
             query?: never;
@@ -1118,6 +1176,18 @@ export interface components {
         CompanyRole: "company_admin" | "manager" | "warehouse_keeper" | "driver";
         /** CompanySettingsOut */
         CompanySettingsOut: {
+            /** Auto Plan Enabled */
+            auto_plan_enabled: boolean;
+            /** Service Minutes */
+            service_minutes: number;
+            /** Turnaround Minutes */
+            turnaround_minutes: number;
+            /** Max Trips Per Vehicle */
+            max_trips_per_vehicle: number;
+            /** Trip Fixed Cost */
+            trip_fixed_cost: number;
+            /** Planning Time Limit S */
+            planning_time_limit_s: number;
             /** Confirm Time Rule */
             confirm_time_rule: boolean;
             /** Confirm Grace Minutes */
@@ -1182,6 +1252,18 @@ export interface components {
             offline_max_delay_minutes?: number | null;
             /** Require Device Approval */
             require_device_approval?: boolean | null;
+            /** Auto Plan Enabled */
+            auto_plan_enabled?: boolean | null;
+            /** Service Minutes */
+            service_minutes?: number | null;
+            /** Turnaround Minutes */
+            turnaround_minutes?: number | null;
+            /** Max Trips Per Vehicle */
+            max_trips_per_vehicle?: number | null;
+            /** Trip Fixed Cost */
+            trip_fixed_cost?: number | null;
+            /** Planning Time Limit S */
+            planning_time_limit_s?: number | null;
         };
         /** CompanyUpdate */
         CompanyUpdate: {
@@ -1343,6 +1425,18 @@ export interface components {
          * @enum {string}
          */
         CostAllocationMethod: "ORDER_VALUE" | "DISTANCE" | "WEIGHT" | "PER_TRIP";
+        /**
+         * CurrentCost
+         * @description Chi phí hiện tại của các lệnh do lần chạy sinh ra (sau khi quản lý chỉnh tay).
+         */
+        CurrentCost: {
+            /** Trips */
+            trips: number;
+            /** Distance Km */
+            distance_km: number;
+            /** Cost */
+            cost: number;
+        };
         /** CustomerCreate */
         CustomerCreate: {
             /** Address */
@@ -1770,6 +1864,39 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["CompanyRole"][];
         };
+        /**
+         * MoveStopIn
+         * @description Chuyển 1 điểm dừng (mọi phần đơn tại điểm giao đó) sang lệnh khác.
+         */
+        MoveStopIn: {
+            /**
+             * From Trip Id
+             * Format: uuid
+             */
+            from_trip_id: string;
+            /**
+             * Stop Id
+             * Format: uuid
+             */
+            stop_id: string;
+            /**
+             * To Trip Id
+             * Format: uuid
+             */
+            to_trip_id: string;
+            /**
+             * Position
+             * @description Vị trí mới (mặc định: cuối)
+             */
+            position?: number | null;
+        };
+        /** MoveStopOut */
+        MoveStopOut: {
+            /** Trips */
+            trips: components["schemas"]["TripSummaryOut"][];
+            /** Warnings */
+            warnings: string[];
+        };
         /** OrderDetailOut */
         OrderDetailOut: {
             /**
@@ -2113,6 +2240,160 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** RunCreate */
+        RunCreate: {
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            /**
+             * Replace Drafts
+             * @description Hủy các lệnh nháp lập tự động trước đó của ngày rồi lập lại
+             * @default true
+             */
+            replace_drafts: boolean;
+        };
+        /** RunDetailOut */
+        RunDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            trigger: components["schemas"]["RunTrigger"];
+            status: components["schemas"]["RunStatus"];
+            /** Replace Drafts */
+            replace_drafts: boolean;
+            /** Requested By */
+            requested_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Distance Source */
+            distance_source: string | null;
+            summary: components["schemas"]["RunSummary"];
+            /** Unassigned */
+            unassigned: components["schemas"]["UnassignedPart"][];
+            /** Warnings */
+            warnings: string[];
+            /** Error */
+            error: string | null;
+            /** Trips */
+            trips: components["schemas"]["TripSummaryOut"][];
+            current: components["schemas"]["CurrentCost"];
+        };
+        /** RunOut */
+        RunOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            trigger: components["schemas"]["RunTrigger"];
+            status: components["schemas"]["RunStatus"];
+            /** Replace Drafts */
+            replace_drafts: boolean;
+            /** Requested By */
+            requested_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Distance Source */
+            distance_source: string | null;
+            summary: components["schemas"]["RunSummary"];
+            /** Unassigned */
+            unassigned: components["schemas"]["UnassignedPart"][];
+            /** Warnings */
+            warnings: string[];
+            /** Error */
+            error: string | null;
+        };
+        /**
+         * RunStatus
+         * @enum {string}
+         */
+        RunStatus: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+        /** RunSummary */
+        RunSummary: {
+            /**
+             * Parts Total
+             * @default 0
+             */
+            parts_total: number;
+            /**
+             * Parts Assigned
+             * @default 0
+             */
+            parts_assigned: number;
+            /**
+             * Trips
+             * @default 0
+             */
+            trips: number;
+            /**
+             * Stops
+             * @default 0
+             */
+            stops: number;
+            /**
+             * Weight Kg
+             * @default 0
+             */
+            weight_kg: number;
+            /**
+             * Utilization
+             * @default 0
+             */
+            utilization: number;
+            /**
+             * Distance Km
+             * @default 0
+             */
+            distance_km: number;
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: number;
+            /**
+             * Solve Seconds
+             * @default 0
+             */
+            solve_seconds: number;
+            /**
+             * Total Seconds
+             * @default 0
+             */
+            total_seconds: number;
+        };
+        /**
+         * RunTrigger
+         * @enum {string}
+         */
+        RunTrigger: "MANUAL" | "SCHEDULED";
         /**
          * StopIn
          * @description Điểm dừng: điểm giao của khách (kèm phần đơn) hoặc điểm tự do (nhập địa chỉ/tọa độ).
@@ -2285,6 +2566,16 @@ export interface components {
             };
             /** Note */
             note: string | null;
+            /** Planning Run Id */
+            planning_run_id: string | null;
+            /** Planned Distance Km */
+            planned_distance_km: string | null;
+            /** Planned Cost */
+            planned_cost: string | null;
+            /** Planned Start */
+            planned_start: string | null;
+            /** Planned End */
+            planned_end: string | null;
             /** Warehouse Name */
             warehouse_name: string;
             /** Warehouse Latitude */
@@ -2401,6 +2692,45 @@ export interface components {
             };
             /** Note */
             note: string | null;
+            /** Planning Run Id */
+            planning_run_id: string | null;
+            /** Planned Distance Km */
+            planned_distance_km: string | null;
+            /** Planned Cost */
+            planned_cost: string | null;
+            /** Planned Start */
+            planned_start: string | null;
+            /** Planned End */
+            planned_end: string | null;
+        };
+        /** UnassignedPart */
+        UnassignedPart: {
+            /**
+             * Order Part Id
+             * Format: uuid
+             */
+            order_part_id: string;
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** External Ref */
+            external_ref: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Weight Kg */
+            weight_kg: number;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            /** Reason */
+            reason: string;
         };
         /** UploadedPhoto */
         UploadedPhoto: {
@@ -4184,6 +4514,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_api_v1_planning_runs_get: {
+        parameters: {
+            query?: {
+                plan_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_run_api_v1_planning_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_api_v1_planning_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_stop_api_v1_planning_move_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveStopIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveStopOut"];
                 };
             };
             /** @description Validation Error */

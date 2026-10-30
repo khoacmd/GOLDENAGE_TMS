@@ -94,6 +94,15 @@ class Trip(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     closed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     cancel_reason: Mapped[str | None] = mapped_column(String(500))
 
+    # Kết quả lập kế hoạch tự động (ước tính lúc lập; lệnh thủ công để trống).
+    planning_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("planning_runs.id", ondelete="SET NULL"), index=True
+    )
+    planned_distance_km: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    planned_cost: Mapped[Decimal | None] = mapped_column(Numeric(14, 0))
+    planned_start: Mapped[datetime | None]
+    planned_end: Mapped[datetime | None]
+
     vehicle: Mapped[Vehicle] = relationship(lazy="selectin")
     warehouse: Mapped[Warehouse] = relationship(lazy="selectin")
     driver: Mapped[User | None] = relationship(foreign_keys=[driver_id], lazy="selectin")
@@ -148,12 +157,13 @@ class TripItem(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
         CheckConstraint(
             "order_part_id IS NOT NULL OR description IS NOT NULL", name="part_or_desc"
         ),
-        # Một phần đơn chỉ nằm trong 1 item đang hiệu lực (chưa hủy).
+        # Một phần đơn chỉ nằm trong 1 item đang hiệu lực (chờ giao hoặc đã giao thành công);
+        # item hủy / giao thất bại không tính → phần đơn được xếp lại lệnh khác.
         Index(
             "uq_trip_items_active_part",
             "order_part_id",
             unique=True,
-            postgresql_where=text("order_part_id IS NOT NULL AND status <> 'CANCELLED'"),
+            postgresql_where=text("order_part_id IS NOT NULL AND status IN ('PENDING', 'SUCCESS')"),
         ),
     )
 

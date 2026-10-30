@@ -3,6 +3,8 @@ import os
 # Phải đặt trước khi import app (engine được tạo lúc import).
 os.environ.setdefault("TMS_ENV", "test")
 os.environ.setdefault("TMS_STORAGE_BACKEND", "memory")
+os.environ.setdefault("TMS_TASKS_EAGER", "true")
+os.environ.setdefault("TMS_PLANNING_TIME_CAP_S", "1")
 os.environ.setdefault(
     "TMS_DATABASE_URL", "postgresql+asyncpg://tms_app:tms_app@localhost:55432/tms_test"
 )

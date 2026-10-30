@@ -40,6 +40,7 @@ export function SettingsPage() {
   return (
     <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
       <ShiftSettings />
+      <PlanningSettingsCard />
       <DeliveryRulesSettings />
       <ApiKeys />
     </Space>
@@ -101,6 +102,77 @@ function ShiftSettings() {
         <Form.Item name="timezone" label="Múi giờ" rules={[{ required: true }]}>
           <Input style={{ width: 240 }} />
         </Form.Item>
+        <Button type="primary" htmlType="submit" loading={save.isPending}>
+          Lưu
+        </Button>
+      </Form>
+    </Card>
+  )
+}
+
+type Planning = Pick<
+  components['schemas']['CompanySettingsOut'],
+  | 'auto_plan_enabled'
+  | 'service_minutes'
+  | 'turnaround_minutes'
+  | 'max_trips_per_vehicle'
+  | 'trip_fixed_cost'
+  | 'planning_time_limit_s'
+>
+
+function PlanningSettingsCard() {
+  const { message } = App.useApp()
+  const queryClient = useQueryClient()
+  const [form] = Form.useForm<Planning>()
+  const query = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/company/settings')),
+  })
+  useEffect(() => {
+    if (query.data) form.setFieldsValue(query.data)
+  }, [query.data, form])
+  const save = useMutation({
+    mutationFn: async (v: Planning) => unwrap(await api.PUT('/api/v1/company/settings', { body: v })),
+    onSuccess: async () => {
+      message.success('Đã lưu cấu hình lập kế hoạch')
+      await queryClient.invalidateQueries({ queryKey: ['company-settings'] })
+    },
+    onError: (e: Error) => message.error(e.message),
+  })
+  return (
+    <Card title="Lập kế hoạch tự động" loading={query.isLoading}>
+      <Form<Planning> form={form} layout="vertical" style={{ maxWidth: 760 }} onFinish={(v) => save.mutate(v)}>
+        <Form.Item
+          name="auto_plan_enabled"
+          label="Tự động lập kế hoạch theo lịch"
+          valuePropName="checked"
+          extra="Đến giờ cut-over mỗi ngày, hệ thống lập kế hoạch nháp cho ngày làm việc kế tiếp; quản lý xem, chỉnh và duyệt."
+        >
+          <Switch />
+        </Form.Item>
+        <Space size="large" wrap align="start">
+          <Form.Item name="service_minutes" label="Thời gian giao tại mỗi điểm (phút)">
+            <InputNumber min={0} max={240} />
+          </Form.Item>
+          <Form.Item name="turnaround_minutes" label="Quay đầu tại kho giữa 2 lượt (phút)">
+            <InputNumber min={0} max={240} />
+          </Form.Item>
+          <Form.Item name="max_trips_per_vehicle" label="Số lượt tối đa / xe / ngày">
+            <InputNumber min={1} max={10} />
+          </Form.Item>
+        </Space>
+        <Space size="large" wrap align="start">
+          <Form.Item
+            name="trip_fixed_cost"
+            label="Chi phí cố định mỗi chuyến (đ)"
+            extra="Càng lớn, bộ tối ưu càng gom hàng vào ít chuyến hơn."
+          >
+            <InputNumber min={0} step={10000} style={{ width: 180 }} />
+          </Form.Item>
+          <Form.Item name="planning_time_limit_s" label="Thời gian tối ưu tối đa (giây)">
+            <InputNumber min={1} max={300} />
+          </Form.Item>
+        </Space>
         <Button type="primary" htmlType="submit" loading={save.isPending}>
           Lưu
         </Button>

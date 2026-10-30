@@ -35,7 +35,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy app
+      - run: uv run mypy app optimization worker
       - run: uv run pytest -q
       - name: Tài liệu template import khớp với code
         run: |

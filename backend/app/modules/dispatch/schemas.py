@@ -149,6 +149,11 @@ class TripSummaryOut(_Out):
     stop_count: int = 0
     item_counts: dict[ItemStatus, int] = {}
     note: str | None
+    planning_run_id: uuid.UUID | None
+    planned_distance_km: Decimal | None
+    planned_cost: Decimal | None
+    planned_start: datetime | None
+    planned_end: datetime | None
 
 
 class TripOut(TripSummaryOut):

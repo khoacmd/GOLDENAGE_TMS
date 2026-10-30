@@ -17,9 +17,10 @@ from app.modules.dispatch.models import (
     TripDeliveryStatus,
     TripItem,
     TripOrderStatus,
+    TripSource,
     TripStop,
 )
-from app.modules.dispatch.schemas import TripIn
+from app.modules.dispatch.schemas import AdhocItemIn, StopIn, TripIn
 from app.modules.identity.models import CompanyRole, UserRole
 from app.modules.inventory.models import InventoryBalance
 from app.modules.master_data.models import (
@@ -190,6 +191,65 @@ async def _stock_warnings(
     return warnings
 
 
+async def stock_available(session: AsyncSession) -> dict[tuple[uuid.UUID, uuid.UUID], Decimal]:
+    """Tồn khả dụng theo (kho, mặt hàng) = tồn snapshot - phần đã giữ bởi lệnh chưa xuất kho."""
+    available: dict[tuple[uuid.UUID, uuid.UUID], Decimal] = defaultdict(Decimal)
+    for warehouse_id, product_id, qty in await session.execute(
+        select(
+            InventoryBalance.warehouse_id, InventoryBalance.product_id, InventoryBalance.qty_on_hand
+        )
+    ):
+        available[(warehouse_id, product_id)] += qty
+    reserved = (
+        select(Trip.warehouse_id, SalesOrderLine.product_id, func.sum(SalesOrderLine.qty))
+        .join(
+            OrderPart,
+            (OrderPart.order_id == SalesOrderLine.order_id)
+            & (OrderPart.temp_group == SalesOrderLine.temp_group),
+        )
+        .join(TripItem, TripItem.order_part_id == OrderPart.id)
+        .join(Trip, Trip.id == TripItem.trip_id)
+        .where(Trip.order_status.in_(RESERVING), TripItem.status != ItemStatus.CANCELLED)
+        .group_by(Trip.warehouse_id, SalesOrderLine.product_id)
+    )
+    for warehouse_id, product_id, qty in await session.execute(reserved):
+        available[(warehouse_id, product_id)] -= qty
+    return dict(available)
+
+
+def trip_input(trip: Trip) -> TripIn:
+    """Dữ liệu hiện tại của lệnh dưới dạng input để sửa (vd. chuyển điểm dừng giữa 2 lệnh)."""
+    return TripIn(
+        plan_date=trip.plan_date,
+        vehicle_id=trip.vehicle_id,
+        warehouse_id=trip.warehouse_id,
+        driver_id=trip.driver_id,
+        assistant_id=trip.assistant_id,
+        note=trip.note,
+        stops=[
+            StopIn(
+                delivery_point_id=s.delivery_point_id,
+                order_part_ids=[
+                    i.order_part_id
+                    for i in s.items
+                    if i.order_part_id and i.status != ItemStatus.CANCELLED
+                ],
+                name=s.name,
+                address=s.address,
+                latitude=s.latitude,
+                longitude=s.longitude,
+                adhoc_items=[
+                    AdhocItemIn(description=i.description, weight_kg=i.weight_kg)
+                    for i in s.items
+                    if i.order_part_id is None and i.description
+                ],
+                note=s.note,
+            )
+            for s in trip.stops
+        ],
+    )
+
+
 async def validate(
     session: AsyncSession, company_id: uuid.UUID, data: TripIn, trip: Trip | None
 ) -> tuple[Validation, Vehicle | None, dict[uuid.UUID, OrderPart]]:
@@ -207,7 +267,13 @@ async def validate(
             v.errors.append("Phụ xe phải khác lái xe")
         elif not await _is_driver(session, company_id, data.assistant_id):
             v.errors.append("Phụ xe phải là nhân viên giao hàng của công ty")
-    if vehicle is not None and vehicle.requires_assistant and not data.assistant_id:
+    # Lệnh chưa phân công (vd. lập tự động) được thiếu phụ xe; khi duyệt vẫn bắt buộc.
+    if (
+        vehicle is not None
+        and vehicle.requires_assistant
+        and data.driver_id
+        and not data.assistant_id
+    ):
         v.errors.append(f"Xe {vehicle.code} yêu cầu phụ xe")
 
     part_ids = [pid for stop in data.stops for pid in stop.order_part_ids]
@@ -300,8 +366,10 @@ async def save_trip(
     session: AsyncSession,
     company_id: uuid.UUID,
     data: TripIn,
-    actor_id: uuid.UUID,
+    actor_id: uuid.UUID | None,
     trip: Trip | None = None,
+    *,
+    source: TripSource = TripSource.MANUAL,
 ) -> tuple[Trip, list[str]]:
     if trip is not None and trip.order_status not in EDITABLE:
         raise AppError("Chỉ sửa được lệnh nháp hoặc đã duyệt (chưa xuất kho)", code="trip_locked")
@@ -318,6 +386,7 @@ async def save_trip(
             trip_seq=await _next_seq(session, data.vehicle_id, data.plan_date, None),
             plan_date=data.plan_date,
             vehicle_id=data.vehicle_id,
+            source=source,
             stops=[],
         )
         action = "created"
@@ -409,6 +478,8 @@ async def approve(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Tri
     _require(trip, TripOrderStatus.DRAFT, action="duyệt")
     if trip.driver_id is None:
         raise AppError("Cần phân công lái xe trước khi duyệt", code="driver_required")
+    if trip.vehicle.requires_assistant and trip.assistant_id is None:
+        raise AppError(f"Xe {trip.vehicle.code} yêu cầu phụ xe", code="assistant_required")
     trip.order_status = TripOrderStatus.APPROVED
     trip.approved_at, trip.approved_by = now(), actor_id
     audit.record(session, trip.company_id, ENTITY, trip.id, "approved", actor_id)
@@ -416,7 +487,9 @@ async def approve(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Tri
     return trip
 
 
-async def cancel(session: AsyncSession, trip: Trip, reason: str, actor_id: uuid.UUID) -> Trip:
+async def cancel(
+    session: AsyncSession, trip: Trip, reason: str, actor_id: uuid.UUID | None
+) -> Trip:
     _require(trip, *EDITABLE, action="hủy")
     for item in items_of(trip):
         item.status = ItemStatus.CANCELLED

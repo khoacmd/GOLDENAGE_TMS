@@ -127,7 +127,7 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
 - `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
 - `delivery_points(customer_id, address, location geography(Point))`
 - `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg)` – đồng bộ từ hệ thống bán hàng
-- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)` + `inventory_reservations(order_part_id, warehouse_id, product_id, qty)`
+- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng = tồn snapshot − hàng của các lệnh `DRAFT/APPROVED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
 
 ### Đơn hàng
 - `sales_orders(external_ref, customer_id, delivery_point_id, requested_date, order_value, status)`
@@ -137,12 +137,12 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
   - **Không tách theo khối lượng**: một `order_part` luôn đi nguyên trên một chuyến.
 
 ### Kế hoạch & chuyến
-- **Kế hoạch ngày** = tập các lệnh có cùng `plan_date` (không có bảng riêng; M4 thêm `planning_runs(plan_date, trigger, cutover_at, input_snapshot, result_summary, unassigned)`).
+- **Kế hoạch ngày** = tập các lệnh có cùng `plan_date` (không có bảng riêng); mỗi lần lập tự động lưu `planning_runs(plan_date, trigger: MANUAL|SCHEDULED, status: QUEUED|RUNNING|SUCCEEDED|FAILED, replace_drafts, distance_source, input_snapshot, summary, unassigned[], warnings[], error)`.
 - `trips` – **Lệnh giao = Chuyến (1–1)**, mã `L{yyMMdd}-{nn}`, hai trục trạng thái:
   - `plan_date, vehicle_id, warehouse_id, driver_id?, assistant_id?, trip_seq` (lượt thứ mấy của xe trong ngày)`, source: MANUAL|AUTO, total_weight_kg, total_value`, mốc thời gian duyệt/xuất kho/xuất phát/kết thúc.
   - `order_status` (lệnh): `DRAFT → APPROVED → PICKED → DISPATCHED → CLOSED` (+ `CANCELLED`)
   - `delivery_status` (chuyến): `NOT_STARTED | IN_PROGRESS | FINISHED`; thống kê thành công/thất bại/hủy tính từ item.
-  - (M4) `planned_distance_km, planned_cost, planned_start/end`.
+  - Lệnh tự động: `planning_run_id, planned_distance_km, planned_cost, planned_start/end` (ước tính lúc lập).
 - `trip_stops(trip_id, seq, delivery_point_id? | name + address + latitude/longitude)` – lệnh thủ công có thể có điểm dừng tự do.
 - `trip_items(trip_id, stop_id, order_part_id? | description, weight_kg, value, status, reason, delivered_at, updated_by, is_manual_update)`; unique index: 1 phần đơn chỉ nằm trong 1 item chưa hủy.
 
@@ -181,7 +181,7 @@ trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho─► PICKED �
 1. **Kiểm tra khả thi từng phần đơn** → loại các phần không thể xếp, ghi lý do:
    - Xe tương thích: `cargo_class` khớp `temp_group`; `vehicle_type` khớp yêu cầu khách; `weight_kg ≤ capacity_kg`.
    - Ví dụ: phần đơn > 250 kg chỉ đi ô tô; > 2.000 kg → không xếp được (báo quản lý).
-2. **Chọn kho theo tồn**: với mỗi phần đơn, kho ứng viên = kho đủ tồn (trừ phần đã giữ chỗ) **và** có xe tương thích được gán kho đó. Heuristic tham lam: ưu tiên kho đáp ứng được mọi phần của cùng điểm giao (giảm số lần giao), sau đó kho gần nhất. Giữ chỗ tồn (`inventory_reservations`).
+2. **Chọn kho theo tồn**: với mỗi phần đơn, kho ứng viên = kho đủ tồn (trừ phần đã giữ chỗ) **và** có xe tương thích được gán kho đó. Heuristic tham lam (đơn yêu cầu sớm / từng giao thất bại xếp trước): ưu tiên kho đáp ứng được mọi phần của cùng điểm giao (giảm số lần giao), sau đó kho gần nhất. Chưa có dữ liệu tồn kho → chọn kho gần nhất, có cảnh báo.
    - *Giai đoạn sau*: đưa lựa chọn kho vào trong bộ giải (alternative nodes) nếu heuristic chưa đủ tốt.
 3. **Ma trận khoảng cách/thời gian** từ OSRM theo profile ô tô và xe máy (cache theo cặp điểm).
 4. **Giải VRP bằng OR-Tools**:
@@ -193,7 +193,15 @@ trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho─► PICKED �
    - Bỏ node có penalty rất lớn → nếu không đủ năng lực, bộ giải vẫn trả kết quả, danh sách **không xếp được** kèm lý do để quản lý xử lý thủ công (thêm lượt, xe thuê ngoài).
 5. **Kết quả**: kế hoạch `DRAFT` → quản lý xem trên bản đồ, kéo thả điều chỉnh → duyệt.
 
-Kích hoạt: job định kỳ (lịch theo `company_settings`) hoặc lệnh manual. Mỗi lần chạy lưu `planning_runs` (snapshot input) để tái hiện/debug.
+Kích hoạt: lệnh manual (`POST /planning/runs`) hoặc job định kỳ (`worker/scheduler.py`, mỗi phút): công ty bật `auto_plan_enabled`, đã qua `cutover_time` → lập cho **ngày làm việc kế tiếp**, mỗi ngày 1 lần. Chạy nền bằng Dramatiq (`worker/tasks.py`, queue `planning`, `--threads 1` vì mỗi message dùng event loop riêng); `TMS_TASKS_EAGER=true` chạy ngay trong API (test/dev không có worker). Mỗi lần chạy lưu `planning_runs` (snapshot input) để tái hiện/debug.
+
+Chi tiết triển khai:
+- Tham số theo công ty: thời gian giao mỗi điểm, quay đầu tại kho, số lượt tối đa/xe, chi phí cố định/chuyến, thời gian tối ưu tối đa. Lượt đã có trong ngày (lệnh thủ công) được trừ khỏi số lượt của xe. Lập trong ngày → chuyến xuất phát từ hiện tại + 15 phút.
+- `replace_drafts`: hủy lệnh `AUTO` còn `DRAFT` của ngày rồi lập lại; lệnh đã duyệt/thủ công giữ nguyên.
+- Lệnh tự động chưa có lái xe/phụ xe; khi duyệt bắt buộc có lái xe và phụ xe nếu xe yêu cầu.
+- Ma trận khoảng cách (`app/modules/routing`): OSRM `/table` (cache Redis theo cặp điểm, 30 ngày) → lỗi/chưa cấu hình thì ước lượng đường chim bay × 1,35, ô tô 22 km/h, xe máy 25 km/h. Profile xe máy (`infra/osrm/motorbike.lua`): không đi cao tốc, tối đa 50 km/h.
+- Bộ giải (`optimization/vrp.py`): mỗi xe nhân thành `max_trips × số kho` xe ảo, chuỗi thời gian `start(k+1) ≥ end(k) + quay đầu × active(k)`; phần đơn cùng điểm + nhóm nhiệt độ + kho gộp 1 node (vượt tải xe lớn nhất thì chia nhiều node, không tách phần đơn); OR-Tools `PATH_CHEAPEST_ARC` + `GUIDED_LOCAL_SEARCH`. (OR-Tools 9.15: `SetAllowedVehiclesForIndex` lỗi binding Python → dùng `VehicleVar(i).SetValues([-1, ...])`.)
+- Điều chỉnh: kéo thả điểm dừng giữa các chuyến / đổi thứ tự (`POST /planning/move-stop`, 1 transaction, kiểm tra ràng buộc như lập tay); trang kết quả so chi phí hiện tại với phương án tối ưu.
 
 ## 10. Tích hợp
 
@@ -269,3 +277,6 @@ Ghi nhận khi dựng M0 trên Spark:
 | D20 | Bản đồ tự host bằng PMTiles (Protomaps, vùng Việt Nam + Hoàng Sa, Trường Sa) phục vụ tĩnh qua nginx (`/tiles`); chưa có dữ liệu thì dùng tile OSM | Chốt (M3) |
 | D21 | Xác nhận giao vi phạm quy tắc vẫn được lưu (để kiểm tra), không cập nhật trạng thái | Chốt (M3) |
 | D22 | Thiết bị mobile tự đăng ký; duyệt trước khi dùng là tùy chọn theo công ty; khóa thiết bị chặn xác nhận giao | Chốt (M3) |
+| D23 | Giữ chỗ tồn = lệnh chưa xuất kho (không có bảng `inventory_reservations` riêng) | Chốt (M4) |
+| D24 | Kho xuất chọn trước bằng heuristic rồi mới giải VRP; đưa chọn kho vào bộ giải ở phase sau | Chốt (M4) |
+| D25 | Phần đơn giao thất bại được xếp lại: unique "phần đơn đang hiệu lực" chỉ tính item `PENDING`/`SUCCESS` | Chốt (M4) |
