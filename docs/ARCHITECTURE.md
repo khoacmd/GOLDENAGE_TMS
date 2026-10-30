@@ -1,0 +1,247 @@
+# Kiến trúc hệ thống TMS (Transportation Management & Optimization)
+
+> Tài liệu sống. Cập nhật khi có quyết định kiến trúc mới (xem mục 12 – Nhật ký quyết định).
+
+## 1. Bối cảnh & quy mô
+
+- Ngành: FMCG (sữa, đồ uống), giao cho đại lý cấp 1. Ba loại hàng: khô / lạnh / đông.
+- Đa công ty (multi-tenant), 1 database dùng chung. Hiện tại: **1 công ty**, thiết kế sẵn để mở rộng.
+- Quy mô công ty đầu tiên: **2 kho**, đội xe 4 chiếc:
+
+| Xe | Loại | Trọng tải |
+|---|---|---|
+| Xe tải | Ô tô | 2.000 kg |
+| Xe Van | Ô tô | 945 kg |
+| Xe máy #1 | Xe máy | 250 kg |
+| Xe máy #2 | Xe máy | 250 kg |
+
+  → Tổng năng lực ~3.445 kg/lượt. Bài toán tối ưu nhỏ (vài chục – vài trăm điểm/ngày), giải trong vài giây đến vài chục giây.
+- Kênh truy cập: **Web** (admin, quản lý, thủ kho) và **Mobile** (nhân viên giao hàng).
+
+## 2. Kiến trúc tổng thể
+
+**Modular monolith** cho API + **worker** tách riêng cho tác vụ nặng (tối ưu tuyến, import, job định kỳ).
+
+```
+ Web (React)                       Mobile (React Native / Expo)
+ Admin · Quản lý · Thủ kho         Lái xe / Phụ xe
+        │                                   │
+        └──────────── HTTPS / REST (OpenAPI) ┘
+                          │
+        ┌──────────────────────────────────────────┐
+        │ Backend API – FastAPI (modular monolith) │
+        │ tenancy · identity · master_data ·       │
+        │ integration · orders · inventory ·       │
+        │ planning · dispatch · warehouse ·        │
+        │ delivery · costing · reporting           │
+        └───────┬──────────────┬───────────────────┘
+                │              │ enqueue job
+                │              ▼
+                │        Redis ──► Worker (Dramatiq) + Scheduler
+                │                   ├─ optimization (OR-Tools)
+                │                   ├─ import / sync tích hợp
+                │                   └─ job lập kế hoạch định kỳ
+                ▼                          │
+   PostgreSQL 16 + PostGIS (RLS)           ▼
+   Object storage S3 (ảnh)           OSRM (bản đồ OSM Việt Nam,
+                                     profile car + motorbike)
+   Hệ thống bán hàng / tồn kho ngoài ──► API tích hợp / upload file
+```
+
+## 3. Tech stack
+
+| Lớp | Công nghệ |
+|---|---|
+| Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic |
+| Quản lý package / chất lượng | `uv`, `ruff`, `mypy`, `pytest` |
+| Database | PostgreSQL 16 + PostGIS (image multi-arch `imresamu/postgis`, vì `postgis/postgis` chỉ có amd64) |
+| Job/queue | Redis + Dramatiq, APScheduler (job định kỳ theo cấu hình công ty) |
+| Tối ưu | Google OR-Tools (Routing Solver) |
+| Routing / khoảng cách | OSRM tự host (OSM Việt Nam) – ma trận khoảng cách/thời gian theo profile ô tô & xe máy |
+| Lưu file | S3-compatible: SeaweedFS khi tự host (image MinIO trên Docker Hub không còn truy cập được), S3 của nhà cung cấp cloud ở production |
+| Web | React 19 + TypeScript + Vite, Ant Design, React Router, TanStack Query, MapLibre GL (từ M1) |
+| Mobile | React Native (Expo SDK 58), TypeScript, expo-secure-store (token); từ M3: SQLite offline queue, expo-location, expo-camera |
+| Dùng chung TS | pnpm workspace; client/type sinh tự động từ OpenAPI (`openapi-typescript`) |
+| Auth | JWT access + refresh token, RBAC theo công ty |
+| Triển khai | Docker Compose trên 1 VPS (cloud-agnostic), nâng cấp K8s khi cần |
+| Giám sát | Sentry (lỗi), log JSON có cấu trúc, Prometheus/Grafana (giai đoạn sau) |
+
+Múi giờ nghiệp vụ: `Asia/Ho_Chi_Minh`; lưu DB dạng `timestamptz` (UTC).
+
+## 4. Cấu trúc repository
+
+```
+backend/
+  app/
+    core/            # config, db session, security, tenancy context, errors
+    modules/
+      <module>/      # models.py, schemas.py, repository.py, service.py, router.py
+    main.py
+  worker/            # dramatiq actors, scheduler
+  optimization/      # bộ giải VRP – thuần Python, không phụ thuộc FastAPI/DB
+  migrations/        # alembic
+  tests/
+web/                 # React app
+mobile/              # Expo app
+packages/api-client/ # TS client sinh từ OpenAPI
+infra/               # docker-compose, osrm, nginx
+docs/
+```
+
+Quy tắc module:
+- Module chỉ gọi module khác qua `service` công khai, không truy cập trực tiếp bảng của module khác.
+- `optimization/` nhận input là dataclass thuần, trả output thuần → test độc lập, có thể tách service sau này.
+
+## 5. Đa công ty (multi-tenancy)
+
+- Mọi bảng nghiệp vụ có cột `company_id NOT NULL`.
+- Bật **PostgreSQL Row-Level Security** (ENABLE + FORCE): mỗi request/job đặt `set_config('app.company_id', ..., true)` theo transaction; policy `company_id = app_current_company()`. Context được lưu trên session và tự áp lại mỗi khi transaction mới bắt đầu.
+- Role DB: `tms_owner` (sở hữu schema, chạy migration) và `tms_app` (runtime, không phải owner/superuser → luôn chịu RLS). Không dùng `BYPASSRLS`.
+- Bảng dùng chung không áp RLS: `companies` (danh mục công ty) và `users` (tài khoản toàn hệ thống; quyền theo công ty nằm ở `user_roles`). System admin thao tác dữ liệu một công ty bằng cách chuyển context sang công ty đó.
+- `user_roles` có thêm policy `own_roles`: user luôn đọc được vai trò của chính mình ở mọi công ty (cần khi đăng nhập/chọn công ty).
+- Khóa duy nhất nghiệp vụ luôn kèm `company_id` (vd. `UNIQUE(company_id, code)`).
+- Cấu hình theo công ty (`company_settings`): ngày làm việc trong tuần, giờ ca (mặc định T2–T7, 07:00–19:00), giờ cut-over, lịch chạy job lập kế hoạch, thời gian phục vụ mặc định mỗi điểm, thời gian quay đầu tại kho, quy tắc xác nhận giao.
+
+## 6. Phân quyền (RBAC)
+
+| Vai trò | Phạm vi |
+|---|---|
+| `system_admin` | Mở/đóng công ty, gán company admin |
+| `company_admin` | User & vai trò, thiết bị (PC, mobile, máy in), kho, đội xe, quy tắc xác nhận giao |
+| `manager` | Lập/duyệt/điều chỉnh kế hoạch & lệnh, phân công lái xe/phụ xe, cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến |
+| `warehouse_keeper` | Xác nhận soạn/xuất hàng cho lệnh **đã duyệt**; có thể giới hạn theo kho |
+| `driver` | Xem chuyến được gán cho mình; cập nhật trạng thái đơn thuộc lệnh **đã duyệt** của chuyến mình, theo điều kiện cho phép |
+
+Một user có thể có nhiều vai trò trong một công ty. Phân quyền kiểm tra ở tầng service (không chỉ ở router).
+
+## 7. Mô hình dữ liệu (lõi)
+
+### Dữ liệu gốc
+- `companies`, `company_settings`
+- `users`, `user_roles(company_id, user_id, role, warehouse_id?)`, `devices(type: pc/mobile/printer, ...)`
+- `warehouses(code, name, address, location geography(Point))`
+- `vehicles(code, name, plate_no, vehicle_type: CAR|MOTORBIKE, capacity_kg, cost_per_km, requires_assistant, cargo_class: DRY_ONLY|COLD_ONLY|ANY, cost_allocation_method: ORDER_VALUE|DISTANCE|WEIGHT|PER_TRIP, active)`
+- `vehicle_warehouses(vehicle_id, warehouse_id)` – kho xe được phép lấy hàng
+- `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
+- `delivery_points(customer_id, address, location geography(Point))`
+- `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg)` – đồng bộ từ hệ thống bán hàng
+- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)` + `inventory_reservations(order_part_id, warehouse_id, product_id, qty)`
+
+### Đơn hàng
+- `sales_orders(external_ref, customer_id, delivery_point_id, requested_date, order_value, status)`
+- `sales_order_lines(product_id, qty, weight_kg)`
+- **`order_parts`** – *đơn vị lập kế hoạch*: mỗi đơn tách tối đa 2 phần theo nhóm nhiệt độ
+  - `temp_group: DRY | COLD` (COLD = lạnh + đông), `weight_kg`, `value`, `warehouse_id?`, `status: PENDING|PLANNED|DELIVERED|FAILED|CANCELLED`, `attempt_count`
+  - **Không tách theo khối lượng**: một `order_part` luôn đi nguyên trên một chuyến.
+
+### Kế hoạch & chuyến
+- `delivery_plans(plan_date, status: DRAFT|APPROVED|CLOSED)` – kế hoạch ngày = tập hợp lệnh trong ngày
+- `planning_runs(plan_id, trigger: SCHEDULED|MANUAL, cutover_at, input_snapshot jsonb, result_summary, unassigned jsonb)`
+- `trips` – **Lệnh giao = Chuyến (1–1)**, gộp làm một bảng với hai trục trạng thái:
+  - `vehicle_id, driver_id, assistant_id, warehouse_id, trip_seq_in_day, planned_start/end, planned_distance_km, planned_cost, source: AUTO|MANUAL`
+  - `order_status` (lệnh): `DRAFT → APPROVED → PICKED → DISPATCHED → CLOSED` (+ `CANCELLED`)
+  - `delivery_status` (chuyến): `NOT_STARTED | IN_PROGRESS | FINISHED` + thống kê `success_count`, `failed_count`, `cancelled_count`
+- `trip_stops(trip_id, seq, delivery_point_id? | adhoc_address + location, planned_eta)` – lệnh thủ công có thể có điểm dừng không gắn đơn
+- `trip_items(trip_stop_id, order_part_id? | adhoc_description)`
+
+### Giao hàng
+- `delivery_rules(company_id)`: cửa sổ thời gian được phép xác nhận, bán kính dung sai (m), bắt buộc ảnh, cho phép xác nhận offline.
+- `delivery_confirmations(trip_item_id, result: SUCCESS|FAILED, reason_code, delivered_at, recorded_at, device_time, lat, lng, distance_to_point_m, rule_check jsonb, confirmed_by, is_manual_override)`
+- `delivery_photos(confirmation_id, object_key)`
+- `audit_logs(entity, entity_id, action, before, after, user_id, at)` – mọi thay đổi trạng thái & chỉnh sửa thời gian giao.
+
+## 8. Luồng trạng thái & nguyên tắc vận hành
+
+```
+order_part: PENDING ──(lập lệnh)──► PLANNED ──► DELIVERED
+                ▲                         └───► FAILED ──(vòng kế hoạch sau)──┐
+                └──────────────────────────────────────────────────────────────┘
+trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho─► PICKED ─lái xe nhận─► DISPATCHED ─QL xác nhận kết thúc─► CLOSED
+```
+
+- Sửa lệnh sau `APPROVED` → quay về `DRAFT`, cần duyệt lại; sau `PICKED` chỉ cho phép khi thủ kho xác nhận hoàn trả.
+- Thủ kho chỉ xác nhận `PICKED` cho lệnh `APPROVED`.
+- Lái xe chỉ xác nhận item thuộc trip `DISPATCHED` mà mình là `driver_id` (hoặc `assistant_id`).
+- Item trong chuyến có trạng thái `PENDING → SUCCESS | FAILED | CANCELLED`.
+- `trip.delivery_status` chuyển sang `FINISHED` ("Kết thúc") khi **không còn item `PENDING`**, kể cả khi có đơn thất bại. Chuyến lưu kèm thống kê thành công / thất bại / hủy.
+- **Chỉ quản lý** được hủy (`CANCELLED`) item đang `PENDING`, phải ghi lý do và có audit. Lái xe không được hủy.
+- Đơn `FAILED`, và đơn bị hủy khỏi chuyến, tự động quay về `PENDING` cho lần lập kế hoạch kế tiếp. Muốn hủy hẳn đơn hàng thì quản lý thao tác trên đơn (`order_part.status = CANCELLED`).
+
+## 9. Lập kế hoạch tự động (module `planning` + `optimization`)
+
+Đầu vào tại thời điểm cut-over: mọi `order_part` `PENDING` (kể cả thất bại trước đó) có `requested_date ≤ plan_date`.
+
+1. **Kiểm tra khả thi từng phần đơn** → loại các phần không thể xếp, ghi lý do:
+   - Xe tương thích: `cargo_class` khớp `temp_group`; `vehicle_type` khớp yêu cầu khách; `weight_kg ≤ capacity_kg`.
+   - Ví dụ: phần đơn > 250 kg chỉ đi ô tô; > 2.000 kg → không xếp được (báo quản lý).
+2. **Chọn kho theo tồn**: với mỗi phần đơn, kho ứng viên = kho đủ tồn (trừ phần đã giữ chỗ) **và** có xe tương thích được gán kho đó. Heuristic tham lam: ưu tiên kho đáp ứng được mọi phần của cùng điểm giao (giảm số lần giao), sau đó kho gần nhất. Giữ chỗ tồn (`inventory_reservations`).
+   - *Giai đoạn sau*: đưa lựa chọn kho vào trong bộ giải (alternative nodes) nếu heuristic chưa đủ tốt.
+3. **Ma trận khoảng cách/thời gian** từ OSRM theo profile ô tô và xe máy (cache theo cặp điểm).
+4. **Giải VRP bằng OR-Tools**:
+   - Nhiều kho; mỗi chuyến xuất phát & kết thúc tại 1 kho.
+   - **Nhiều lượt/xe**: mỗi xe vật lý được nhân thành N "xe ảo" (lượt 1..N) ràng buộc `start(lượt k+1) ≥ end(lượt k) + thời gian quay đầu`.
+   - Ràng buộc: tải trọng kg; ca làm việc (khung giờ nhận hàng của đại lý = giờ làm việc); thời gian phục vụ mỗi điểm; `SetAllowedVehiclesForIndex` cho tương thích xe.
+   - Các phần đơn cùng điểm giao, cùng nhóm nhiệt độ → gộp 1 node. Phần DRY & COLD cùng điểm → 2 node khoảng cách 0, ưu tiên cùng xe khi xe `ANY`.
+   - Hàm mục tiêu: Σ(km × `cost_per_km` của xe) + chi phí cố định mỗi lượt (giảm số chuyến).
+   - Bỏ node có penalty rất lớn → nếu không đủ năng lực, bộ giải vẫn trả kết quả, danh sách **không xếp được** kèm lý do để quản lý xử lý thủ công (thêm lượt, xe thuê ngoài).
+5. **Kết quả**: kế hoạch `DRAFT` → quản lý xem trên bản đồ, kéo thả điều chỉnh → duyệt.
+
+Kích hoạt: job định kỳ (lịch theo `company_settings`) hoặc lệnh manual. Mỗi lần chạy lưu `planning_runs` (snapshot input) để tái hiện/debug.
+
+## 10. Tích hợp
+
+- Đối tượng: đơn hàng, mặt hàng, khách hàng/điểm giao, tồn kho.
+- Hai kênh: **REST API** (API key theo công ty) và **upload file** Excel/CSV (template chuẩn, báo cáo lỗi từng dòng).
+- Upsert **idempotent** theo mã ngoài (`external_ref` / `code`); tồn kho là snapshot ghi đè kèm `synced_at`.
+- Đơn đã `PLANNED` không bị ghi đè số lượng bởi lần đồng bộ sau → ghi nhận xung đột để quản lý xử lý.
+
+## 11. Mobile & xác nhận giao hàng
+
+- App lưu hàng đợi thao tác trong SQLite, gửi khi có mạng; mỗi thao tác có `client_id` (UUID) để server xử lý idempotent.
+- Mỗi xác nhận gửi kèm: GPS, độ chính xác, giờ thiết bị, ảnh chứng từ.
+- **Server là nơi quyết định** điều kiện: đúng người, đúng trạng thái lệnh, trong cửa sổ thời gian, khoảng cách tới điểm giao ≤ bán kính (PostGIS `ST_DWithin`). Kết quả kiểm tra lưu trong `rule_check`.
+- Phát hiện giả lập vị trí (mock location) ở mức thiết bị → gắn cờ.
+- `delivered_at` mặc định = thời điểm cập nhật, có thể chỉnh sửa (ghi audit).
+- Ảnh: upload trực tiếp lên object storage qua presigned URL, nén phía client.
+
+## 12. Triển khai
+
+Docker Compose: `api`, `worker`, `scheduler`, `postgres`, `redis`, `storage` (SeaweedFS S3), `osrm-car`, `osrm-motorbike`, `web` (nginx).
+
+| Môi trường | Hạ tầng | Ghi chú |
+|---|---|---|
+| dev/test | Máy DGX Spark hiện tại (**ARM64/aarch64**, 20 core, 121 GB RAM) | Mọi image phải hỗ trợ `linux/arm64`; mobile chạy giả lập |
+| production | Cloud VPS (khuyến nghị 4 vCPU / 8 GB, thường là amd64) | OSRM Việt Nam cần ~2–3 GB RAM/profile; build image multi-arch (`docker buildx`) |
+
+Image đã kiểm tra có `arm64`: `imresamu/postgis:16-3.4`, `ghcr.io/project-osrm/osrm-backend`, `redis:7`, `chrislusf/seaweedfs`.
+
+**Mobile trên Spark (ARM64):** Android Emulator của Google chủ yếu phát hành cho host x86_64, nên cần kiểm chứng ở M0. Thứ tự phương án:
+1. **Redroid** (Android chạy trong container, hỗ trợ arm64 gốc, máy có `/dev/kvm`) + `adb` + `scrcpy` để thao tác.
+2. Expo Go trên điện thoại thật qua mạng LAN, dùng để kiểm thử GPS và camera thật.
+3. Expo web, chỉ để xem nhanh giao diện (không thay thế được kiểm thử GPS/camera).
+
+Kiểm thử điều kiện tọa độ trên giả lập: dùng `adb emu geo fix` hoặc mock location.
+
+Ghi nhận khi dựng M0 trên Spark:
+- Kernel có module `binder_linux` (cần `sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"`) → Redroid khả thi.
+- Trình biên dịch Hermes (`hermesc`) đi kèm React Native chỉ có bản x86-64 → `expo export` cần `--no-bytecode` trên Spark; build APK release nên chạy trên CI x86-64 hoặc EAS Build. Chế độ dev qua Metro không bị ảnh hưởng.
+- TypeScript: web dùng TS 7 (bản native); `packages/api-client` ghim TS 5.9 vì `openapi-typescript` cần API compiler JS; mobile dùng TS theo SDK Expo.
+
+## 13. Giả định & quyết định
+
+| # | Nội dung | Trạng thái |
+|---|---|---|
+| D1 | Modular monolith + worker, chưa tách microservices | Chốt |
+| D2 | Đa công ty bằng `company_id` + PostgreSQL RLS | Chốt |
+| D3 | Tách đơn theo nhóm nhiệt độ DRY / COLD (lạnh+đông); **không** tách theo khối lượng | Chốt |
+| D4 | Chưa xét thể tích; thiết kế để thêm `volume` cho xe & mặt hàng ở phase sau | Chốt |
+| D5 | Đại lý nhận hàng suốt giờ làm việc (không có time window riêng từng điểm) | Chốt |
+| D6 | Không đủ năng lực → vẫn sinh kế hoạch + danh sách không xếp được + cảnh báo | Chốt |
+| D7 | Bộ tối ưu tự chọn kho theo tồn kho | Chốt |
+| D8 | Lệnh giao và chuyến 1–1, gộp chung bảng `trips` | Chốt |
+| D9 | Tần suất giao của khách chỉ dùng để **cảnh báo** khi ngày yêu cầu không khớp, không phải ràng buộc cứng | Chốt |
+| D10 | Chuyến "Kết thúc" khi không còn đơn pending (kể cả có đơn thất bại), kèm thống kê; chỉ quản lý được hủy đơn pending | Chốt |
+| D11 | "Phương pháp ghi nhận chi phí" = cách phân bổ chi phí chuyến về từng đơn; không dùng làm hàm mục tiêu tối ưu | Chốt |
+| D12 | Docker Compose; dev/test trên DGX Spark (ARM64), mobile giả lập; production trên cloud VPS | Chốt |
+| D13 | Một chuyến chỉ lấy hàng tại 1 kho (giai đoạn này; có thể mở ở phase sau) | Chốt tạm |
+| D14 | Item bị quản lý hủy khỏi chuyến quay về `PENDING` để lập lại kế hoạch (không hủy hẳn đơn) | Chốt |

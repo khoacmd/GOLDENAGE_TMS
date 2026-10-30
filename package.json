@@ -1,0 +1,11 @@
+{
+  "name": "tms",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "scripts": {
+    "api:generate": "pnpm --filter @tms/api-client generate",
+    "web:dev": "pnpm --filter web dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

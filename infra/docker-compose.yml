@@ -1,0 +1,42 @@
+# Môi trường dev/test (DGX Spark, linux/arm64). Mọi image phải hỗ trợ arm64.
+name: tms
+
+services:
+  postgres:
+    image: imresamu/postgis:16-3.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TMS_OWNER_PASSWORD: ${TMS_OWNER_PASSWORD:-tms_owner}
+      TMS_APP_PASSWORD: ${TMS_APP_PASSWORD:-tms_app}
+      TZ: UTC
+    ports:
+      - "${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tms"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-56379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Object storage S3-compatible (ảnh chứng từ giao hàng)
+  storage:
+    image: chrislusf/seaweedfs:latest
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "${S3_PORT:-58333}:8333"
+    volumes:
+      - ./data/seaweedfs:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
