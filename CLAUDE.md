@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Chạy 1 test: `uv run pytest tests/test_auth.py::test_refresh_token`
   - Tạo admin hệ thống: `uv run python -m app.cli create-system-admin --username sysadmin`
 - Frontend (chạy ở thư mục gốc): `pnpm install`; `pnpm web:dev` (http://localhost:5173, proxy `/api` → :8000); `pnpm typecheck`; `pnpm lint`.
+- Dữ liệu demo: import lần lượt các file trong `docs/samples/` ở màn hình Import dữ liệu (đăng nhập `demo_admin`).
 - Sau mỗi lần đổi API backend: `pnpm api:generate` (sinh lại `packages/api-client/src/schema.d.ts`, CI kiểm tra file này khớp).
 - Mobile: `cd mobile && EXPO_PUBLIC_API_URL=http://<ip-máy>:8000 pnpm start`. Giả lập Android trên Spark (Redroid + Expo Go): xem `infra/android/README.md`.
 - `packages/api-client`: middleware của openapi-fetch phải trả `undefined` khi không thay request/response (React Native từ chối object Response gốc).
@@ -32,6 +33,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - API dùng role DB `tms_app` (chịu RLS); context công ty đặt qua `set_tenant_context`, tự áp lại sau mỗi commit.
   - Route ghi dữ liệu tự gọi `await session.commit()`; service chỉ `flush()`.
   - Lỗi nghiệp vụ raise `AppError` và các lớp con (`app/core/errors.py`).
+  - Danh sách trả `Page[T]` (`app/core/schemas.py`), tham số `q/limit/offset` qua `page_params`.
+  - Thêm/sửa loại import: khai báo `ImportSpec` ở module sở hữu dữ liệu, đăng ký trong `integration/registry.py`, rồi chạy `uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md` (CI kiểm tra file này khớp code). Dữ liệu mẫu `docs/samples/` phải luôn import được (có test).
+- Quy ước code web: gọi API qua `api` (openapi-fetch) + `unwrap()`; bảng phân trang dùng `usePaging()`; form tạo/sửa dùng `useEntityModal()` (`web/src/lib/`); nhãn tiếng Việt cho enum ở `web/src/lib/labels.ts`. antd 6: dùng `orientation` thay `direction`.
 
 ## Nghiệp vụ
 - Nghiệp vụ này được thiết kế chung cho nhiều Công ty cùng sử dụng chung hệ thống.

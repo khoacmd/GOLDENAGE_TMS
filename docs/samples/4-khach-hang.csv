@@ -1,0 +1,10 @@
+Mã KH,Tên KH,Địa chỉ KH,Người liên hệ,Điện thoại,Yêu cầu xe,NV sales,Ngày giao,Số lần giao/tuần,Mã điểm giao,Tên điểm giao,Địa chỉ điểm giao,Vĩ độ,Kinh độ,Điểm mặc định
+KH001,Đại lý Minh Anh,"12 Trần Phú, Hà Đông",Nguyễn Văn An,0912000001,Bất kỳ,Trần Thị Bình,"T2,T4,T6",3,DG1,Cửa hàng chính,"12 Trần Phú, Hà Đông",20.970500,105.778200,C
+KH001,Đại lý Minh Anh,"12 Trần Phú, Hà Đông",Nguyễn Văn An,0912000001,Bất kỳ,Trần Thị Bình,"T2,T4,T6",3,DG2,Kho phụ,"88 Nguyễn Trãi, Thanh Xuân",20.993600,105.808100,K
+KH002,Tạp hóa Hồng Phúc,"45 Lê Lợi, Hà Đông",Lê Thị Hồng,0912000002,Xe máy,Trần Thị Bình,"T3,T5",2,DG1,,"45 Lê Lợi, Hà Đông",20.967100,105.774300,
+KH003,Đại lý Thành Công,"210 Cầu Giấy",Phạm Văn Công,0912000003,Ô tô,Đỗ Văn Cường,"T2,T5",2,DG1,,"210 Cầu Giấy, Cầu Giấy",21.033800,105.794900,
+KH004,Siêu thị mini An Khang,"15 Hoàng Quốc Việt",Vũ Thị Khang,0912000004,Bất kỳ,Đỗ Văn Cường,"T2,T3,T4,T5,T6,T7",6,DG1,,"15 Hoàng Quốc Việt, Cầu Giấy",21.046300,105.799200,
+KH005,Đại lý Phú Gia,"30 Nguyễn Văn Cừ, Long Biên",Hoàng Văn Gia,0912000005,Ô tô,Ngô Thị Dung,"T2,T4,T6",3,DG1,,"30 Nguyễn Văn Cừ, Long Biên",21.044500,105.871200,
+KH006,Tạp hóa Bích Ngọc,"7 Ngọc Lâm, Long Biên",Đặng Thị Ngọc,0912000006,Xe máy,Ngô Thị Dung,T3,1,DG1,,"7 Ngọc Lâm, Long Biên",21.045800,105.866900,
+KH007,Đại lý Hưng Thịnh,"120 Giải Phóng, Hai Bà Trưng",Bùi Văn Hưng,0912000007,Bất kỳ,Ngô Thị Dung,"T2,T6",2,DG1,,"120 Giải Phóng, Hai Bà Trưng",20.995800,105.841600,
+KH008,Cửa hàng Thu Trang,"56 Kim Mã, Ba Đình",Mai Thu Trang,0912000008,Xe máy,Đỗ Văn Cường,"T4,T7",2,DG1,,"56 Kim Mã, Ba Đình",21.031300,105.822800,

@@ -1,0 +1,5 @@
+Mã xe,Tên xe,Biển số,Loại xe,Trọng tải (kg),Chi phí/km (đ),Cần phụ xe,Loại hàng ưu tiên,Kho lấy hàng,PP ghi nhận chi phí
+XE01,Xe tải 2 tấn,29C-123.45,Ô tô,2000,9000,C,Không phân biệt,"KHO01,KHO02",Khối lượng
+XE02,Xe Van 945kg,29D-678.90,Ô tô,945,6000,K,Không phân biệt,"KHO01,KHO02",Khối lượng
+XE03,Xe máy 1,29X1-111.11,Xe máy,250,2000,K,Hàng khô,KHO01,Chuyến
+XE04,Xe máy 2,29X1-222.22,Xe máy,250,2000,K,Hàng khô,KHO02,Chuyến

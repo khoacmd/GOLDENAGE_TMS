@@ -7,7 +7,7 @@ from sqlalchemy import CheckConstraint, ForeignKey, Numeric, SmallInteger, Strin
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin, enum_type
-from app.modules.master_data.models import TempClass
+from app.modules.master_data.models import Customer, DeliveryPoint, Product, TempClass
 
 
 class TempGroup(StrEnum):
@@ -62,6 +62,8 @@ class SalesOrder(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     status: Mapped[OrderStatus] = mapped_column(enum_type(OrderStatus), default=OrderStatus.OPEN)
     source: Mapped[OrderSource] = mapped_column(enum_type(OrderSource))
 
+    customer: Mapped[Customer] = relationship(lazy="selectin")
+    delivery_point: Mapped[DeliveryPoint] = relationship(lazy="selectin")
     lines: Mapped[list["SalesOrderLine"]] = relationship(
         cascade="all, delete-orphan", lazy="selectin", order_by="SalesOrderLine.line_no"
     )
@@ -87,6 +89,8 @@ class SalesOrderLine(UUIDPrimaryKeyMixin, TenantMixin, Base):
     weight_kg: Mapped[Decimal] = mapped_column(Numeric(12, 3))
     amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 2))
     temp_group: Mapped[TempGroup] = mapped_column(enum_type(TempGroup))
+
+    product: Mapped[Product] = relationship(lazy="selectin")
 
 
 class OrderPart(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):

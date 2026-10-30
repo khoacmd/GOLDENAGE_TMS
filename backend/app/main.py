@@ -8,6 +8,7 @@ from app.core.errors import register_error_handlers
 from app.modules.identity.router import router as auth_router
 from app.modules.identity.router import users_router
 from app.modules.integration.router import api_keys_router, imports_router, integration_router
+from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_data_router
 from app.modules.orders.router import router as orders_router
 from app.modules.tenancy.router import admin_router, company_router
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
         company_router,
         master_data_router,
         orders_router,
+        inventory_router,
         imports_router,
         api_keys_router,
         integration_router,

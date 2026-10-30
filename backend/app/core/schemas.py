@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Query
 from pydantic import BaseModel
@@ -25,9 +25,13 @@ def page_params(
     return PageParams(q=q, limit=limit, offset=offset)
 
 
+async def count_rows(session: AsyncSession, stmt: Select[*tuple[Any, ...]]) -> int:
+    total = await session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
+    return total or 0
+
+
 async def paginate[M](
     session: AsyncSession, stmt: Select[M], params: PageParams
 ) -> tuple[list[M], int]:
-    total = await session.scalar(select(func.count()).select_from(stmt.order_by(None).subquery()))
     items = await session.scalars(stmt.limit(params.limit).offset(params.offset))
-    return list(items), total or 0
+    return list(items), await count_rows(session, stmt)

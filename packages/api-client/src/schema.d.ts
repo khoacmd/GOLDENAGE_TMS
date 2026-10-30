@@ -372,6 +372,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Inventory */
+        get: operations["list_inventory_api_v1_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/specs": {
         parameters: {
             query?: never;
@@ -954,6 +971,34 @@ export interface components {
              */
             dry_run: boolean;
         };
+        /** InventoryOut */
+        InventoryOut: {
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Warehouse Code */
+            warehouse_code: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            /** Uom */
+            uom: string;
+            /** Qty On Hand */
+            qty_on_hand: string;
+            /**
+             * Synced At
+             * Format: date-time
+             */
+            synced_at: string;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Username */
@@ -1002,11 +1047,19 @@ export interface components {
              * Format: uuid
              */
             customer_id: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
             /**
              * Delivery Point Id
              * Format: uuid
              */
             delivery_point_id: string;
+            /** Delivery Point Code */
+            delivery_point_code: string;
+            /** Delivery Address */
+            delivery_address: string;
             /**
              * Order Date
              * Format: date
@@ -1042,6 +1095,12 @@ export interface components {
              * Format: uuid
              */
             product_id: string;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            /** Uom */
+            uom: string;
             /** Qty */
             qty: string;
             /** Weight Kg */
@@ -1064,11 +1123,19 @@ export interface components {
              * Format: uuid
              */
             customer_id: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
             /**
              * Delivery Point Id
              * Format: uuid
              */
             delivery_point_id: string;
+            /** Delivery Point Code */
+            delivery_point_code: string;
+            /** Delivery Address */
+            delivery_address: string;
             /**
              * Order Date
              * Format: date
@@ -1135,6 +1202,13 @@ export interface components {
         Page_ImportJobOut_: {
             /** Items */
             items: components["schemas"]["ImportJobOut"][];
+            /** Total */
+            total: number;
+        };
+        /** Page[InventoryOut] */
+        Page_InventoryOut_: {
+            /** Items */
+            items: components["schemas"]["InventoryOut"][];
             /** Total */
             total: number;
         };
@@ -2415,6 +2489,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrderDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_inventory_api_v1_inventory_get: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_InventoryOut_"];
                 };
             };
             /** @description Validation Error */

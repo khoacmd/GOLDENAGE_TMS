@@ -21,16 +21,21 @@
 - [x] Cập nhật mục "Lệnh phát triển" trong CLAUDE.md
 
 ## M1 – Dữ liệu gốc & tích hợp
-- [ ] System admin: mở/đóng công ty, gán company admin
-- [ ] Company admin: user, vai trò, thiết bị (PC/mobile/máy in)
-- [ ] Cấu hình công ty: ngày làm việc, giờ ca, cut-over, quy tắc xác nhận giao
-- [ ] CRUD kho (có chọn tọa độ trên bản đồ)
-- [ ] CRUD đội xe + gán kho được phép lấy hàng
-- [ ] Khách hàng & điểm giao (import + chỉnh sửa, hiển thị bản đồ)
-- [ ] Mặt hàng: import file / API
-- [ ] Đơn hàng: import file / API, tự tách `order_parts` DRY/COLD, kiểm tra dữ liệu
-- [ ] Tồn kho: import file / API (snapshot)
-- [ ] Báo cáo lỗi import theo dòng, upsert idempotent
+- [x] System admin: mở/đóng công ty, gán company admin (API + web)
+- [x] Company admin: user, vai trò (tài khoản thuộc `home_company_id`)
+- [x] Cấu hình công ty: ngày làm việc, giờ ca, cut-over, múi giờ
+- [x] CRUD kho (nhập tọa độ, link xem bản đồ OSM)
+- [x] CRUD đội xe + gán kho được phép lấy hàng
+- [x] Khách hàng & điểm giao (import + chỉnh sửa, 1 điểm mặc định)
+- [x] Mặt hàng: import file / API
+- [x] Đơn hàng: import file / API, tự tách `order_parts` DRY/COLD, phân bổ giá trị, khóa khi đã vào kế hoạch, quản lý hủy đơn
+- [x] Tồn kho: import file / API (snapshot theo kho), màn hình xem tồn
+- [x] Báo cáo lỗi import theo dòng, upsert idempotent, all-or-nothing, dry-run, lịch sử import
+- [x] Template chuẩn 6 loại dữ liệu + `docs/IMPORT_TEMPLATES.md` (sinh tự động) + dữ liệu mẫu `docs/samples/`
+- [x] API key cho hệ thống ngoài (`/api/v1/integration/{loại}`)
+- [ ] Bản đồ: chọn tọa độ trên bản đồ, hiển thị khách hàng/kho (MapLibre) - chuyển sang M2 cùng màn hình lập lệnh
+- [ ] Cấu hình thiết bị (PC/mobile/máy in) - chuyển sang M3 cùng đăng ký thiết bị mobile
+- [ ] Quy tắc xác nhận giao (thời gian, bán kính tọa độ) - chuyển sang M3
 
 ## M2 – Lập lệnh thủ công & kho
 - [ ] Kế hoạch ngày, tạo lệnh giao (chuyến) thủ công: chọn xe, kho, đơn hoặc điểm dừng tự do

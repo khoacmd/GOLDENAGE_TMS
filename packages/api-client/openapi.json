@@ -1735,6 +1735,102 @@
         }
       }
     },
+    "/api/v1/inventory": {
+      "get": {
+        "tags": [
+          "inventory"
+        ],
+        "summary": "List Inventory",
+        "operationId": "list_inventory_api_v1_inventory_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm theo mã/tên",
+              "title": "Q"
+            },
+            "description": "Tìm theo mã/tên"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_InventoryOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/imports/specs": {
       "get": {
         "tags": [
@@ -3532,6 +3628,57 @@
         "title": "IntegrationRequest",
         "description": "Dữ liệu từ hệ thống ngoài: mỗi phần tử là 1 dòng, key theo cột template (vd. ma_hang)."
       },
+      "InventoryOut": {
+        "properties": {
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "qty_on_hand": {
+            "type": "string",
+            "title": "Qty On Hand"
+          },
+          "synced_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Synced At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "warehouse_id",
+          "warehouse_code",
+          "product_id",
+          "product_code",
+          "product_name",
+          "uom",
+          "qty_on_hand",
+          "synced_at"
+        ],
+        "title": "InventoryOut"
+      },
       "LoginRequest": {
         "properties": {
           "username": {
@@ -3656,10 +3803,26 @@
             "format": "uuid",
             "title": "Customer Id"
           },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
           "delivery_point_id": {
             "type": "string",
             "format": "uuid",
             "title": "Delivery Point Id"
+          },
+          "delivery_point_code": {
+            "type": "string",
+            "title": "Delivery Point Code"
+          },
+          "delivery_address": {
+            "type": "string",
+            "title": "Delivery Address"
           },
           "order_date": {
             "type": "string",
@@ -3717,7 +3880,11 @@
           "id",
           "external_ref",
           "customer_id",
+          "customer_code",
+          "customer_name",
           "delivery_point_id",
+          "delivery_point_code",
+          "delivery_address",
           "order_date",
           "requested_date",
           "order_value",
@@ -3740,6 +3907,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Product Id"
+          },
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
           },
           "qty": {
             "type": "string",
@@ -3768,6 +3947,9 @@
         "required": [
           "line_no",
           "product_id",
+          "product_code",
+          "product_name",
+          "uom",
           "qty",
           "weight_kg",
           "amount",
@@ -3791,10 +3973,26 @@
             "format": "uuid",
             "title": "Customer Id"
           },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
           "delivery_point_id": {
             "type": "string",
             "format": "uuid",
             "title": "Delivery Point Id"
+          },
+          "delivery_point_code": {
+            "type": "string",
+            "title": "Delivery Point Code"
+          },
+          "delivery_address": {
+            "type": "string",
+            "title": "Delivery Address"
           },
           "order_date": {
             "type": "string",
@@ -3845,7 +4043,11 @@
           "id",
           "external_ref",
           "customer_id",
+          "customer_code",
+          "customer_name",
           "delivery_point_id",
+          "delivery_point_code",
+          "delivery_address",
           "order_date",
           "requested_date",
           "order_value",
@@ -3964,6 +4166,27 @@
           "total"
         ],
         "title": "Page[ImportJobOut]"
+      },
+      "Page_InventoryOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "Page[InventoryOut]"
       },
       "Page_OrderOut_": {
         "properties": {

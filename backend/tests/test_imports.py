@@ -396,3 +396,36 @@ def test_split_parts_value_allocation() -> None:
     parts = split_parts(lines, Decimal("100"))
     assert parts[TempGroup.DRY] == (Decimal(1), Decimal("33.33"))
     assert parts[TempGroup.COLD] == (Decimal(2), Decimal("66.67"))
+
+
+async def test_inventory_and_order_listing_fields(client: AsyncClient, admin_token: str) -> None:
+    await seed_master_data(client, admin_token)
+    await upload(
+        client, admin_token, "inventory", b"ma_kho,ma_hang,so_luong_ton\nKHO01,KEM-01,5\n", "t.csv"
+    )
+    page = (await client.get("/api/v1/inventory?q=kem", headers=auth(admin_token))).json()
+    assert (page["total"], page["items"][0]["warehouse_code"]) == (1, "KHO01")
+
+    content = xlsx(
+        ORDER_HEADERS,
+        [
+            ["DH100", "29/10/2026", "31/10/2026", "KH002", "", 1000, "KEM-01", 1, None],
+        ],
+    )
+    await upload(client, admin_token, "orders", content, "d.xlsx")
+    order = (await client.get("/api/v1/orders", headers=auth(admin_token))).json()["items"][0]
+    assert (order["customer_code"], order["delivery_point_code"]) == ("KH002", "DG1")
+    detail = (await client.get(f"/api/v1/orders/{order['id']}", headers=auth(admin_token))).json()
+    assert detail["lines"][0]["product_name"] == "Kem que"
+
+
+async def test_sample_files_import_in_order(client: AsyncClient, admin_token: str) -> None:
+    """Bộ dữ liệu mẫu trong docs/samples luôn import được."""
+    from pathlib import Path
+
+    kinds = ["warehouses", "vehicles", "products", "customers", "inventory", "orders"]
+    samples = sorted((Path(__file__).parents[2] / "docs" / "samples").glob("*.csv"))
+    assert len(samples) == len(kinds)
+    for path, kind in zip(samples, kinds, strict=True):
+        result = await upload(client, admin_token, kind, path.read_bytes(), path.name)
+        assert result["status"] == "SUCCEEDED", (path.name, result["errors"])

@@ -1,0 +1,86 @@
+import type { components } from '@tms/api-client'
+
+type S = components['schemas']
+
+export const VEHICLE_TYPE: Record<S['VehicleType'], string> = { CAR: 'Ô tô', MOTORBIKE: 'Xe máy' }
+
+export const VEHICLE_REQUIREMENT: Record<S['VehicleRequirement'], string> = {
+  CAR: 'Ô tô',
+  MOTORBIKE: 'Xe máy',
+  ANY: 'Bất kỳ',
+}
+
+export const CARGO_CLASS: Record<S['CargoClass'], string> = {
+  DRY_ONLY: 'Chỉ hàng khô',
+  COLD_ONLY: 'Chỉ hàng đông lạnh',
+  ANY: 'Không phân biệt',
+}
+
+export const COST_METHOD: Record<S['CostAllocationMethod'], string> = {
+  ORDER_VALUE: 'Giá trị đơn',
+  DISTANCE: 'Khoảng cách',
+  WEIGHT: 'Khối lượng',
+  PER_TRIP: 'Chuyến',
+}
+
+export const TEMP_CLASS: Record<S['TempClass'], string> = {
+  DRY: 'Khô',
+  CHILLED: 'Lạnh',
+  FROZEN: 'Đông',
+}
+
+export const TEMP_GROUP: Record<S['TempGroup'], string> = { DRY: 'Khô', COLD: 'Lạnh/Đông' }
+
+export const ORDER_STATUS: Record<S['OrderStatus'], string> = {
+  OPEN: 'Đang xử lý',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+}
+
+export const PART_STATUS: Record<S['OrderPartStatus'], { label: string; color: string }> = {
+  PENDING: { label: 'Chờ lập kế hoạch', color: 'default' },
+  PLANNED: { label: 'Đã lên kế hoạch', color: 'blue' },
+  DELIVERED: { label: 'Đã giao', color: 'green' },
+  FAILED: { label: 'Giao thất bại', color: 'red' },
+  CANCELLED: { label: 'Đã hủy', color: 'default' },
+}
+
+export const ROLE: Record<S['CompanyRole'], string> = {
+  company_admin: 'Admin công ty',
+  manager: 'Quản lý',
+  warehouse_keeper: 'Thủ kho',
+  driver: 'Nhân viên giao hàng',
+}
+
+export const IMPORT_STATUS: Record<S['ImportStatus'], { label: string; color: string }> = {
+  VALIDATED: { label: 'Đã kiểm tra', color: 'blue' },
+  SUCCEEDED: { label: 'Thành công', color: 'green' },
+  FAILED: { label: 'Lỗi', color: 'red' },
+}
+
+export const WEEKDAYS = [
+  { value: 1, label: 'T2' },
+  { value: 2, label: 'T3' },
+  { value: 3, label: 'T4' },
+  { value: 4, label: 'T5' },
+  { value: 5, label: 'T6' },
+  { value: 6, label: 'T7' },
+  { value: 7, label: 'CN' },
+]
+
+export const weekdayText = (days: number[]) =>
+  days.map((d) => WEEKDAYS.find((w) => w.value === d)?.label).join(', ')
+
+export function options<K extends string>(labels: Record<K, string>) {
+  return (Object.keys(labels) as K[]).map((value) => ({ value, label: labels[value] }))
+}
+
+const numberFormat = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 })
+export const fmtNumber = (v: number | string | null | undefined) =>
+  v === null || v === undefined || v === '' ? '' : numberFormat.format(Number(v))
+
+export const fmtDate = (v: string | null | undefined) =>
+  v ? new Date(v.length === 10 ? `${v}T00:00:00` : v).toLocaleDateString('vi-VN') : ''
+
+export const fmtDateTime = (v: string | null | undefined) =>
+  v ? new Date(v).toLocaleString('vi-VN') : ''

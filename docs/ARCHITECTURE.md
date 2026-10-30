@@ -99,6 +99,8 @@ Quy tắc module:
 - Role DB: `tms_owner` (sở hữu schema, chạy migration) và `tms_app` (runtime, không phải owner/superuser → luôn chịu RLS). Không dùng `BYPASSRLS`.
 - Bảng dùng chung không áp RLS: `companies` (danh mục công ty) và `users` (tài khoản toàn hệ thống; quyền theo công ty nằm ở `user_roles`). System admin thao tác dữ liệu một công ty bằng cách chuyển context sang công ty đó.
 - `user_roles` có thêm policy `own_roles`: user luôn đọc được vai trò của chính mình ở mọi công ty (cần khi đăng nhập/chọn công ty).
+- `users.home_company_id`: công ty sở hữu tài khoản. Chỉ admin công ty này được đổi mật khẩu/khóa tài khoản (admin công ty khác không thấy được vai trò của user ở công ty khác do RLS).
+- `api_keys` có policy `api_key_lookup`: trước khi biết công ty, chỉ đọc được đúng key có prefix đang xác thực (`app.api_key_prefix`).
 - Khóa duy nhất nghiệp vụ luôn kèm `company_id` (vd. `UNIQUE(company_id, code)`).
 - Cấu hình theo công ty (`company_settings`): ngày làm việc trong tuần, giờ ca (mặc định T2–T7, 07:00–19:00), giờ cut-over, lịch chạy job lập kế hoạch, thời gian phục vụ mặc định mỗi điểm, thời gian quay đầu tại kho, quy tắc xác nhận giao.
 
@@ -191,9 +193,14 @@ Kích hoạt: job định kỳ (lịch theo `company_settings`) hoặc lệnh ma
 ## 10. Tích hợp
 
 - Đối tượng: đơn hàng, mặt hàng, khách hàng/điểm giao, tồn kho.
-- Hai kênh: **REST API** (API key theo công ty) và **upload file** Excel/CSV (template chuẩn, báo cáo lỗi từng dòng).
-- Upsert **idempotent** theo mã ngoài (`external_ref` / `code`); tồn kho là snapshot ghi đè kèm `synced_at`.
-- Đơn đã `PLANNED` không bị ghi đè số lượng bởi lần đồng bộ sau → ghi nhận xung đột để quản lý xử lý.
+- Hai kênh dùng chung một pipeline (`app/core/importing.py` + `app/modules/integration`):
+  - **Upload file** `.xlsx`/`.csv`: `POST /api/v1/imports/{loại}` (người dùng web).
+  - **API tích hợp**: `POST /api/v1/integration/{loại}` với header `X-API-Key` (key theo công ty, chỉ lưu SHA-256, thu hồi được); body `{"rows": [...], "dry_run": false}`.
+- Mỗi loại dữ liệu khai báo một `ImportSpec` (cột template, model Pydantic cho 1 dòng, hàm `apply`) ở module sở hữu dữ liệu (`master_data/importers.py`, `orders/importers.py`, `inventory/importers.py`), đăng ký trong `integration/registry.py`.
+- Header nhận nhãn tiếng Việt hoặc mã cột; lỗi trả theo dòng/cột bằng tiếng Việt; **all-or-nothing** (savepoint); `dry_run` kiểm tra không ghi; mọi lần chạy lưu `import_jobs`.
+- Upsert **idempotent** theo mã (`code` / `external_ref`, không phân biệt hoa thường); tồn kho là snapshot thay toàn bộ theo kho kèm `synced_at`.
+- Đơn đã vào kế hoạch/giao/hủy bị **khóa**: lần đồng bộ sau báo lỗi cho dòng đó, không ghi đè.
+- Template chuẩn và tài liệu: `docs/IMPORT_TEMPLATES.md` (sinh từ code), dữ liệu mẫu `docs/samples/`.
 
 ## 11. Mobile & xác nhận giao hàng
 

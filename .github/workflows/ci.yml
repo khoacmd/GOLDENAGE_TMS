@@ -37,6 +37,10 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy app
       - run: uv run pytest -q
+      - name: Tài liệu template import khớp với code
+        run: |
+          uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md
+          git diff --exit-code ../docs/IMPORT_TEMPLATES.md
 
   frontend:
     runs-on: ubuntu-latest
