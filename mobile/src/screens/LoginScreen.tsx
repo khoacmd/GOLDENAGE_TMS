@@ -92,7 +92,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
       />
       {mode === 'pin' ? (
         <TextInput
-          style={[styles.input, styles.pin]}
+          style={[styles.input, pin ? styles.pin : styles.pinEmpty]}
           placeholder="Mã PIN 6 số"
           keyboardType="number-pad"
           secureTextEntry
@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
   error: { color: '#c62828', textAlign: 'center' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
   pin: { fontSize: 22, letterSpacing: 8, textAlign: 'center' },
+  pinEmpty: { textAlign: 'center' },
   button: { backgroundColor: '#1677ff', borderRadius: 8, padding: 14, alignItems: 'center' },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
