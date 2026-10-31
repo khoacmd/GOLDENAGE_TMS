@@ -1,7 +1,7 @@
 import uuid
 from datetime import time
 
-from sqlalchemy import ARRAY, ForeignKey, SmallInteger, String, text
+from sqlalchemy import ARRAY, Float, ForeignKey, SmallInteger, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -52,6 +52,10 @@ class CompanySettings(TimestampMixin, Base):
     # Chi phí cố định mỗi chuyến (đồng) để bộ tối ưu hạn chế số chuyến.
     trip_fixed_cost: Mapped[int] = mapped_column(default=50_000, server_default=text("50000"))
     planning_time_limit_s: Mapped[int] = mapped_column(default=15, server_default=text("15"))
+    # Thời gian OSRM (đường thông thoáng) x hệ số này = thời gian chạy thực tế (kẹt xe, dừng đèn).
+    travel_time_factor: Mapped[float] = mapped_column(
+        Float, default=1.8, server_default=text("1.8")
+    )
 
     # Điện thoại mới đăng ký phải được admin công ty duyệt trước khi xác nhận giao.
     require_device_approval: Mapped[bool] = mapped_column(

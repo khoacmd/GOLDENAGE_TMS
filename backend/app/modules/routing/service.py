@@ -2,7 +2,8 @@
 
 Ước lượng (khi chưa dựng OSRM hoặc OSRM lỗi): đường chim bay x hệ số đường vòng, tốc độ trung bình
 nội đô theo loại xe. Đo trên dữ liệu demo Hà Nội: quãng đường OSRM / đường chim bay trung vị 1,32;
-tốc độ OSRM (đường thông thoáng) ~43 km/h → thời gian OSRM được nhân `osrm_duration_factor`.
+tốc độ OSRM (đường thông thoáng) ~43 km/h → thời gian OSRM được nhân hệ số của công ty
+(`company_settings.travel_time_factor`, mặc định 1,8).
 """
 
 import hashlib
@@ -106,28 +107,30 @@ async def _osrm_table(url: str, points: list[Point]) -> Matrix:
     )
 
 
-def _with_traffic(m: Matrix) -> Matrix:
-    factor = get_settings().osrm_duration_factor
+def _with_traffic(m: Matrix, factor: float) -> Matrix:
     return Matrix(
         distance_m=m.distance_m,
         duration_s=[[round(d * factor) for d in row] for row in m.duration_s],
     )
 
 
-async def matrix(points: list[Point], profile: Profile) -> tuple[Matrix, str]:
-    """Trả (ma trận, nguồn: "osrm" | "cache" | "estimate"). Cache lưu số liệu gốc của OSRM."""
+async def matrix(
+    points: list[Point], profile: Profile, duration_factor: float = 1.0
+) -> tuple[Matrix, str]:
+    """Trả (ma trận, nguồn: "osrm" | "cache" | "estimate"). Thời gian OSRM nhân `duration_factor`
+    (ước lượng đã dùng tốc độ nội đô nên không nhân); cache lưu số liệu gốc của OSRM."""
     url = _osrm_url(profile)
     if not url or len(points) < 2:
         return estimate(points, profile), "estimate"
     if (hit := await _cached(profile, points)) is not None:
-        return _with_traffic(hit), "cache"
+        return _with_traffic(hit, duration_factor), "cache"
     try:
         result = await _osrm_table(url, points)
     except (httpx.HTTPError, RuntimeError, KeyError, ValueError) as e:
         log.warning("OSRM %s lỗi, dùng ước lượng: %s", profile, e)
         return estimate(points, profile), "estimate"
     await _store(profile, points, result)
-    return _with_traffic(result), "osrm"
+    return _with_traffic(result, duration_factor), "osrm"
 
 
 async def geometry(points: list[Point], profile: Profile) -> list[tuple[float, float]] | None:

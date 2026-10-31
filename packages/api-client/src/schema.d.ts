@@ -1293,6 +1293,11 @@ export interface components {
             trip_fixed_cost: number;
             /** Planning Time Limit S */
             planning_time_limit_s: number;
+            /**
+             * Travel Time Factor
+             * @description Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)
+             */
+            travel_time_factor: number;
             /** Confirm Time Rule */
             confirm_time_rule: boolean;
             /** Confirm Grace Minutes */
@@ -1369,6 +1374,8 @@ export interface components {
             trip_fixed_cost?: number | null;
             /** Planning Time Limit S */
             planning_time_limit_s?: number | null;
+            /** Travel Time Factor */
+            travel_time_factor?: number | null;
         };
         /** CompanyUpdate */
         CompanyUpdate: {

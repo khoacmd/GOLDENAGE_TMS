@@ -40,11 +40,10 @@ async def test_osrm_durations_scaled_for_traffic(
         return Matrix(distance_m=[[0, 11400], [11400, 0]], duration_s=[[0, 930], [940, 0]])
 
     monkeypatch.setattr(routing, "_osrm_table", table)
-    m, source = await routing.matrix(POINTS, Profile.CAR)
-    factor = get_settings().osrm_duration_factor
+    m, source = await routing.matrix(POINTS, Profile.CAR, 1.8)
     assert source == "osrm"
     assert m.distance_m[0][1] == 11400
-    assert m.duration_s[0][1] == round(930 * factor)
+    assert m.duration_s[0][1] == round(930 * 1.8)
 
 
 def _mock_osrm(monkeypatch: pytest.MonkeyPatch, handler: Any) -> None:

@@ -118,6 +118,7 @@ type Planning = Pick<
   | 'max_trips_per_vehicle'
   | 'trip_fixed_cost'
   | 'planning_time_limit_s'
+  | 'travel_time_factor'
 >
 
 function PlanningSettingsCard() {
@@ -171,6 +172,14 @@ function PlanningSettingsCard() {
           </Form.Item>
           <Form.Item name="planning_time_limit_s" label="Thời gian tối ưu tối đa (giây)">
             <InputNumber min={1} max={300} />
+          </Form.Item>
+          <Form.Item
+            name="travel_time_factor"
+            label="Hệ số thời gian di chuyển"
+            extra="Thời gian theo bản đồ đường (OSRM, đường thông thoáng) × hệ số = thời gian chạy thực tế (kẹt xe, đèn đỏ). Mặc định 1,8; hiệu chỉnh khi có số liệu chuyến thực tế."
+            style={{ maxWidth: 360 }}
+          >
+            <InputNumber min={0.5} max={5} step={0.1} precision={2} />
           </Form.Item>
         </Space>
         <Button type="primary" htmlType="submit" loading={save.isPending}>

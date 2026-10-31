@@ -4746,6 +4746,13 @@
             "minimum": 1.0,
             "title": "Planning Time Limit S"
           },
+          "travel_time_factor": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.5,
+            "title": "Travel Time Factor",
+            "description": "Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)"
+          },
           "confirm_time_rule": {
             "type": "boolean",
             "title": "Confirm Time Rule"
@@ -4819,6 +4826,7 @@
           "max_trips_per_vehicle",
           "trip_fixed_cost",
           "planning_time_limit_s",
+          "travel_time_factor",
           "confirm_time_rule",
           "confirm_grace_minutes",
           "confirm_geofence",
@@ -5070,6 +5078,19 @@
               }
             ],
             "title": "Planning Time Limit S"
+          },
+          "travel_time_factor": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Travel Time Factor"
           }
         },
         "type": "object",

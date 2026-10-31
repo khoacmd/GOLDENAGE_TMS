@@ -5,6 +5,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.modules.planning import service as planning
+from app.modules.routing import service as routing
 from tests.conftest import PLAN_DATE, Env, auth
 
 
@@ -175,3 +176,32 @@ async def test_move_stop_rejects_other_warehouse(client: AsyncClient, env: Env) 
     )
     assert resp.status_code == 400
     assert resp.json()["error"]["code"] == "different_warehouse"
+
+
+async def test_travel_time_factor_is_company_setting(
+    client: AsyncClient, env: Env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    resp = await client.put(
+        "/api/v1/company/settings", headers=auth(env.admin), json={"travel_time_factor": 9}
+    )
+    assert resp.status_code == 422
+    resp = await client.put(
+        "/api/v1/company/settings", headers=auth(env.admin), json={"travel_time_factor": 2.5}
+    )
+    assert resp.json()["travel_time_factor"] == 2.5
+
+    factors: list[float] = []
+    real = routing.matrix
+
+    async def spy(points: Any, profile: Any, duration_factor: float = 1.0) -> Any:
+        factors.append(duration_factor)
+        return await real(points, profile, duration_factor)
+
+    monkeypatch.setattr(routing, "matrix", spy)
+    monkeypatch.setattr(planning, "current_cost", _no_cost)  # chỉ đo quãng đường, bỏ qua
+    await plan(client, env)
+    assert factors and set(factors) == {2.5}
+
+
+async def _no_cost(trips: Any) -> tuple[float, float]:
+    return 0.0, 0.0

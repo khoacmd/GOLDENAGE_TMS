@@ -343,7 +343,9 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
     sources: set[str] = set()
     matrices = {}
     for profile in {dispatch.vehicle_profile(v) for v in usable} or {Profile.CAR}:
-        matrices[str(profile)], source = await routing.matrix(locations, profile)
+        matrices[str(profile)], source = await routing.matrix(
+            locations, profile, settings.travel_time_factor
+        )
         sources.add(source)
     run.distance_source = "estimate" if "estimate" in sources else sorted(sources)[0]
     if run.distance_source == "estimate":
@@ -476,6 +478,7 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             "turnaround_minutes": settings.turnaround_minutes,
             "max_trips_per_vehicle": settings.max_trips_per_vehicle,
             "trip_fixed_cost": settings.trip_fixed_cost,
+            "travel_time_factor": settings.travel_time_factor,
         },
     }
     if unassigned:

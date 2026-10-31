@@ -61,6 +61,9 @@ class PlanningSettings(BaseModel):
     max_trips_per_vehicle: int = Field(ge=1, le=10)
     trip_fixed_cost: int = Field(ge=0, le=100_000_000)
     planning_time_limit_s: int = Field(ge=1, le=300)
+    travel_time_factor: float = Field(
+        ge=0.5, le=5, description="Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)"
+    )
 
 
 class CompanySettingsOut(DeliveryRules, PlanningSettings):
@@ -95,6 +98,7 @@ class CompanySettingsUpdate(BaseModel):
     max_trips_per_vehicle: int | None = Field(default=None, ge=1, le=10)
     trip_fixed_cost: int | None = Field(default=None, ge=0, le=100_000_000)
     planning_time_limit_s: int | None = Field(default=None, ge=1, le=300)
+    travel_time_factor: float | None = Field(default=None, ge=0.5, le=5)
 
     @field_validator("working_weekdays")
     @classmethod
