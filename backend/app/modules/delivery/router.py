@@ -102,4 +102,5 @@ async def confirm_item(
 async def trip_confirmations(
     trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
 ) -> list[ConfirmationOut]:
+    await dispatch.get_trip(session, trip_id)  # 404 nếu không có / thuộc công ty khác
     return [service.to_out(c) for c in await service.list_for_trip(session, trip_id)]

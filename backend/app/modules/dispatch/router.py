@@ -204,4 +204,5 @@ async def picking_list(trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
 
 @router.get("/{trip_id}/history")
 async def trip_history(trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession) -> list[AuditOut]:
+    await service.get_trip(session, trip_id)  # 404 nếu không có / thuộc công ty khác
     return [AuditOut.model_validate(a) for a in await audit.history(session, "trip", trip_id)]

@@ -25,6 +25,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from app.core import throttle
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.main import app
@@ -53,6 +54,11 @@ async def _clean_tables(owner_engine: AsyncEngine) -> AsyncIterator[None]:
     yield
     async with owner_engine.begin() as conn:
         await conn.execute(text("TRUNCATE companies, users CASCADE"))
+
+
+@pytest.fixture(autouse=True)
+async def _reset_login_throttle() -> None:
+    await throttle.clear()
 
 
 @pytest.fixture

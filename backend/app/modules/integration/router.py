@@ -3,9 +3,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Header, Query, Response, UploadFile, status
 
-from app.core.auth import CompanyAdminDep, CurrentUserDep
+from app.core.auth import CompanyAdminDep, CurrentUserDep, OfficeStaffDep
+from app.core.config import get_settings
 from app.core.db import DbSession
-from app.core.errors import PermissionDeniedError
+from app.core.errors import AppError, PermissionDeniedError
 from app.core.schemas import Page, PageParams, page_params
 from app.modules.integration import service
 from app.modules.integration.models import ImportKind, ImportSource
@@ -39,12 +40,12 @@ def _spec_out(kind: ImportKind) -> ImportSpecOut:
 
 
 @imports_router.get("/specs")
-async def list_specs(_: CurrentUserDep) -> list[ImportSpecOut]:
+async def list_specs(_: OfficeStaffDep) -> list[ImportSpecOut]:
     return [_spec_out(kind) for kind in SPECS]
 
 
 @imports_router.get("/templates/{kind}", response_class=Response)
-async def download_template(kind: ImportKind, _: CurrentUserDep) -> Response:
+async def download_template(kind: ImportKind, _: OfficeStaffDep) -> Response:
     content = service.build_template(SPECS[kind])
     return Response(
         content,
@@ -64,7 +65,13 @@ async def import_file(
     spec = SPECS[kind]
     if user.company_id is None or not user.has_any_role(*spec.allowed_roles):
         raise PermissionDeniedError(f"Không có quyền import {spec.title.lower()}")
-    raw_rows = service.read_file(await file.read(), file.filename or "")
+    data = await file.read(get_settings().max_import_bytes + 1)
+    if len(data) > get_settings().max_import_bytes:
+        raise AppError(
+            f"File quá lớn (tối đa {get_settings().max_import_bytes // 1024 // 1024} MB)",
+            code="file_too_large",
+        )
+    raw_rows = service.read_file(data, file.filename or "")
     result = await service.run_import(
         session,
         spec,
@@ -81,9 +88,8 @@ async def import_file(
 
 @imports_router.get("/jobs")
 async def list_jobs(
-    user: CurrentUserDep, session: DbSession, params: Annotated[PageParams, Depends(page_params)]
+    _: OfficeStaffDep, session: DbSession, params: Annotated[PageParams, Depends(page_params)]
 ) -> Page[ImportJobOut]:
-    _ = user.cid
     items, total = await service.list_jobs(session, params)
     return Page(items=[ImportJobOut.model_validate(j) for j in items], total=total)
 

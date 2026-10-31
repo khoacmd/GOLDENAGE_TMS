@@ -116,6 +116,14 @@ Quy tắc module:
 
 Một user có thể có nhiều vai trò trong một công ty. Phân quyền kiểm tra ở tầng service (không chỉ ở router).
 
+Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét **mọi** endpoint trong OpenAPI nên endpoint mới tự được kiểm tra):
+- Công ty B (tài khoản đủ mọi vai trò) gọi mọi endpoint có id với id của công ty A → chỉ 403/404, dữ liệu A không đổi; API danh sách của B không chứa id/mã của A.
+- Tham chiếu id công ty khác trong body (xe, kho, phần đơn, lái xe, thiết bị, chuyển điểm dừng) bị từ chối - khóa ngoại PostgreSQL **không** chịu RLS nên service phải tự nạp đối tượng qua session có RLS.
+- Không token / token sai chữ ký → 401 ở mọi endpoint trừ danh sách công khai; tài khoản chỉ có vai trò lái xe → 403 ngoài danh sách cho phép (`/driver/*`, xuất phát chuyến, `/auth/me`). Endpoint mới mở cho khách/lái xe phải khai báo vào danh sách trong test.
+- API key chỉ ghi vào công ty của key; key thu hồi → 401.
+- Chống dò mật khẩu (`app/core/throttle.py`): sai 5 lần / 15 phút theo tài khoản (50 lần theo IP) → 429; đếm ở Redis, Redis lỗi thì đếm trong tiến trình. Sau proxy cần `uvicorn --proxy-headers` để lấy IP thật.
+- Giới hạn file: ảnh 8 MB, file import 20 MB.
+
 ## 7. Mô hình dữ liệu (lõi)
 
 ### Dữ liệu gốc

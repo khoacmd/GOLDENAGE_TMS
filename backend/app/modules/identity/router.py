@@ -1,10 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 
+from app.core import throttle
 from app.core.auth import CompanyAdminDep, CurrentUserDep, OfficeStaffDep
 from app.core.db import DbSession
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, AuthenticationError, NotFoundError
 from app.core.security import hash_password
 from app.modules.identity import service
 from app.modules.identity.models import CompanyRole, User
@@ -23,9 +24,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login")
-async def login(body: LoginRequest, session: DbSession) -> TokenPair:
-    tokens = await service.login(session, body.username, body.password, body.company_code)
+async def login(body: LoginRequest, request: Request, session: DbSession) -> TokenPair:
+    ip = request.client.host if request.client else None
+    await throttle.check(body.username, ip)
+    try:
+        tokens = await service.login(session, body.username, body.password, body.company_code)
+    except AuthenticationError:
+        await throttle.failed(body.username, ip)
+        raise
     await session.commit()
+    await throttle.succeeded(body.username)
     return tokens
 
 

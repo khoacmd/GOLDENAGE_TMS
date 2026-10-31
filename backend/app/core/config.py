@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     s3_bucket: str = "tms-photos"
     s3_region: str = "us-east-1"
     max_photo_bytes: int = 8 * 1024 * 1024
+    max_import_bytes: int = 20 * 1024 * 1024
+    # Chống dò mật khẩu: khóa tạm sau N lần sai trong cửa sổ (theo tài khoản / theo IP).
+    login_max_failures: int = 5
+    login_ip_max_failures: int = 50
+    login_window_s: int = 15 * 60
     cors_origins: list[str] = ["http://localhost:5173"]
 
     redis_url: str = "redis://localhost:56379/0"

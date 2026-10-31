@@ -91,7 +91,8 @@
 - [ ] (Tùy chọn) Biểu đồ xu hướng theo ngày trên trang báo cáo
 
 ## M6 – Hoàn thiện & mở rộng
-- [ ] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền)
+- [x] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền): quét tự động mọi endpoint (`tests/test_security.py`)
+- [x] Vá sau kiểm thử: lái xe không xem được lịch sử/template import; lịch sử & xác nhận của lệnh công ty khác trả 404; chống dò mật khẩu (429); giới hạn kích thước file import
 - [ ] Build image multi-arch (arm64 + amd64) bằng `docker buildx`
 - [ ] Giám sát, backup/restore, triển khai production trên cloud VPS
 - [ ] Onboarding công ty thứ 2 (kiểm chứng multi-tenant)
