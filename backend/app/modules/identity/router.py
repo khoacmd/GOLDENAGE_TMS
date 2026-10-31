@@ -15,6 +15,8 @@ from app.modules.identity.schemas import (
     CompanyUserUpdate,
     LoginRequest,
     MeResponse,
+    PinLoginRequest,
+    PinUpdate,
     RefreshRequest,
     RolesUpdate,
     TokenPair,
@@ -29,6 +31,21 @@ async def login(body: LoginRequest, request: Request, session: DbSession) -> Tok
     await throttle.check(body.username, ip)
     try:
         tokens = await service.login(session, body.username, body.password, body.company_code)
+    except AuthenticationError:
+        await throttle.failed(body.username, ip)
+        raise
+    await session.commit()
+    await throttle.succeeded(body.username)
+    return tokens
+
+
+@router.post("/login-pin")
+async def login_pin(body: PinLoginRequest, request: Request, session: DbSession) -> TokenPair:
+    """App mobile: đăng nhập bằng tên đăng nhập + mã PIN (dùng chung bộ đếm chống dò)."""
+    ip = request.client.host if request.client else None
+    await throttle.check(body.username, ip)
+    try:
+        tokens = await service.login_pin(session, body.username, body.pin, body.company_code)
     except AuthenticationError:
         await throttle.failed(body.username, ip)
         raise
@@ -71,6 +88,7 @@ def _user_out(user: User, roles: list[CompanyRole]) -> CompanyUserOut:
         email=user.email,
         phone=user.phone,
         is_active=user.is_active,
+        has_pin=user.pin_hash is not None,
         roles=roles,
     )
 
@@ -124,6 +142,30 @@ async def set_user_roles(
     await service.set_roles(session, admin.cid, user.id, set(body.roles), actor_id=admin.id)
     await session.commit()
     return _user_out(user, sorted(set(body.roles)))
+
+
+@users_router.put("/{user_id}/pin")
+async def set_user_pin(
+    user_id: uuid.UUID, body: PinUpdate, admin: CompanyAdminDep, session: DbSession
+) -> CompanyUserOut:
+    user, roles = await service.get_company_user(session, admin.cid, user_id)
+    service.ensure_home_company(user, admin.cid)
+    if set(roles) != {CompanyRole.DRIVER}:
+        raise AppError("Chỉ đặt mã PIN cho tài khoản chỉ có vai trò lái xe", code="pin_not_allowed")
+    user.pin_hash = hash_password(body.pin)
+    await session.commit()
+    return _user_out(user, roles)
+
+
+@users_router.delete("/{user_id}/pin")
+async def clear_user_pin(
+    user_id: uuid.UUID, admin: CompanyAdminDep, session: DbSession
+) -> CompanyUserOut:
+    user, roles = await service.get_company_user(session, admin.cid, user_id)
+    service.ensure_home_company(user, admin.cid)
+    user.pin_hash = None
+    await session.commit()
+    return _user_out(user, roles)
 
 
 staff_router = APIRouter(prefix="/staff", tags=["users"])

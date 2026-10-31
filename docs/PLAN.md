@@ -61,6 +61,7 @@
 - [x] Web: cấu hình quy tắc xác nhận giao; xem lịch sử xác nhận + ảnh trong chi tiết chuyến
 - [x] Định vị dự phòng khi máy không có Google Play Services: module native `mobile/modules/tms-location` (LocationManager), chỉ có trong bản APK
 - [x] Workflow build APK trên GitHub Actions x86-64 (`.github/workflows/mobile-apk.yml`, chạy tay, nhập URL API)
+- [x] Đăng nhập app bằng mã PIN 6 số do admin công ty đặt (chỉ tài khoản lái xe; trang Người dùng: đặt/đổi/xóa PIN)
 - [ ] Kiểm tra APK trên điện thoại thật (GPS dự phòng, camera); keystore phát hành riêng
 - [x] Thiết bị: admin quản lý PC/máy in, điện thoại tự đăng ký khi mở app, tùy chọn bắt buộc duyệt, khóa máy → từ chối xác nhận giao
 - [x] Bản đồ tự host trên web: PMTiles + style Protomaps (tiếng Việt), service `tiles` (nginx), tự quay về tile OSM nếu chưa có dữ liệu

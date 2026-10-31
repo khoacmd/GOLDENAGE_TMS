@@ -1,6 +1,7 @@
 import uuid
+from itertools import pairwise
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.modules.identity.models import CompanyRole
 
@@ -10,6 +11,28 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1)
     # Bắt buộc khi user thuộc nhiều công ty.
     company_code: str | None = None
+
+
+class PinLoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+    pin: str = Field(min_length=1, max_length=16)
+    company_code: str | None = None
+
+
+PIN_LENGTH = 6
+
+
+class PinUpdate(BaseModel):
+    pin: str = Field(pattern=rf"^\d{{{PIN_LENGTH}}}$")
+
+    @field_validator("pin")
+    @classmethod
+    def not_trivial(cls, v: str) -> str:
+        digits = [int(c) for c in v]
+        steps = {b - a for a, b in pairwise(digits)}
+        if len(set(digits)) == 1 or steps in ({1}, {-1}):
+            raise ValueError("Mã PIN quá dễ đoán (toàn số trùng hoặc dãy liên tiếp)")
+        return v
 
 
 class RefreshRequest(BaseModel):
@@ -76,4 +99,5 @@ class CompanyUserOut(BaseModel):
     email: str | None
     phone: str | None
     is_active: bool
+    has_pin: bool = False
     roles: list[CompanyRole]

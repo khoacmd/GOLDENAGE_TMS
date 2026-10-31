@@ -21,6 +21,7 @@ WRITE = {"post", "put", "patch", "delete"}
 PUBLIC = {
     ("get", "/health"),
     ("post", "/api/v1/auth/login"),
+    ("post", "/api/v1/auth/login-pin"),
     ("post", "/api/v1/auth/refresh"),
     ("post", "/api/v1/integration/{kind}"),  # X-API-Key, kiểm tra riêng bên dưới
 }
@@ -129,6 +130,7 @@ def write_body(path: str, a: TenantA) -> Any:
         "/api/v1/trips/{trip_id}/cost": {"extra_cost": 1},
         "/api/v1/orders/{order_id}/cancel": {"reason": "thử"},
         "/api/v1/users/{user_id}/roles": {"roles": ["manager"]},
+        "/api/v1/users/{user_id}/pin": {"pin": "246810"},
         "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {
             "client_id": str(uuid.uuid4()),
             "status": "SUCCESS",

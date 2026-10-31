@@ -116,6 +116,8 @@ Quy tắc module:
 
 Một user có thể có nhiều vai trò trong một công ty. Phân quyền kiểm tra ở tầng service (không chỉ ở router).
 
+**Đăng nhập bằng mã PIN** (app mobile, `POST /auth/login-pin`): tên đăng nhập + PIN 6 số do admin công ty đặt (`PUT/DELETE /users/{id}/pin`, chỉ cho tài khoản thuộc công ty). Lưu hash (`users.pin_hash`, Argon2 như mật khẩu), không nhận dãy trùng/liên tiếp. Chỉ cấp token khi tài khoản **chỉ có vai trò `driver`** tại công ty đăng nhập (thêm vai trò khác → PIN hết tác dụng, phải dùng mật khẩu). Dùng chung bộ đếm chống dò với mật khẩu (5 lần sai/15 phút → khóa tạm). Mật khẩu vẫn dùng song song. App nhớ tên đăng nhập và cách đăng nhập lần trước.
+
 Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét **mọi** endpoint trong OpenAPI nên endpoint mới tự được kiểm tra):
 - Công ty B (tài khoản đủ mọi vai trò) gọi mọi endpoint có id với id của công ty A → chỉ 403/404, dữ liệu A không đổi; API danh sách của B không chứa id/mã của A.
 - Tham chiếu id công ty khác trong body (xe, kho, phần đơn, lái xe, thiết bị, chuyển điểm dừng) bị từ chối - khóa ngoại PostgreSQL **không** chịu RLS nên service phải tự nạp đối tượng qua session có RLS.
@@ -310,3 +312,4 @@ Ghi nhận khi dựng M0 trên Spark:
 | D27 | Giai đoạn này chỉ kéo thả điểm dừng giữa các chuyến cùng kho xuất (kho chọn theo kho gần nhất) | Chốt (M5) |
 | D28 | Thời gian di chuyển từ OSRM nhân hệ số kẹt xe cấu hình theo công ty (mặc định 1,8, chưa có số liệu thực tế để kiểm định), chưa dùng dữ liệu giao thông theo giờ | Chốt (M4) |
 | D29 | Thêm bước "Đã soạn hàng" (`PREPARED`) trước xuất kho; lệnh đã soạn vẫn sửa/hủy được (hàng còn trong kho), sửa thì phải duyệt và soạn lại | Chốt |
+| D30 | Lái xe đăng nhập app bằng tên đăng nhập + mã PIN 6 số do admin công ty đặt (song song với mật khẩu); PIN chỉ hiệu lực với tài khoản chỉ có vai trò lái xe | Chốt |

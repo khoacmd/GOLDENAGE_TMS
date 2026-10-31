@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login Pin
+         * @description App mobile: đăng nhập bằng tên đăng nhập + mã PIN (dùng chung bộ đếm chống dò).
+         */
+        post: operations["login_pin_api_v1_auth_login_pin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -119,6 +139,24 @@ export interface paths {
         put: operations["set_user_roles_api_v1_users__user_id__roles_put"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set User Pin */
+        put: operations["set_user_pin_api_v1_users__user_id__pin_put"];
+        post?: never;
+        /** Clear User Pin */
+        delete: operations["clear_user_pin_api_v1_users__user_id__pin_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1433,6 +1471,11 @@ export interface components {
             phone: string | null;
             /** Is Active */
             is_active: boolean;
+            /**
+             * Has Pin
+             * @default false
+             */
+            has_pin: boolean;
             /** Roles */
             roles: components["schemas"]["CompanyRole"][];
         };
@@ -2385,6 +2428,20 @@ export interface components {
             lines: components["schemas"]["PickingLineOut"][];
             /** Adhoc Items */
             adhoc_items: string[];
+        };
+        /** PinLoginRequest */
+        PinLoginRequest: {
+            /** Username */
+            username: string;
+            /** Pin */
+            pin: string;
+            /** Company Code */
+            company_code?: string | null;
+        };
+        /** PinUpdate */
+        PinUpdate: {
+            /** Pin */
+            pin: string;
         };
         /**
          * PrinterConnection
@@ -3425,6 +3482,39 @@ export interface operations {
             };
         };
     };
+    login_pin_api_v1_auth_login_pin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     refresh_api_v1_auth_refresh_post: {
         parameters: {
             query?: never;
@@ -3580,6 +3670,72 @@ export interface operations {
                 "application/json": components["schemas"]["RolesUpdate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_pin_api_v1_users__user_id__pin_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_user_pin_api_v1_users__user_id__pin_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

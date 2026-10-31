@@ -71,6 +71,48 @@
         }
       }
     },
+    "/api/v1/auth/login-pin": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login Pin",
+        "description": "App mobile: đăng nhập bằng tên đăng nhập + mã PIN (dùng chung bộ đếm chống dò).",
+        "operationId": "login_pin_api_v1_auth_login_pin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPair"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "tags": [
@@ -304,6 +346,110 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyUserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/pin": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set User Pin",
+        "operationId": "set_user_pin_api_v1_users__user_id__pin_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyUserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Clear User Pin",
+        "operationId": "clear_user_pin_api_v1_users__user_id__pin_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -5277,6 +5423,11 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "has_pin": {
+            "type": "boolean",
+            "title": "Has Pin",
+            "default": false
+          },
           "roles": {
             "items": {
               "$ref": "#/components/schemas/CompanyRole"
@@ -7996,6 +8147,53 @@
           "adhoc_items"
         ],
         "title": "PickingListOut"
+      },
+      "PinLoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Username"
+          },
+          "pin": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Pin"
+          },
+          "company_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "pin"
+        ],
+        "title": "PinLoginRequest"
+      },
+      "PinUpdate": {
+        "properties": {
+          "pin": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Pin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pin"
+        ],
+        "title": "PinUpdate"
       },
       "PrinterConnection": {
         "type": "string",

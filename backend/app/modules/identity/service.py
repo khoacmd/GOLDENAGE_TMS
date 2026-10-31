@@ -60,30 +60,49 @@ async def login(
         raise AuthenticationError("Sai tên đăng nhập hoặc mật khẩu")
     if new_hash:
         user.password_hash = new_hash
+    company_id, _ = await _resolve_company(session, user, company_code)
+    return _issue_tokens(user.id, company_id)
 
+
+async def login_pin(
+    session: AsyncSession, username: str, pin: str, company_code: str | None
+) -> TokenPair:
+    """Đăng nhập app bằng mã PIN - chỉ cho tài khoản chỉ có vai trò lái xe tại công ty."""
+    user = await get_user_by_username(session, username)
+    valid, new_hash = verify_password(pin, user.pin_hash if user else None)
+    if user is None or not valid or not user.is_active:
+        raise AuthenticationError("Sai tên đăng nhập hoặc mã PIN")
+    if new_hash:
+        user.pin_hash = new_hash
+    company_id, roles = await _resolve_company(session, user, company_code)
+    if company_id is None or set(roles) != {CompanyRole.DRIVER}:
+        raise AuthenticationError(
+            "Mã PIN chỉ dùng cho tài khoản lái xe, vui lòng đăng nhập bằng mật khẩu"
+        )
+    return _issue_tokens(user.id, company_id)
+
+
+async def _resolve_company(
+    session: AsyncSession, user: User, company_code: str | None
+) -> tuple[uuid.UUID | None, list[CompanyRole]]:
+    """Chọn công ty đăng nhập; trả về (company_id, vai trò tại công ty đó)."""
     await set_tenant_context(session, company_id=None, user_id=user.id)
     memberships = await list_memberships(session, user.id)
 
-    company_id: uuid.UUID | None
     if company_code is not None:
         match = next(
             (m for m in memberships if m.company.code.lower() == company_code.lower()), None
         )
         if match is None:
             raise AuthenticationError("Tài khoản không thuộc công ty này")
-        company_id = match.company.id
-    elif len(memberships) == 1:
-        company_id = memberships[0].company.id
-    elif not memberships and user.is_system_admin:
-        company_id = None
-    elif not memberships:
+        return match.company.id, match.roles
+    if len(memberships) == 1:
+        return memberships[0].company.id, memberships[0].roles
+    if not memberships and user.is_system_admin:
+        return None, []
+    if not memberships:
         raise AuthenticationError("Tài khoản chưa được gán vào công ty nào")
-    else:
-        raise AppError(
-            "Tài khoản thuộc nhiều công ty, cần chọn company_code", code="company_required"
-        )
-
-    return _issue_tokens(user.id, company_id)
+    raise AppError("Tài khoản thuộc nhiều công ty, cần chọn company_code", code="company_required")
 
 
 async def refresh(session: AsyncSession, refresh_token: str) -> TokenPair:

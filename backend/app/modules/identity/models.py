@@ -22,6 +22,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     username: Mapped[str] = mapped_column(String(64))
     password_hash: Mapped[str] = mapped_column(String(255))
+    # Mã PIN đăng nhập app mobile do admin công ty đặt; chỉ dùng cho tài khoản chỉ là lái xe.
+    pin_hash: Mapped[str | None] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32))
