@@ -12,6 +12,9 @@
 6. Chạy backend và Metro: `cd mobile && EXPO_PUBLIC_API_URL=http://localhost:8000 pnpm start --localhost`
 7. Mở app: `infra/android/adb.sh -s localhost:5555 shell am start -a android.intent.action.VIEW -d exp://localhost:8081`
 8. Chụp màn hình: `infra/android/adb.sh -s localhost:5555 exec-out screencap -p > screen.png`
+9. Xem/điều khiển màn hình: `scrcpy -s localhost:5555 --no-audio` (scrcpy 5.0.1 cài bằng snap: `sudo snap install scrcpy`).
+   - scrcpy dùng adb đi kèm snap (34.0.4), nói chuyện với adb server của service `adb` (cổng 5037, cùng giao thức 41) → **bật service `adb` trước** khi chạy scrcpy. Nếu chạy scrcpy/adb của máy host khi service `adb` chưa chạy, adb host sẽ tự mở server riêng chiếm cổng 5037 và service `adb` không khởi động được: tắt bằng `adb kill-server` rồi `docker compose ... up -d adb`.
+   - Cảnh báo `raw-usb`/`joystick` của snap chỉ ảnh hưởng chế độ OTG/tay cầm, không dùng ở đây.
 
 Lưu ý:
 - Không chạy Metro với `CI=1` khi cần fast refresh/log từ app. Sau khi sửa module không phải component (vd. `src/queue.ts`), nên khởi động lại app (`am force-stop host.exp.exponent`) để tránh 2 bản module cùng tồn tại.

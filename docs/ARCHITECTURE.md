@@ -61,6 +61,7 @@
 | Lưu file | S3-compatible qua boto3: SeaweedFS khi tự host (image MinIO trên Docker Hub không còn truy cập được), S3 của nhà cung cấp cloud ở production; test dùng bộ nhớ (`TMS_STORAGE_BACKEND=memory`) |
 | Web | React 19 + TypeScript + Vite, Ant Design, React Router, TanStack Query, MapLibre GL (từ M1) |
 | Mobile | React Native (Expo SDK 58), TypeScript, expo-secure-store (token); từ M3: SQLite offline queue, expo-location, expo-camera |
+| Giả lập mobile (dev) | Redroid `14.0.0_64only` (Android 14 arm64) + adb server trong container (`tms-adb`) + **scrcpy 5.0.1** (snap) để xem/điều khiển màn hình |
 | Dùng chung TS | pnpm workspace; client/type sinh tự động từ OpenAPI (`openapi-typescript`) |
 | Auth | JWT access + refresh token, RBAC theo công ty |
 | Triển khai | Docker Compose trên 1 VPS (cloud-agnostic), nâng cấp K8s khi cần |
@@ -275,7 +276,7 @@ Image đã kiểm tra có `arm64`: `imresamu/postgis:16-3.4`, `ghcr.io/project-o
 Kiểm thử điều kiện tọa độ trên giả lập: dùng `adb emu geo fix` hoặc mock location.
 
 Ghi nhận khi dựng M0 trên Spark:
-- **Đã kiểm chứng**: Redroid `14.0.0_64only` (arm64) + Expo Go SDK 58 chạy được app, đăng nhập qua backend thật. Cần `sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"`; adb chạy trong container (không có bản adb arm64 cài sẵn). Hướng dẫn: `infra/android/README.md`.
+- **Đã kiểm chứng**: Redroid `14.0.0_64only` (arm64) + Expo Go SDK 58 chạy được app, đăng nhập qua backend thật. scrcpy 5.0.1 (snap, 31/10/2026; thay bản apt cũ) điều khiển được Redroid qua adb server của container: adb kèm snap (34.0.4) và adb trong container (29.0.6) cùng giao thức server 41 nên dùng chung server cổng 5037, không tranh chấp. Redroid không có âm thanh → chạy `scrcpy -s localhost:5555 --no-audio`. Cần `sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"`; adb chạy trong container (không có bản adb arm64 cài sẵn). Hướng dẫn: `infra/android/README.md`.
 - Trình biên dịch Hermes (`hermesc`) đi kèm React Native chỉ có bản x86-64 → `expo export` cần `--no-bytecode` trên Spark; build APK release nên chạy trên CI x86-64 hoặc EAS Build. Chế độ dev qua Metro không bị ảnh hưởng.
 - TypeScript: web dùng TS 7 (bản native); `packages/api-client` ghim TS 5.9 vì `openapi-typescript` cần API compiler JS; mobile dùng TS theo SDK Expo.
 
