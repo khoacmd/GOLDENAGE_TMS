@@ -25,6 +25,7 @@ confirmations_router = APIRouter(prefix="/trips", tags=["dispatch"])
 DriverDep = Annotated[CurrentUser, Depends(require_roles(CompanyRole.DRIVER))]
 VISIBLE_TO_DRIVER = [
     TripOrderStatus.APPROVED,
+    TripOrderStatus.PREPARED,
     TripOrderStatus.PICKED,
     TripOrderStatus.DISPATCHED,
     TripOrderStatus.CLOSED,

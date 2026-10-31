@@ -43,9 +43,9 @@ from app.modules.tenancy.models import CompanySettings
 
 # Phần đơn có thể xếp lệnh: chưa lập kế hoạch hoặc lần giao trước thất bại.
 ELIGIBLE_PART_STATUSES = (OrderPartStatus.PENDING, OrderPartStatus.FAILED)
-EDITABLE = (TripOrderStatus.DRAFT, TripOrderStatus.APPROVED)
+EDITABLE = (TripOrderStatus.DRAFT, TripOrderStatus.APPROVED, TripOrderStatus.PREPARED)
 # Lệnh còn "giữ" tồn kho tại kho xuất (chưa xuất hàng thực tế).
-RESERVING = (TripOrderStatus.DRAFT, TripOrderStatus.APPROVED)
+RESERVING = EDITABLE
 
 TEMP_LABEL = {TempGroup.DRY: "hàng khô", TempGroup.COLD: "hàng lạnh/đông"}
 ENTITY = "trip"
@@ -390,7 +390,7 @@ async def save_trip(
     source: TripSource = TripSource.MANUAL,
 ) -> tuple[Trip, list[str]]:
     if trip is not None and trip.order_status not in EDITABLE:
-        raise AppError("Chỉ sửa được lệnh nháp hoặc đã duyệt (chưa xuất kho)", code="trip_locked")
+        raise AppError("Chỉ sửa được lệnh chưa xuất kho", code="trip_locked")
     check, vehicle, parts = await validate(session, company_id, data, trip)
     if check.errors:
         raise AppError("Lệnh giao không hợp lệ", code="invalid_trip", details=check.errors)
@@ -415,9 +415,10 @@ async def save_trip(
         trip.stops.clear()
         await session.flush()  # xóa item cũ trước (unique phần đơn đang hiệu lực)
         action = "updated"
-        if trip.order_status == TripOrderStatus.APPROVED:
-            trip.order_status = TripOrderStatus.DRAFT  # sửa sau duyệt → duyệt lại
+        if trip.order_status != TripOrderStatus.DRAFT:
+            trip.order_status = TripOrderStatus.DRAFT  # sửa sau duyệt → duyệt & soạn lại
             trip.approved_at = trip.approved_by = None
+            trip.prepared_at = trip.prepared_by = None
             action = "updated_reopened"
         if trip.vehicle_id != data.vehicle_id or trip.plan_date != data.plan_date:
             trip.trip_seq = await _next_seq(session, data.vehicle_id, data.plan_date, trip.id)
@@ -520,9 +521,19 @@ async def cancel(
     return trip
 
 
+async def prepare(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:
+    """Thủ kho xác nhận đã soạn xong hàng - chỉ cho lệnh đã duyệt."""
+    _require(trip, TripOrderStatus.APPROVED, action="xác nhận soạn hàng cho")
+    trip.order_status = TripOrderStatus.PREPARED
+    trip.prepared_at, trip.prepared_by = now(), actor_id
+    audit.record(session, trip.company_id, ENTITY, trip.id, "prepared", actor_id)
+    await session.flush()
+    return trip
+
+
 async def pick(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:
-    """Thủ kho xác nhận soạn/xuất hàng - chỉ cho lệnh đã duyệt."""
-    _require(trip, TripOrderStatus.APPROVED, action="xác nhận xuất kho cho")
+    """Thủ kho xác nhận xuất hàng - chỉ cho lệnh đã soạn hàng."""
+    _require(trip, TripOrderStatus.PREPARED, action="xác nhận xuất kho cho")
     trip.order_status = TripOrderStatus.PICKED
     trip.picked_at, trip.picked_by = now(), actor_id
     audit.record(session, trip.company_id, ENTITY, trip.id, "picked", actor_id)

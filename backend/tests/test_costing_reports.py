@@ -114,6 +114,7 @@ async def test_report_summary_and_redelivery(client: AsyncClient, env: Env) -> N
     second = (await client.post("/api/v1/trips", headers=auth(env.manager), json=body)).json()
     url = f"/api/v1/trips/{second['id']}"
     await client.post(f"{url}/approve", headers=auth(env.manager))
+    await client.post(f"{url}/prepare", headers=auth(env.keeper))
     await client.post(f"{url}/pick", headers=auth(env.keeper))
     second = (await client.post(f"{url}/dispatch", headers=auth(env.driver_token))).json()
     await finish(client, env, second, fail_first=False)

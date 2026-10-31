@@ -111,7 +111,7 @@ Quy tắc module:
 | `system_admin` | Mở/đóng công ty, gán company admin |
 | `company_admin` | User & vai trò, thiết bị (PC, mobile, máy in), kho, đội xe, quy tắc xác nhận giao |
 | `manager` | Lập/duyệt/điều chỉnh kế hoạch & lệnh, phân công lái xe/phụ xe, cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến |
-| `warehouse_keeper` | Xác nhận soạn/xuất hàng cho lệnh **đã duyệt**; có thể giới hạn theo kho |
+| `warehouse_keeper` | Xác nhận **đã soạn hàng** cho lệnh đã duyệt, rồi xác nhận **xuất kho** cho lệnh đã soạn; có thể giới hạn theo kho |
 | `driver` | Xem chuyến được gán cho mình; cập nhật trạng thái đơn thuộc lệnh **đã duyệt** của chuyến mình, theo điều kiện cho phép |
 
 Một user có thể có nhiều vai trò trong một công ty. Phân quyền kiểm tra ở tầng service (không chỉ ở router).
@@ -135,7 +135,7 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
 - `delivery_points(customer_id, address, location geography(Point))`
 - `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg)` – đồng bộ từ hệ thống bán hàng
-- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng = tồn snapshot − hàng của các lệnh `DRAFT/APPROVED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
+- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng = tồn snapshot − hàng của các lệnh `DRAFT/APPROVED/PREPARED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
 
 ### Đơn hàng
 - `sales_orders(external_ref, customer_id, delivery_point_id, requested_date, order_value, status)`
@@ -148,7 +148,7 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - **Kế hoạch ngày** = tập các lệnh có cùng `plan_date` (không có bảng riêng); mỗi lần lập tự động lưu `planning_runs(plan_date, trigger: MANUAL|SCHEDULED, status: QUEUED|RUNNING|SUCCEEDED|FAILED, replace_drafts, distance_source, input_snapshot, summary, unassigned[], warnings[], error)`.
 - `trips` – **Lệnh giao = Chuyến (1–1)**, mã `L{yyMMdd}-{nn}`, hai trục trạng thái:
   - `plan_date, vehicle_id, warehouse_id, driver_id?, assistant_id?, trip_seq` (lượt thứ mấy của xe trong ngày)`, source: MANUAL|AUTO, total_weight_kg, total_value`, mốc thời gian duyệt/xuất kho/xuất phát/kết thúc.
-  - `order_status` (lệnh): `DRAFT → APPROVED → PICKED → DISPATCHED → CLOSED` (+ `CANCELLED`)
+  - `order_status` (lệnh): `DRAFT → APPROVED → PREPARED (đã soạn hàng) → PICKED (đã xuất kho) → DISPATCHED → CLOSED` (+ `CANCELLED`)
   - `delivery_status` (chuyến): `NOT_STARTED | IN_PROGRESS | FINISHED`; thống kê thành công/thất bại/hủy tính từ item.
   - Lệnh tự động: `planning_run_id, planned_distance_km, planned_cost, planned_start/end` (ước tính lúc lập).
 - `trip_stops(trip_id, seq, delivery_point_id? | name + address + latitude/longitude)` – lệnh thủ công có thể có điểm dừng tự do.
@@ -171,14 +171,14 @@ order_part: PENDING ──(vào lệnh)──► PLANNED ──► DELIVERED
               ▲  ▲                       └───► FAILED (attempt_count+1) ── xếp lệnh lại được
               │  └──── hủy lệnh / hủy item (về PENDING, hoặc FAILED nếu đã từng thất bại)
               └──────── sửa lệnh bỏ phần đơn ra
-trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho─► PICKED ─lái xe nhận─► DISPATCHED ─QL xác nhận kết thúc─► CLOSED
+trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho soạn─► PREPARED ─thủ kho xuất─► PICKED ─lái xe nhận─► DISPATCHED ─QL kết thúc─► CLOSED
 ```
 
 - Phần đơn được xếp lệnh khi `PENDING` hoặc `FAILED` (giao lại), đơn `OPEN`, ngày giao yêu cầu ≤ ngày lập lệnh. Vào lệnh (kể cả nháp) → `PLANNED` để không xếp trùng.
 - Ràng buộc **chặn** khi lưu lệnh: xe hoạt động, kho thuộc danh sách kho của xe, lái xe/phụ xe có vai trò `driver`, phụ xe bắt buộc nếu xe yêu cầu, phần đơn đúng điểm dừng, loại hàng hợp `cargo_class` của xe, loại xe đúng yêu cầu của khách, tổng khối lượng ≤ trọng tải. **Cảnh báo** (vẫn lưu): tồn kho tại kho xuất không đủ (trừ phần đã giữ bởi lệnh khác chưa xuất kho), ngày giao khác ngày yêu cầu, ngày không phải ngày giao hàng.
-- Duyệt cần có lái xe. Sửa lệnh sau `APPROVED` → quay về `DRAFT`, cần duyệt lại; sau `PICKED` không sửa/hủy được (chưa có luồng hoàn trả kho).
-- Quyền: lập/sửa/duyệt/hủy/cập nhật giao/kết thúc = `manager`; xác nhận xuất kho = `warehouse_keeper`; xuất phát = `manager` hoặc lái xe/phụ xe của chuyến.
-- Thủ kho chỉ xác nhận `PICKED` cho lệnh `APPROVED`.
+- Duyệt cần có lái xe. Sửa lệnh `APPROVED`/`PREPARED` (hàng còn trong kho) → quay về `DRAFT`, cần duyệt và soạn lại; sau `PICKED` không sửa/hủy được (chưa có luồng hoàn trả kho).
+- Quyền: lập/sửa/duyệt/hủy/cập nhật giao/kết thúc = `manager`; xác nhận soạn hàng, xuất kho = `warehouse_keeper`; xuất phát = `manager` hoặc lái xe/phụ xe của chuyến.
+- Thủ kho xác nhận `PREPARED` (đã soạn hàng, `POST /trips/{id}/prepare`) cho lệnh `APPROVED`, rồi `PICKED` (xuất kho, `POST /trips/{id}/pick`) cho lệnh `PREPARED`; không bỏ qua bước soạn hàng.
 - Lái xe chỉ xác nhận item thuộc trip `DISPATCHED` mà mình là `driver_id` (hoặc `assistant_id`).
 - Item trong chuyến có trạng thái `PENDING → SUCCESS | FAILED | CANCELLED`.
 - `trip.delivery_status` chuyển sang `FINISHED` ("Kết thúc") khi **không còn item `PENDING`**, kể cả khi có đơn thất bại. Chuyến lưu kèm thống kê thành công / thất bại / hủy.
@@ -309,3 +309,4 @@ Ghi nhận khi dựng M0 trên Spark:
 | D26 | Chi phí chuyến phân bổ cho cả lượt giao thất bại; kết thúc chuyến tự ghi nhận chi phí theo km kế hoạch/ước lượng nếu quản lý chưa nhập | Chốt (M5) |
 | D27 | Giai đoạn này chỉ kéo thả điểm dừng giữa các chuyến cùng kho xuất (kho chọn theo kho gần nhất) | Chốt (M5) |
 | D28 | Thời gian di chuyển từ OSRM nhân hệ số kẹt xe cấu hình theo công ty (mặc định 1,8, chưa có số liệu thực tế để kiểm định), chưa dùng dữ liệu giao thông theo giờ | Chốt (M4) |
+| D29 | Thêm bước "Đã soạn hàng" (`PREPARED`) trước xuất kho; lệnh đã soạn vẫn sửa/hủy được (hàng còn trong kho), sửa thì phải duyệt và soạn lại | Chốt |

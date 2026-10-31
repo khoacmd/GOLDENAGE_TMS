@@ -82,7 +82,8 @@ export function TripScreen({
           {trip.order_status === 'PICKED' && (
             <Button title="Nhận hàng & xuất phát" loading={start.isPending} onPress={() => start.mutate()} />
           )}
-          {trip.order_status === 'APPROVED' && <Text style={styles.muted}>Chờ thủ kho xác nhận xuất hàng.</Text>}
+          {trip.order_status === 'APPROVED' && <Text style={styles.muted}>Thủ kho đang soạn hàng.</Text>}
+          {trip.order_status === 'PREPARED' && <Text style={styles.muted}>Đã soạn hàng, chờ thủ kho xác nhận xuất kho.</Text>}
         </Card>
 
         {trip.stops.map((stop) => (

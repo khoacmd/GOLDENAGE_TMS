@@ -69,6 +69,7 @@ async def tenant_a(client: AsyncClient, env: Env, sysadmin_token: str) -> Tenant
     trip = (await client.post("/api/v1/trips", headers=m, json=body)).json()
     url = f"/api/v1/trips/{trip['id']}"
     await client.post(f"{url}/approve", headers=m)
+    await client.post(f"{url}/prepare", headers=auth(env.keeper))
     await client.post(f"{url}/pick", headers=auth(env.keeper))
     trip = (await client.post(f"{url}/dispatch", headers=auth(env.driver_token))).json()
     assert trip["order_status"] == "DISPATCHED", trip

@@ -43,6 +43,7 @@
 - [x] Phân công lái xe, phụ xe (bắt buộc phụ xe nếu xe yêu cầu)
 - [x] Phê duyệt / điều chỉnh / hủy lệnh, audit log
 - [x] Thủ kho: danh sách lệnh đã duyệt, phiếu soạn hàng, xác nhận xuất hàng
+- [x] Bổ sung trạng thái "Đã soạn hàng" (`PREPARED`) giữa "Đã duyệt" và "Đã xuất kho": nút "Xác nhận soạn hàng" ở màn hình Xuất kho và chi tiết lệnh, lọc "Cần xử lý"
 - [x] In phiếu soạn hàng / phiếu giao hàng (trang in trình duyệt → PDF)
 - [x] Quản lý cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến
 - [x] Bản đồ (MapLibre): chọn tọa độ kho/điểm giao, xem điểm dừng của lệnh

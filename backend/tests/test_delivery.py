@@ -34,6 +34,7 @@ async def dispatched_trip(client: AsyncClient, env: Env) -> dict[str, Any]:
     trip = (await client.post("/api/v1/trips", headers=auth(env.manager), json=body)).json()
     url = f"/api/v1/trips/{trip['id']}"
     await client.post(f"{url}/approve", headers=auth(env.manager))
+    await client.post(f"{url}/prepare", headers=auth(env.keeper))
     await client.post(f"{url}/pick", headers=auth(env.keeper))
     resp = await client.post(f"{url}/dispatch", headers=auth(env.driver_token))
     assert resp.json()["order_status"] == "DISPATCHED", resp.text

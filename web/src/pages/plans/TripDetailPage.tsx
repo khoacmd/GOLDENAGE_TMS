@@ -81,7 +81,7 @@ export function TripDetailPage() {
   if (!trip) return <Card loading />
   const isManager = hasRole('manager')
   const s = trip.order_status
-  const editable = isManager && (s === 'DRAFT' || s === 'APPROVED')
+  const editable = isManager && (s === 'DRAFT' || s === 'APPROVED' || s === 'PREPARED')
   const canUpdateItems = isManager && s === 'DISPATCHED'
 
   const updateItem = (item: Item, status: ItemStatus, reason?: string) =>
@@ -138,7 +138,12 @@ export function TripDetailPage() {
               </Button>
             )}
             {hasRole('warehouse_keeper') && s === 'APPROVED' && (
-              <Popconfirm title="Xác nhận đã soạn và xuất đủ hàng?" onConfirm={() => run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/pick', path)))}>
+              <Popconfirm title="Xác nhận đã soạn đủ hàng theo phiếu soạn hàng?" onConfirm={() => run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/prepare', path)))}>
+                <Button type="primary">Xác nhận soạn hàng</Button>
+              </Popconfirm>
+            )}
+            {hasRole('warehouse_keeper') && s === 'PREPARED' && (
+              <Popconfirm title="Xác nhận đã giao đủ hàng lên xe (xuất kho)?" onConfirm={() => run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/pick', path)))}>
                 <Button type="primary">Xác nhận xuất kho</Button>
               </Popconfirm>
             )}

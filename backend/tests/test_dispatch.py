@@ -142,8 +142,11 @@ async def test_full_lifecycle(client: AsyncClient, env: Env) -> None:
     assert edited["order_status"] == "DRAFT"
     await client.post(f"{url}/approve", headers=auth(env.manager))
 
-    # Quản lý không có quyền xuất kho; thủ kho xác nhận.
-    assert (await client.post(f"{url}/pick", headers=auth(env.manager))).status_code == 403
+    # Quản lý không có quyền soạn/xuất kho; thủ kho xác nhận soạn hàng rồi mới xuất kho.
+    assert (await client.post(f"{url}/prepare", headers=auth(env.manager))).status_code == 403
+    assert (await client.post(f"{url}/pick", headers=auth(env.keeper))).json()["error"][
+        "code"
+    ] == "invalid_status"
     picking = (await client.get(f"{url}/picking-list", headers=auth(env.keeper))).json()
     assert {line["product_code"] for line in picking["lines"]} == {
         "SUA-TT-180",
@@ -151,6 +154,18 @@ async def test_full_lifecycle(client: AsyncClient, env: Env) -> None:
         "KEM-QUE-60",
         "NUOC-SUOI-500",
     }
+    prepared = (await client.post(f"{url}/prepare", headers=auth(env.keeper))).json()
+    assert prepared["order_status"] == "PREPARED" and prepared["prepared_at"]
+    assert (await client.post(f"{url}/dispatch", headers=auth(env.driver_token))).json()["error"][
+        "code"
+    ] == "invalid_status"
+
+    # Sửa lệnh đã soạn hàng → về nháp, duyệt và soạn lại.
+    edited = (await client.put(url, headers=auth(env.manager), json=body)).json()
+    assert (edited["order_status"], edited["prepared_at"]) == ("DRAFT", None)
+    await client.post(f"{url}/approve", headers=auth(env.manager))
+    await client.post(f"{url}/prepare", headers=auth(env.keeper))
+
     assert (await client.post(f"{url}/pick", headers=auth(env.keeper))).json()[
         "order_status"
     ] == "PICKED"

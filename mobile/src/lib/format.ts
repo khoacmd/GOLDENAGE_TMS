@@ -16,7 +16,8 @@ export const shiftDate = (iso: string, days: number) => {
 }
 
 export const TRIP_STATUS: Record<string, { label: string; color: string }> = {
-  APPROVED: { label: 'Chờ xuất kho', color: '#8c8c8c' },
+  APPROVED: { label: 'Chờ soạn hàng', color: '#8c8c8c' },
+  PREPARED: { label: 'Chờ xuất kho', color: '#8c8c8c' },
   PICKED: { label: 'Sẵn sàng xuất phát', color: '#1677ff' },
   DISPATCHED: { label: 'Đang giao', color: '#fa8c16' },
   CLOSED: { label: 'Đã kết thúc', color: '#389e0d' },

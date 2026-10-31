@@ -112,6 +112,7 @@ export const fmtDateTime = (v: string | null | undefined) =>
 export const TRIP_STATUS: Record<S['TripOrderStatus'], { label: string; color: string }> = {
   DRAFT: { label: 'Nháp', color: 'default' },
   APPROVED: { label: 'Đã duyệt', color: 'blue' },
+  PREPARED: { label: 'Đã soạn hàng', color: 'geekblue' },
   PICKED: { label: 'Đã xuất kho', color: 'cyan' },
   DISPATCHED: { label: 'Đang giao', color: 'orange' },
   CLOSED: { label: 'Đã kết thúc', color: 'green' },
@@ -134,9 +135,10 @@ export const ITEM_STATUS: Record<S['ItemStatus'], { label: string; color: string
 export const TRIP_ACTION: Record<string, string> = {
   created: 'Lập lệnh',
   updated: 'Sửa lệnh',
-  updated_reopened: 'Sửa lệnh đã duyệt (chờ duyệt lại)',
+  updated_reopened: 'Sửa lệnh đã duyệt/đã soạn (chờ duyệt lại)',
   approved: 'Duyệt lệnh',
   cancelled: 'Hủy lệnh',
+  prepared: 'Xác nhận soạn hàng',
   picked: 'Xác nhận xuất kho',
   dispatched: 'Xuất phát',
   item_updated: 'Cập nhật giao hàng',

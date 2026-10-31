@@ -161,6 +161,7 @@ class TripOut(TripSummaryOut):
     warehouse_latitude: Decimal = Field(validation_alias=AliasPath("warehouse", "latitude"))
     warehouse_longitude: Decimal = Field(validation_alias=AliasPath("warehouse", "longitude"))
     approved_at: datetime | None
+    prepared_at: datetime | None
     picked_at: datetime | None
     dispatched_at: datetime | None
     finished_at: datetime | None

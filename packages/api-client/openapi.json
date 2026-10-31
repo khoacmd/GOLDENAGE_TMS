@@ -2527,6 +2527,54 @@
         }
       }
     },
+    "/api/v1/trips/{trip_id}/prepare": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Prepare Trip",
+        "operationId": "prepare_trip_api_v1_trips__trip_id__prepare_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips/{trip_id}/pick": {
       "post": {
         "tags": [
@@ -9254,6 +9302,7 @@
         "enum": [
           "DRAFT",
           "APPROVED",
+          "PREPARED",
           "PICKED",
           "DISPATCHED",
           "CLOSED",
@@ -9454,6 +9503,18 @@
             ],
             "title": "Approved At"
           },
+          "prepared_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prepared At"
+          },
           "picked_at": {
             "anyOf": [
               {
@@ -9558,6 +9619,7 @@
           "warehouse_latitude",
           "warehouse_longitude",
           "approved_at",
+          "prepared_at",
           "picked_at",
           "dispatched_at",
           "finished_at",

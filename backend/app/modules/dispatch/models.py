@@ -26,6 +26,7 @@ class TripOrderStatus(StrEnum):
 
     DRAFT = "DRAFT"
     APPROVED = "APPROVED"
+    PREPARED = "PREPARED"  # thủ kho đã soạn xong hàng (hàng vẫn ở kho)
     PICKED = "PICKED"  # thủ kho đã xác nhận xuất hàng
     DISPATCHED = "DISPATCHED"  # xe đã xuất phát
     CLOSED = "CLOSED"  # quản lý xác nhận kết thúc
@@ -86,6 +87,8 @@ class Trip(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
 
     approved_at: Mapped[datetime | None]
     approved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    prepared_at: Mapped[datetime | None]
+    prepared_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     picked_at: Mapped[datetime | None]
     picked_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     dispatched_at: Mapped[datetime | None]

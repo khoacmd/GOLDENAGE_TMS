@@ -290,8 +290,13 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
           </Space>
         }
       >
-        {trip?.order_status === 'APPROVED' && (
-          <Alert type="warning" showIcon style={{ marginBottom: 16 }} title="Lệnh đã duyệt: sau khi sửa sẽ quay về nháp và cần duyệt lại." />
+        {(trip?.order_status === 'APPROVED' || trip?.order_status === 'PREPARED') && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+            title={`Lệnh ${trip.order_status === 'PREPARED' ? 'đã soạn hàng' : 'đã duyệt'}: sau khi sửa sẽ quay về nháp, cần duyệt lại và thủ kho soạn lại.`}
+          />
         )}
         {errors.length > 0 && (
           <Alert

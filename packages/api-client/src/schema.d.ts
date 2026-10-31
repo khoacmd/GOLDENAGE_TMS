@@ -535,6 +535,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{trip_id}/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare Trip */
+        post: operations["prepare_trip_api_v1_trips__trip_id__prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{trip_id}/pick": {
         parameters: {
             query?: never;
@@ -2873,7 +2890,7 @@ export interface components {
          * @description Trạng thái lệnh giao.
          * @enum {string}
          */
-        TripOrderStatus: "DRAFT" | "APPROVED" | "PICKED" | "DISPATCHED" | "CLOSED" | "CANCELLED";
+        TripOrderStatus: "DRAFT" | "APPROVED" | "PREPARED" | "PICKED" | "DISPATCHED" | "CLOSED" | "CANCELLED";
         /** TripOut */
         TripOut: {
             /**
@@ -2949,6 +2966,8 @@ export interface components {
             warehouse_longitude: string;
             /** Approved At */
             approved_at: string | null;
+            /** Prepared At */
+            prepared_at: string | null;
             /** Picked At */
             picked_at: string | null;
             /** Dispatched At */
@@ -4768,6 +4787,37 @@ export interface operations {
                 "application/json": components["schemas"]["CancelIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_trip_api_v1_trips__trip_id__prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

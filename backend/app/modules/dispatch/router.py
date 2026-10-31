@@ -125,6 +125,13 @@ async def cancel_trip(
     return trip_out(trip)
 
 
+@router.post("/{trip_id}/prepare")
+async def prepare_trip(trip_id: uuid.UUID, user: KeeperDep, session: DbSession) -> TripOut:
+    trip = await service.prepare(session, await service.get_trip(session, trip_id), user.id)
+    await session.commit()
+    return trip_out(trip)
+
+
 @router.post("/{trip_id}/pick")
 async def pick_trip(trip_id: uuid.UUID, user: KeeperDep, session: DbSession) -> TripOut:
     trip = await service.pick(session, await service.get_trip(session, trip_id), user.id)
