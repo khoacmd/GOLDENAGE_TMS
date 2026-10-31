@@ -3,11 +3,12 @@
 # Dùng: infra/osrm/prepare-vietnam.sh   → infra/data/osrm/{car,motorbike}/vietnam.osrm*
 # Sau đó: docker compose -f infra/docker-compose.yml --profile routing up -d osrm-car osrm-motorbike
 # và cấu hình backend: TMS_OSRM_CAR_URL=http://localhost:55000 TMS_OSRM_MOTORBIKE_URL=http://localhost:55001
-# Cần ~4 GB RAM và vài GB đĩa; chạy lại để cập nhật bản đồ mới.
+# Cần ~4 GB RAM và ~9 GB đĩa; chạy lại để cập nhật bản đồ mới.
+# Production: DATA_ROOT=/srv/tms infra/osrm/prepare-vietnam.sh  → /srv/tms/osrm/... (DATA_DIR của infra/prod)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 IMAGE=ghcr.io/project-osrm/osrm-backend:v6.0.0
-OUT=data/osrm
+OUT=$(realpath -m "${DATA_ROOT:-data}")/osrm
 PBF=$OUT/vietnam-latest.osm.pbf
 mkdir -p "$OUT/car" "$OUT/motorbike"
 
@@ -24,7 +25,7 @@ for profile in car motorbike; do
   ln -f "$PBF" "$dir/vietnam.osm.pbf"
   lua=/opt/car.lua
   [[ $profile == motorbike ]] && lua=/profiles/motorbike.lua
-  run() { docker run --rm -v "$PWD/$dir:/data" -v "$PWD/osrm:/profiles:ro" "$IMAGE" "$@"; }
+  run() { docker run --rm -v "$dir:/data" -v "$PWD/osrm:/profiles:ro" "$IMAGE" "$@"; }
   run osrm-extract -p "$lua" /data/vietnam.osm.pbf
   run osrm-partition /data/vietnam.osrm
   run osrm-customize /data/vietnam.osrm

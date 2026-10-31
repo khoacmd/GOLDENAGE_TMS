@@ -5,6 +5,7 @@ import logging
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from app.core import observability
 from app.core.db import engine
 from app.modules.planning.service import create_due_runs
 from worker.tasks import plan_run
@@ -25,7 +26,7 @@ def check_due() -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    observability.setup("scheduler")
     scheduler = BlockingScheduler()
     scheduler.add_job(check_due, "interval", minutes=1, max_instances=1, coalesce=True)
     log.info("Scheduler lập kế hoạch đã chạy")

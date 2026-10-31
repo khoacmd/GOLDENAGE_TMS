@@ -256,7 +256,7 @@ Chi tiết triển khai:
 
 ## 12. Triển khai
 
-Docker Compose: `api`, `worker`, `scheduler`, `postgres`, `redis`, `storage` (SeaweedFS S3), `osrm-car`, `osrm-motorbike`, `web` (nginx).
+Docker Compose (`infra/prod`, hướng dẫn `docs/DEPLOY.md`): `caddy` (HTTPS tự động, cổng vào duy nhất) → `web` (nginx: SPA, proxy `/api`, `/tiles`, ảnh S3 qua URL ký sẵn) → `api`; `migrate` (alembic, chạy trước), `worker`, `scheduler` dùng chung image `tms-api`; `postgres`, `redis`, `storage` (SeaweedFS S3), `osrm-car`, `osrm-motorbike` (profile `routing`). Image đa kiến trúc build bởi workflow Images (QEMU + buildx) lên GHCR. Log JSON ra stdout, Sentry tùy chọn (`TMS_SENTRY_DSN`), backup/restore bằng `infra/prod/backup.sh`/`restore.sh`.
 
 | Môi trường | Hạ tầng | Ghi chú |
 |---|---|---|

@@ -1,0 +1,19 @@
+# Cổng vào duy nhất: HTTPS tự động (Let's Encrypt) khi SITE_ADDRESS là tên miền thật.
+# Thử trên máy: SITE_ADDRESS=:80 (HTTP thường).
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy web:80 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+	log {
+		output stdout
+		format json
+	}
+}

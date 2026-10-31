@@ -1,0 +1,46 @@
+# Sinh từ template lúc container khởi động (envsubst biến môi trường: TMS_S3_BUCKET).
+server {
+  listen 80;
+  server_tokens off;
+  client_max_body_size 25m;
+  root /usr/share/nginx/html;
+
+  location /api/ {
+    proxy_pass http://api:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    proxy_read_timeout 120s;
+  }
+  location = /health {
+    proxy_pass http://api:8000/health;
+  }
+
+  # Ảnh chứng từ: URL ký sẵn (path-style) tới storage; giữ Host để chữ ký SigV4 khớp.
+  location /${TMS_S3_BUCKET}/ {
+    proxy_pass http://storage:8333;
+    proxy_set_header Host $http_host;
+    proxy_buffering off;
+  }
+
+  # Bản đồ tự host (PMTiles, đọc theo HTTP Range).
+  location /tiles/ {
+    alias /srv/tiles/;
+    add_header Cache-Control "public, max-age=86400" always;
+    types {
+      application/json json;
+      image/png png;
+      application/x-protobuf pbf;
+      application/octet-stream pmtiles;
+    }
+  }
+
+  location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    try_files $uri =404;
+  }
+  location / {
+    add_header Cache-Control "no-cache" always;
+    try_files $uri /index.html;
+  }
+}

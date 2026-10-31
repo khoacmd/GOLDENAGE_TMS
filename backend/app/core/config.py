@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="TMS_", env_file=".env", extra="ignore")
 
     env: Literal["dev", "test", "prod"] = "dev"
+    release: str = "dev"  # phiên bản image (gắn khi build)
+
+    # Giám sát: log JSON (production) và Sentry (để trống DSN → tắt).
+    log_json: bool = False
+    log_level: str = "INFO"
+    sentry_dsn: str | None = None
+    sentry_traces_sample_rate: float = 0.0
 
     # Runtime dùng role tms_app (chịu RLS); migration dùng role tms_owner.
     database_url: str = "postgresql+asyncpg://tms_app:tms_app@localhost:55432/tms"

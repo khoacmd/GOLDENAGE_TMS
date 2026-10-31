@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Trạng thái dự án
 - Đã chốt kiến trúc & tech stack (FastAPI + PostgreSQL/PostGIS + OR-Tools + OSRM; web React/TS; mobile React Native/Expo) trong `docs/ARCHITECTURE.md`. Lộ trình trong `docs/PLAN.md`.
-- Đã xong M0–M5 (xem `docs/PLAN.md`), gồm OSRM; tiếp theo M6.
+- Đã xong M0–M5 (xem `docs/PLAN.md`); M6 đang làm: đã có kiểm thử bảo mật, image multi-arch, bộ triển khai `infra/prod` (`docs/DEPLOY.md`); chờ VPS thật.
 - Tài liệu yêu cầu gốc: `Mô tả yêu cầu1.odt`. Phần "Nghiệp vụ" bên dưới là bản mới hơn, ưu tiên dùng bản này.
 
 ## Lệnh phát triển
@@ -34,6 +34,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `backend/optimization/` là bộ giải thuần Python (không import `app`); mypy chạy `app optimization worker`.
 - Bản đồ tự host: `infra/tiles/fetch-vietnam.sh` rồi `docker compose -f infra/docker-compose.yml up -d tiles` (Vite proxy `/tiles` → :58080).
 - Mobile (Expo SDK 58): upload file bằng `FormData.append('file', new File(uri))` (`expo-file-system`), không dùng `{uri, name, type}` kiểu cũ. Gọi `fetch` trực tiếp phải tự lo token (nạp từ SecureStore, làm mới khi 401) và timeout.
+- Production: `infra/prod` (Caddy + nginx + image `tms-api`/`tms-web` từ workflow Images); hướng dẫn `docs/DEPLOY.md`. Sửa Dockerfile/compose thì chạy thử theo mục 8 của DEPLOY.md.
+- Kiểm thử bảo mật `backend/tests/test_security.py` quét mọi endpoint: endpoint mới mở cho khách/lái xe phải thêm vào danh sách cho phép trong file này.
 - Máy dev/test là DGX Spark **ARM64 (aarch64)**: mọi Docker image phải hỗ trợ `linux/arm64`. Production chạy trên cloud VPS.
 - Quy ước code backend:
   - Bảng theo công ty dùng `TenantMixin`; migration tạo bảng đó PHẢI gọi `enable_tenant_rls()` (`app/core/rls.py`). Test `test_every_tenant_table_has_forced_rls` sẽ fail nếu quên.

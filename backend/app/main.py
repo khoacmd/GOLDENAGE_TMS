@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.core import observability
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import register_error_handlers
@@ -22,6 +23,8 @@ from app.modules.tenancy.router import admin_router, company_router
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if settings.env != "test":  # test giữ cấu hình log của pytest
+        observability.setup("api")
     app = FastAPI(title="TMS API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,

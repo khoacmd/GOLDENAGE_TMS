@@ -4,9 +4,10 @@
 #       MAXZOOM=15 infra/tiles/fetch-vietnam.sh   (mặc định 14: ~1/4 dung lượng; MapLibre phóng to
 #       tiếp từ zoom 14 vẫn rõ đường phố)
 # Kết quả: infra/data/tiles/{vietnam.pmtiles, fonts/, sprites/}
+# Production: DATA_ROOT=/srv/tms infra/tiles/fetch-vietnam.sh → /srv/tms/tiles (DATA_DIR của infra/prod)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-OUT=data/tiles
+OUT=$(realpath -m "${DATA_ROOT:-data}")/tiles
 BIN=data/tools
 PMTILES_VERSION=1.31.2
 ASSETS_REF=main

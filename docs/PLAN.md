@@ -79,7 +79,7 @@
 - [x] Danh sách đơn không xếp được + cảnh báo
 - [x] Sửa: phần đơn giao thất bại xếp lại được vào lệnh mới (D25)
 - [x] Vẽ tuyến theo đường thực tế (OSRM `/route`) thay cho đường thẳng trên bản đồ
-- [ ] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6)
+- [x] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6, `infra/prod`)
 - [ ] (Khi có dữ liệu) Hiệu chỉnh hệ số thời gian di chuyển theo giờ xuất phát/kết thúc thực tế của chuyến
 
 ## M5 – Chi phí & báo cáo
@@ -93,9 +93,13 @@
 ## M6 – Hoàn thiện & mở rộng
 - [x] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền): quét tự động mọi endpoint (`tests/test_security.py`)
 - [x] Vá sau kiểm thử: lái xe không xem được lịch sử/template import; lịch sử & xác nhận của lệnh công ty khác trả 404; chống dò mật khẩu (429); giới hạn kích thước file import
-- [ ] Build image multi-arch (arm64 + amd64) bằng `docker buildx`
-- [ ] Giám sát, backup/restore, triển khai production trên cloud VPS
-- [ ] Onboarding công ty thứ 2 (kiểm chứng multi-tenant)
+- [x] Build image multi-arch (arm64 + amd64): `backend/Dockerfile`, `web/Dockerfile`, workflow Images → GHCR
+- [x] Bộ triển khai production `infra/prod` (Caddy HTTPS, nginx, api/worker/scheduler/migrate, OSRM tùy chọn), chạy thử đầy đủ trên máy arm64
+- [x] Giám sát: `/health` + healthcheck, log JSON, Sentry tùy chọn; backup/restore (đã diễn tập khôi phục)
+- [x] Hướng dẫn triển khai, cập nhật, onboarding: `docs/DEPLOY.md`
+- [ ] Triển khai thật trên cloud VPS (chờ máy chủ + tên miền)
+- [x] Kiểm chứng multi-tenant trên stack production: 2 công ty cùng dữ liệu mẫu, lập kế hoạch song song, cô lập dữ liệu
+- [ ] Onboarding công ty thứ 2 thật (quy trình: `docs/DEPLOY.md` mục 7)
 - [ ] (Phase sau) Thể tích / số thùng cho xe & mặt hàng
 - [ ] (Phase sau) Đưa lựa chọn kho vào trong bộ giải
 - [ ] (Phase sau) Theo dõi vị trí xe thời gian thực
