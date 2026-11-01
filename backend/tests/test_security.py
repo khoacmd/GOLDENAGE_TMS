@@ -12,7 +12,17 @@ from httpx import AsyncClient
 
 from app.core.config import get_settings
 from app.main import app
-from tests.conftest import PLAN_DATE, Env, auth, create_company, create_user, login, stop, trip_body
+from tests.conftest import (
+    PLAN_DATE,
+    Env,
+    auth,
+    create_company,
+    create_user,
+    login,
+    stop,
+    trip_body,
+    zalo_activate,
+)
 
 PARAM = re.compile(r"{(\w+)}")
 WRITE = {"post", "put", "patch", "delete"}
@@ -24,6 +34,9 @@ PUBLIC = {
     ("post", "/api/v1/auth/login-pin"),
     ("post", "/api/v1/auth/refresh"),
     ("post", "/api/v1/auth/logout"),  # tự xác thực bằng refresh token trong body
+    ("post", "/api/v1/auth/zalo/login"),  # xác thực bằng token Zalo
+    ("post", "/api/v1/auth/zalo/activate"),
+    ("post", "/api/v1/auth/zalo/refresh"),
     ("post", "/api/v1/integration/{kind}"),  # X-API-Key, kiểm tra riêng bên dưới
 }
 # Endpoint tài khoản chỉ có vai trò lái xe được gọi.
@@ -35,6 +48,13 @@ DRIVER_ALLOWED = {
     (m, p)
     for p, ops in app.openapi()["paths"].items()
     if p.startswith("/api/v1/driver/")
+    for m in ops
+}
+# Endpoint chỉ nhận token khách hàng (Zalo Mini App); token nhân viên → 401.
+CUSTOMER_ONLY = {
+    (m, p)
+    for p, ops in app.openapi()["paths"].items()
+    if p.startswith("/api/v1/customer/")
     for m in ops
 }
 # Tham số query bắt buộc → giá trị hợp lệ.
@@ -201,7 +221,7 @@ async def test_lists_do_not_leak_other_company(
     secrets = set(tenant_a.ids.values()) - {"products"}
     leaks = []
     for method, path, op in operations():
-        if method != "get" or PARAM.search(path) or (method, path) in PUBLIC:
+        if method != "get" or PARAM.search(path) or (method, path) in PUBLIC | CUSTOMER_ONLY:
             continue
         resp = await client.get(path, headers=auth(b_token), params=required_query(op))
         if resp.status_code == 403:  # vd. /admin/companies
@@ -324,6 +344,8 @@ async def test_driver_only_reaches_driver_endpoints(client: AsyncClient, tenant_
     for method, path, op in operations():
         if (method, path) in PUBLIC | DRIVER_ALLOWED:
             continue
+        if (method, path) in CUSTOMER_ONLY:
+            continue  # kiểm tra ở test_customer_token_only_reaches_customer_endpoints
         url = path.format(**{n: tenant_a.ids[n] for n in PARAM.findall(path)})
         kwargs: dict[str, Any] = {"params": required_query(op)}
         if method in WRITE and "requestBody" in op:
@@ -363,3 +385,33 @@ async def test_import_file_size_limit(
     )
     assert resp.status_code == 400
     assert resp.json()["error"]["code"] == "file_too_large"
+
+
+async def test_customer_token_only_reaches_customer_endpoints(
+    client: AsyncClient, tenant_a: TenantA
+) -> None:
+    """Token khách hàng (Zalo Mini App) bị từ chối ở mọi API nhân viên; token nhân viên bị từ
+    chối ở API khách hàng."""
+    customer_id, contact_id = tenant_a.ids["customer_id"], tenant_a.ids["contact_id"]
+    issue = f"/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code"
+    session = await zalo_activate(client, tenant_a.env.admin, issue, "zalo-a")
+    customer = auth(session["access_token"])
+    opened = []
+    for method, path, op in operations():
+        if (method, path) in PUBLIC:
+            continue
+        url = path.format(**{n: tenant_a.ids[n] for n in PARAM.findall(path)})
+        kwargs: dict[str, Any] = {"params": required_query(op)}
+        if method in WRITE and "requestBody" in op:
+            if "multipart/form-data" in op["requestBody"]["content"]:
+                kwargs["files"] = {"file": ("a.csv", b"code,name\n")}
+            else:
+                kwargs["json"] = write_body(path, tenant_a)
+        resp = await client.request(method, url, headers=customer, **kwargs)
+        if (method, path) in CUSTOMER_ONLY:
+            assert resp.status_code == 200, (path, resp.text)
+            staff = await client.request(method, url, headers=auth(tenant_a.env.manager), **kwargs)
+            assert staff.status_code == 401, path
+        elif resp.status_code != 401:
+            opened.append((method.upper(), path, resp.status_code))
+    assert opened == []

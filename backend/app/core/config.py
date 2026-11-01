@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     osrm_motorbike_url: str | None = None
     # Chạy tác vụ nền ngay trong tiến trình gọi (test / dev không chạy worker).
     tasks_eager: bool = False
+    # Zalo Mini App: server đổi access token của người dùng lấy Zalo ID qua Graph API.
+    zalo_app_id: str | None = None
+    zalo_app_secret: str | None = None
+    zalo_graph_url: str = "https://graph.zalo.me/v2.0/me"
+    # Dev/test không có Zalo thật: chấp nhận token dạng "mock:<zalo_id>:<tên>". Cấm ở prod.
+    zalo_mock: bool = False
     # Link mở Zalo Mini App kèm mã kích hoạt (QR gửi khách/tài xế); có "{code}". Trống → chỉ có mã.
     zalo_activation_url: str | None = None
     # Giới hạn trên thời gian chạy bộ giải (giây), bất kể cấu hình công ty (test đặt nhỏ).
@@ -62,6 +68,8 @@ class Settings(BaseSettings):
     def _check_prod_secrets(self) -> "Settings":
         if self.env == "prod" and (self.jwt_secret == _DEV_JWT_SECRET or len(self.jwt_secret) < 32):
             raise ValueError("TMS_JWT_SECRET phải được cấu hình (>= 32 ký tự) ở môi trường prod")
+        if self.env == "prod" and self.zalo_mock:
+            raise ValueError("TMS_ZALO_MOCK không được bật ở môi trường prod")
         return self
 
 

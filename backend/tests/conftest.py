@@ -5,6 +5,7 @@ os.environ.setdefault("TMS_ENV", "test")
 os.environ.setdefault("TMS_STORAGE_BACKEND", "memory")
 os.environ.setdefault("TMS_TASKS_EAGER", "true")
 os.environ.setdefault("TMS_PLANNING_TIME_CAP_S", "1")
+os.environ.setdefault("TMS_ZALO_MOCK", "true")  # token Zalo giả "mock:<id>:<tên>"
 os.environ.setdefault(
     "TMS_DATABASE_URL", "postgresql+asyncpg://tms_app:tms_app@localhost:55432/tms_test"
 )
@@ -237,3 +238,17 @@ def trip_body(
         "stops": stops,
         **extra,
     }
+
+
+async def zalo_activate(
+    client: AsyncClient, admin: str, issue_url: str, zalo_id: str, name: str = "Zalo"
+) -> dict[str, Any]:
+    """Admin cấp mã rồi Zalo (giả lập) nhập mã → kết quả đăng nhập."""
+    code = (await client.post(issue_url, headers=auth(admin))).json()["code"]
+    resp = await client.post(
+        "/api/v1/auth/zalo/activate",
+        json={"access_token": f"mock:{zalo_id}:{name}", "code": code},
+    )
+    assert resp.status_code == 200, resp.text
+    body: dict[str, Any] = resp.json()
+    return body

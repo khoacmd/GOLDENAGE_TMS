@@ -29,6 +29,9 @@ x-backend: &backend
     TMS_OSRM_MOTORBIKE_URL: ${TMS_OSRM_MOTORBIKE_URL:-}
     TMS_SENTRY_DSN: ${TMS_SENTRY_DSN:-}
     TMS_SENTRY_TRACES_SAMPLE_RATE: ${TMS_SENTRY_TRACES_SAMPLE_RATE:-0}
+    TMS_ZALO_APP_ID: ${TMS_ZALO_APP_ID:-}
+    TMS_ZALO_APP_SECRET: ${TMS_ZALO_APP_SECRET:-}
+    TMS_ZALO_ACTIVATION_URL: ${TMS_ZALO_ACTIVATION_URL:-}
   depends_on:
     postgres: { condition: service_healthy }
     redis: { condition: service_healthy }

@@ -15,6 +15,7 @@ from app.core.errors import (
     PermissionDeniedError,
 )
 from app.core.security import (
+    TokenKind,
     TokenPayload,
     create_token,
     decode_token,
@@ -52,10 +53,12 @@ async def list_memberships(session: AsyncSession, user_id: uuid.UUID) -> list[Me
     ]
 
 
-def issue_tokens(user_id: uuid.UUID, company_id: uuid.UUID | None) -> TokenPair:
+def issue_tokens(
+    user_id: uuid.UUID, company_id: uuid.UUID | None, *, via: str | None = None
+) -> TokenPair:
     return TokenPair(
-        access_token=create_token(user_id, company_id, "access"),
-        refresh_token=create_token(user_id, company_id, "refresh"),
+        access_token=create_token(user_id, company_id, "access", via=via),
+        refresh_token=create_token(user_id, company_id, "refresh", via=via),
     )
 
 
@@ -141,19 +144,28 @@ async def _resolve_company(
 
 async def logout(refresh_token: str, access_token: str | None) -> None:
     """Thu hồi refresh token (và access token đi kèm nếu cùng tài khoản); token sai thì bỏ qua."""
-    try:
-        refresh_payload = decode_token(refresh_token, "refresh")
-    except AuthenticationError:
+    refresh_payload: TokenPayload | None = None
+    access_payload: TokenPayload | None = None
+    kinds: list[tuple[TokenKind, TokenKind]] = [
+        ("refresh", "access"),
+        ("customer_refresh", "customer_access"),  # phiên khách hàng Zalo Mini App
+    ]
+    for refresh_kind, access_kind in kinds:
+        try:
+            refresh_payload = decode_token(refresh_token, refresh_kind)
+        except AuthenticationError:
+            continue
+        if access_token:
+            try:
+                access_payload = decode_token(access_token, access_kind)
+            except AuthenticationError:
+                access_payload = None
+        break
+    if refresh_payload is None:
         return
     payloads = [refresh_payload]
-    if access_token:
-        try:
-            access_payload = decode_token(access_token, "access")
-        except AuthenticationError:
-            pass
-        else:
-            if access_payload.user_id == refresh_payload.user_id:
-                payloads.append(access_payload)
+    if access_payload is not None and access_payload.subject == refresh_payload.subject:
+        payloads.append(access_payload)
     for p in payloads:
         if p.jti and p.expires_at:
             await revocation.revoke(p.jti, p.expires_at)
@@ -163,6 +175,8 @@ async def refresh(session: AsyncSession, refresh_token: str) -> TokenPair:
     payload = decode_token(refresh_token, "refresh")
     if await revocation.is_revoked(payload.jti):
         raise AuthenticationError("Phiên đăng nhập đã kết thúc")
+    if payload.via == "zalo":
+        raise AuthenticationError("Phiên Zalo Mini App làm mới qua /auth/zalo/refresh")
     await set_tenant_context(session, company_id=payload.company_id, user_id=payload.user_id)
     user = await session.get(User, payload.user_id)
     if user is None or not user.is_active:

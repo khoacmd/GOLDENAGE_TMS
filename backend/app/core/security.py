@@ -9,7 +9,8 @@ from pwdlib import PasswordHash
 from app.core.config import get_settings
 from app.core.errors import AuthenticationError
 
-TokenKind = Literal["access", "refresh"]
+# customer_*: phiên khách hàng Zalo Mini App (sub = Zalo ID), không dùng được cho API nhân viên.
+TokenKind = Literal["access", "refresh", "customer_access", "customer_refresh"]
 
 _password_hash = PasswordHash.recommended()
 # Hash giả để thời gian xử lý khi sai username tương đương khi sai mật khẩu.
@@ -30,30 +31,43 @@ def verify_password(password: str, password_hash: str | None) -> tuple[bool, str
 
 @dataclass(frozen=True)
 class TokenPayload:
-    user_id: uuid.UUID
+    subject: str  # user id (UUID) hoặc Zalo ID với token khách hàng
     company_id: uuid.UUID | None
     kind: TokenKind
     issued_at: datetime | None = None
     expires_at: datetime | None = None
     jti: str | None = None
+    via: str | None = None  # "zalo": phiên lái xe đăng nhập qua Zalo Mini App
+
+    @property
+    def user_id(self) -> uuid.UUID:
+        return uuid.UUID(self.subject)
 
 
-def create_token(user_id: uuid.UUID, company_id: uuid.UUID | None, kind: TokenKind) -> str:
+def create_token(
+    subject: uuid.UUID | str,
+    company_id: uuid.UUID | None,
+    kind: TokenKind,
+    *,
+    via: str | None = None,
+) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     ttl = (
         timedelta(minutes=settings.access_token_ttl_minutes)
-        if kind == "access"
+        if kind.endswith("access")
         else timedelta(days=settings.refresh_token_ttl_days)
     )
     claims = {
-        "sub": str(user_id),
+        "sub": str(subject),
         "cid": str(company_id) if company_id else None,
         "typ": kind,
         "iat": now,
         "exp": now + ttl,
         "jti": uuid.uuid4().hex,
     }
+    if via:
+        claims["via"] = via
     return jwt.encode(claims, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
@@ -69,13 +83,17 @@ def decode_token(token: str, expected_kind: TokenKind) -> TokenPayload:
         if claims["typ"] != expected_kind:
             raise AuthenticationError("Sai loại token")
         cid = claims.get("cid")
-        return TokenPayload(
-            user_id=uuid.UUID(claims["sub"]),
+        payload = TokenPayload(
+            subject=str(claims["sub"]),
             company_id=uuid.UUID(cid) if cid else None,
             kind=expected_kind,
             issued_at=datetime.fromtimestamp(claims["iat"], UTC) if "iat" in claims else None,
             expires_at=datetime.fromtimestamp(claims["exp"], UTC),
             jti=claims.get("jti"),
+            via=claims.get("via"),
         )
+        if not expected_kind.startswith("customer"):
+            uuid.UUID(payload.subject)  # token nhân viên: sub phải là UUID
+        return payload
     except (jwt.PyJWTError, ValueError) as exc:
         raise AuthenticationError("Token không hợp lệ hoặc đã hết hạn") from exc

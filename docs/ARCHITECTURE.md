@@ -265,7 +265,13 @@ Chi tiết triển khai:
 ## 11b. Zalo Mini App (M7 - đã chốt yêu cầu, chưa triển khai)
 
 - **Một mini app chung** cho mọi công ty, OA doanh nghiệp do công ty vận hành TMS đứng tên. Thư mục `zalo/` trong pnpm workspace (React + ZaUI + `zmp-sdk`), dùng chung `packages/api-client`; domain API `tms.thanhxuan.me` khai báo trong cấu hình mini app.
-- **Xác thực**: mini app `getAccessToken()` → `POST /auth/zalo` → backend gọi Open API của Zalo lấy Zalo ID (ID theo ứng dụng, người dùng/admin không tự biết) → nếu Zalo ID đã liên kết: cấp JWT TMS, nhiều công ty thì chọn công ty như đăng nhập web. Chưa liên kết → màn hình nhập mã kích hoạt.
+- **Xác thực** (`app/modules/zalo/auth.py`, `client.py`): mini app `getAccessToken()` → backend gọi Graph API `GET {TMS_ZALO_GRAPH_URL}?fields=id,name` (header `access_token` + `appsecret_proof` = HMAC-SHA256(token, app secret) - **cần kiểm chứng khi có App thật**) lấy Zalo ID (ID theo ứng dụng).
+  - `POST /auth/zalo/login {access_token, company_id?, kind?}` → `ok` (token) | `choose_account` (Zalo liên kết nhiều công ty / vừa lái xe vừa khách hàng → gửi lại kèm `company_id` + `kind`) | `not_linked` (→ nhập mã).
+  - `POST /auth/zalo/activate {access_token, code}` → nhập mã kích hoạt rồi đăng nhập luôn tài khoản vừa liên kết.
+  - **Lái xe**: token nhân viên bình thường kèm claim `via=zalo` (dùng API `/driver/*` như app native); chỉ khi tài khoản chỉ có vai trò lái xe (như PIN).
+  - **Khách hàng**: token loại `customer_access`/`customer_refresh` (`sub` = Zalo ID, kèm công ty) - API nhân viên từ chối (sai loại token), chỉ dùng cho `/customer/*` (dependency `CurrentCustomerDep`: nạp lại phạm vi liên hệ mỗi request → thu hồi có hiệu lực ngay). `GET /customer/me`: công ty + phạm vi (chủ / điểm giao).
+  - Làm mới phiên Zalo (cả lái xe) qua `POST /auth/zalo/refresh` (kiểm tra lại liên kết); `/auth/refresh` từ chối token `via=zalo`. Đăng xuất dùng chung `/auth/logout`.
+  - Dev/test: `TMS_ZALO_MOCK=true` nhận token giả `mock:<zalo_id>:<tên>` (cấm ở prod).
 - **Mã kích hoạt (phương án A, D32)**: admin công ty tạo cho từng liên hệ khách hàng hoặc từng tài xế; mã 8 ký tự (bỏ ký tự dễ nhầm), kèm link/QR mở mini app có sẵn mã; dùng 1 lần, hết hạn 7 ngày (cấu hình); lưu hash. Nhập đúng → gắn Zalo ID vào liên hệ/tài khoản. Tạo lại mã → mã cũ mất hiệu lực; thu hồi liên kết bất kỳ lúc nào; audit mọi thao tác; nhập sai 5 lần/15 phút → khóa tạm.
 - **Dữ liệu** (module `app/modules/zalo`):
   - `customer_contacts` (mục 7): liên hệ chủ / liên hệ điểm giao. Quyền của một Zalo = hợp các liên hệ đã kích hoạt tại công ty đang chọn.
@@ -274,7 +280,7 @@ Chi tiết triển khai:
   - Trạng thái hiển thị (`ZaloLinkInfo`): `NOT_INVITED` / `PENDING` (có mã còn hạn) / `ACTIVE` - suy ra từ 2 bảng trên, không lưu cột trạng thái.
   - RLS theo công ty + policy tra cứu trước khi biết công ty: `activation_code_lookup` (`app.activation_code_hash`), `zalo_link_lookup` (`app.zalo_user_id`).
   - API (admin công ty): `POST /customers/{id}/contacts/{contact_id}/activation-code`, `DELETE …/zalo`; `POST /users/{id}/activation-code`, `DELETE /users/{id}/zalo` (chỉ tài khoản lái xe). Nhập mã: `zalo.service.redeem` (endpoint ở bước xác thực Zalo). Link/QR: `TMS_ZALO_ACTIVATION_URL` (có `{code}`), trống → chỉ có mã.
-- **JWT**: thêm loại chủ thể `customer` (kèm danh sách liên hệ) bên cạnh user; endpoint khách `/customer/*` chỉ đọc. `test_security.py` thêm danh sách cho phép của khách và kiểm tra cô lập giữa khách/điểm giao.
+- **Kiểm thử bảo mật**: `test_security.py` - token khách hàng bị từ chối (401) ở mọi API nhân viên, token nhân viên bị từ chối ở `/customer/*`; cô lập giữa khách/điểm giao kiểm tra cùng API khách hàng.
 - **Giờ đến dự kiến (ETA)**: lưu `trip_stops.planned_arrival` khi lập kế hoạch (bộ giải đã tính) / khi lập tay (ước lượng); khi chuyến đang giao: mốc = giờ giao thực tế gần nhất (hoặc giờ xuất phát) + thời gian di chuyển (OSRM × hệ số kẹt xe) + thời gian phục vụ các điểm còn lại trước điểm của khách; hiển thị dạng khoảng, cập nhật sau mỗi lần xác nhận giao.
 - **Tuyến đã đi (D33)**: tuyến OSRM theo đường qua kho → các điểm **đã giao** → điểm của khách (sau khi giao xong); không trả tọa độ/marker điểm dừng khác; cắt bớt đoạn đường sát các điểm dừng khác để không lộ vị trí khách khác. Chưa dùng GPS thực của xe.
 - **Tài xế trên Zalo (D34)**: kênh phụ, dùng chung API `/driver/*`; vị trí qua `getLocation` (token đổi qua server Zalo), không phát hiện được vị trí giả lập, offline giới hạn (Native Storage 10 MB) → công ty bật/tắt "cho phép xác nhận giao qua Zalo". App native vẫn là kênh chính.

@@ -1223,10 +1223,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/zalo/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Zalo Login
+         * @description Zalo đã liên kết → token; nhiều tài khoản → chọn; chưa liên kết → nhập mã kích hoạt.
+         */
+        post: operations["zalo_login_api_v1_auth_zalo_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/zalo/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Zalo Activate */
+        post: operations["zalo_activate_api_v1_auth_zalo_activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/zalo/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Zalo Refresh */
+        post: operations["zalo_refresh_api_v1_auth_zalo_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customer Me */
+        get: operations["customer_me_api_v1_customer_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccountKind
+         * @enum {string}
+         */
+        AccountKind: "driver" | "customer";
         /**
          * ActivationCodeOut
          * @description Mã chỉ hiển thị 1 lần lúc tạo (server chỉ lưu hash).
@@ -1848,6 +1924,14 @@ export interface components {
             /** Delivery Points */
             delivery_points: components["schemas"]["DeliveryPointIn"][];
         };
+        /** CustomerMe */
+        CustomerMe: {
+            /** Zalo User Id */
+            zalo_user_id: string;
+            company: components["schemas"]["CompanyRef"];
+            /** Scopes */
+            scopes: components["schemas"]["CustomerScope"][];
+        };
         /** CustomerOut */
         CustomerOut: {
             /**
@@ -1902,6 +1986,27 @@ export interface components {
             cost: number;
             /** Cost Per Kg */
             cost_per_kg: number | null;
+        };
+        /**
+         * CustomerScope
+         * @description Phạm vi xem đơn: cả khách hàng (chủ) hoặc 1 điểm giao.
+         */
+        CustomerScope: {
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Delivery Point Id */
+            delivery_point_id: string | null;
+            /** Delivery Point Code */
+            delivery_point_code: string | null;
+            /** Delivery Point Name */
+            delivery_point_name: string | null;
         };
         /** CustomerUpdate */
         CustomerUpdate: {
@@ -3636,6 +3741,21 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /**
+         * ZaloAccount
+         * @description Một vai trò Zalo đã liên kết: lái xe hoặc khách hàng của 1 công ty.
+         */
+        ZaloAccount: {
+            kind: components["schemas"]["AccountKind"];
+            company: components["schemas"]["CompanyRef"];
+        };
+        /** ZaloActivateRequest */
+        ZaloActivateRequest: {
+            /** Access Token */
+            access_token: string;
+            /** Code */
+            code: string;
+        };
         /** ZaloLinkInfo */
         ZaloLinkInfo: {
             /** @default NOT_INVITED */
@@ -3646,6 +3766,45 @@ export interface components {
             activated_at?: string | null;
             /** Code Expires At */
             code_expires_at?: string | null;
+        };
+        /** ZaloLoginOut */
+        ZaloLoginOut: {
+            status: components["schemas"]["ZaloLoginStatus"];
+            /** Zalo Name */
+            zalo_name?: string | null;
+            account?: components["schemas"]["ZaloAccount"] | null;
+            /**
+             * Accounts
+             * @default []
+             */
+            accounts: components["schemas"]["ZaloAccount"][];
+            /** Access Token */
+            access_token?: string | null;
+            /** Refresh Token */
+            refresh_token?: string | null;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+        };
+        /** ZaloLoginRequest */
+        ZaloLoginRequest: {
+            /** Access Token */
+            access_token: string;
+            /** Company Id */
+            company_id?: string | null;
+            kind?: components["schemas"]["AccountKind"] | null;
+        };
+        /**
+         * ZaloLoginStatus
+         * @enum {string}
+         */
+        ZaloLoginStatus: "ok" | "choose_account" | "not_linked";
+        /** ZaloRefreshRequest */
+        ZaloRefreshRequest: {
+            /** Refresh Token */
+            refresh_token: string;
         };
         /**
          * ZaloStatus
@@ -6490,6 +6649,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    zalo_login_api_v1_auth_zalo_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZaloLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZaloLoginOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    zalo_activate_api_v1_auth_zalo_activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZaloActivateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZaloLoginOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    zalo_refresh_api_v1_auth_zalo_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZaloRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZaloLoginOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    customer_me_api_v1_customer_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerMe"];
                 };
             };
         };

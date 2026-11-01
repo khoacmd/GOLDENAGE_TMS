@@ -120,10 +120,11 @@
 - [x] Chốt yêu cầu, kiến trúc, phương án mã kích hoạt (D32–D35, ARCHITECTURE mục 11b)
 - [x] Liên hệ khách hàng: bảng `customer_contacts` (chủ / điểm giao, SĐT chuẩn hóa), web thêm/sửa/xóa (Khách hàng → Liên hệ), loại import "Liên hệ khách hàng" + mẫu `docs/samples/7-lien-he-khach-hang.csv`
 - [x] Mã kích hoạt: tạo / tạo lại / thu hồi cho liên hệ khách và tài xế, link + QR, chống dò, audit (web: Khách hàng → Liên hệ, Người dùng; Cấu hình → hạn mã); nhập mã `zalo.service.redeem` (endpoint ở bước xác thực Zalo)
-- [ ] Xác thực Zalo (`POST /auth/zalo`), liên kết bằng mã, chọn công ty, JWT chủ thể khách hàng; test bảo mật cho khách
+- [x] Xác thực Zalo (`POST /auth/zalo/login|activate|refresh`), liên kết bằng mã, chọn tài khoản (công ty / lái xe / khách hàng), JWT khách hàng (`customer_*`), `GET /customer/me`; chế độ giả lập `TMS_ZALO_MOCK`; test bảo mật cho token khách
+- [ ] Kiểm chứng gọi Graph API của Zalo (`appsecret_proof`) với App ID/secret thật
 - [ ] API khách hàng: đơn theo ngày, chi tiết + log giao (ảnh chứng từ), phân quyền chủ/điểm giao, ẩn giá trị với điểm giao
 - [ ] Giờ đến dự kiến: `trip_stops.planned_arrival` + tính lại theo giờ giao thực tế
 - [ ] Tuyến đã đi (OSRM, không lộ điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao
-- [ ] Mini app `zalo/` (React + ZaUI + zmp-sdk): phần khách hàng
+- [ ] Mini app `zalo/` (React + ZaUI + zmp-sdk): phần khách hàng; `packages/api-client` cho chọn đường dẫn làm mới token (`/auth/zalo/refresh`); CORS cho domain của Zalo Mini App
 - [ ] Mini app: phần tài xế (kênh phụ), cấu hình công ty "cho phép xác nhận giao qua Zalo"
 - [ ] Kiểm thử trên Zalo thật, gửi duyệt và phát hành mini app

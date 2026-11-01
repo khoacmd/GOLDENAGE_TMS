@@ -4843,10 +4843,168 @@
           }
         }
       }
+    },
+    "/api/v1/auth/zalo/login": {
+      "post": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Zalo Login",
+        "description": "Zalo đã liên kết → token; nhiều tài khoản → chọn; chưa liên kết → nhập mã kích hoạt.",
+        "operationId": "zalo_login_api_v1_auth_zalo_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZaloLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZaloLoginOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/zalo/activate": {
+      "post": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Zalo Activate",
+        "operationId": "zalo_activate_api_v1_auth_zalo_activate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZaloActivateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZaloLoginOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/zalo/refresh": {
+      "post": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Zalo Refresh",
+        "operationId": "zalo_refresh_api_v1_auth_zalo_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZaloRefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZaloLoginOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/me": {
+      "get": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Customer Me",
+        "operationId": "customer_me_api_v1_customer_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerMe"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccountKind": {
+        "type": "string",
+        "enum": [
+          "driver",
+          "customer"
+        ],
+        "title": "AccountKind"
+      },
       "ActivationCodeOut": {
         "properties": {
           "code": {
@@ -6627,6 +6785,31 @@
         ],
         "title": "CustomerCreate"
       },
+      "CustomerMe": {
+        "properties": {
+          "zalo_user_id": {
+            "type": "string",
+            "title": "Zalo User Id"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyRef"
+          },
+          "scopes": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerScope"
+            },
+            "type": "array",
+            "title": "Scopes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zalo_user_id",
+          "company",
+          "scopes"
+        ],
+        "title": "CustomerMe"
+      },
       "CustomerOut": {
         "properties": {
           "id": {
@@ -6808,6 +6991,68 @@
           "cost_per_kg"
         ],
         "title": "CustomerRow"
+      },
+      "CustomerScope": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "delivery_point_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Id"
+          },
+          "delivery_point_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Code"
+          },
+          "delivery_point_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "customer_code",
+          "customer_name",
+          "delivery_point_id",
+          "delivery_point_code",
+          "delivery_point_name"
+        ],
+        "title": "CustomerScope",
+        "description": "Phạm vi xem đơn: cả khách hàng (chủ) hoặc 1 điểm giao."
       },
       "CustomerUpdate": {
         "properties": {
@@ -11634,6 +11879,41 @@
         "type": "object",
         "title": "WarehouseUpdate"
       },
+      "ZaloAccount": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/AccountKind"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyRef"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "company"
+        ],
+        "title": "ZaloAccount",
+        "description": "Một vai trò Zalo đã liên kết: lái xe hoặc khách hàng của 1 công ty."
+      },
+      "ZaloActivateRequest": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "code"
+        ],
+        "title": "ZaloActivateRequest"
+      },
       "ZaloLinkInfo": {
         "properties": {
           "status": {
@@ -11678,6 +11958,131 @@
         },
         "type": "object",
         "title": "ZaloLinkInfo"
+      },
+      "ZaloLoginOut": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ZaloLoginStatus"
+          },
+          "zalo_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zalo Name"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ZaloAccount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/ZaloAccount"
+            },
+            "type": "array",
+            "title": "Accounts",
+            "default": []
+          },
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ZaloLoginOut"
+      },
+      "ZaloLoginRequest": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "ZaloLoginRequest"
+      },
+      "ZaloLoginStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "choose_account",
+          "not_linked"
+        ],
+        "title": "ZaloLoginStatus"
+      },
+      "ZaloRefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "ZaloRefreshRequest"
       },
       "ZaloStatus": {
         "type": "string",
