@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.core.parsing import Phone
 from app.modules.master_data.models import (
     CargoClass,
     CostAllocationMethod,
@@ -147,6 +148,26 @@ class CustomerUpdate(_CustomerFields):
     is_active: bool | None = None
     # Danh sách đầy đủ: upsert theo mã, điểm không còn trong danh sách bị ngưng hoạt động.
     delivery_points: list[DeliveryPointIn] | None = Field(default=None, min_length=1)
+
+
+class CustomerContactIn(BaseModel):
+    # Trống = liên hệ chủ (xem mọi đơn + giá trị); có = liên hệ của điểm giao đó.
+    delivery_point_id: uuid.UUID | None = None
+    name: str = Field(min_length=1, max_length=255)
+    phone: Phone
+    note: str | None = Field(default=None, max_length=255)
+    is_active: bool = True
+
+
+class CustomerContactOut(_Out):
+    id: uuid.UUID
+    customer_id: uuid.UUID
+    delivery_point_id: uuid.UUID | None
+    delivery_point_code: str | None
+    name: str
+    phone: str
+    note: str | None
+    is_active: bool
 
 
 class CustomerOut(_Out):

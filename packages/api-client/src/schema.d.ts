@@ -383,6 +383,42 @@ export interface paths {
         patch: operations["update_customer_api_v1_customers__customer_id__patch"];
         trace?: never;
     };
+    "/api/v1/customers/{customer_id}/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Customer Contacts */
+        get: operations["list_customer_contacts_api_v1_customers__customer_id__contacts_get"];
+        put?: never;
+        /** Create Customer Contact */
+        post: operations["create_customer_contact_api_v1_customers__customer_id__contacts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{customer_id}/contacts/{contact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Customer Contact */
+        put: operations["update_customer_contact_api_v1_customers__customer_id__contacts__contact_id__put"];
+        post?: never;
+        /** Delete Customer Contact */
+        delete: operations["delete_customer_contact_api_v1_customers__customer_id__contacts__contact_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -1649,6 +1685,47 @@ export interface components {
             /** Cost */
             cost: number;
         };
+        /** CustomerContactIn */
+        CustomerContactIn: {
+            /** Delivery Point Id */
+            delivery_point_id?: string | null;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** CustomerContactOut */
+        CustomerContactOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Delivery Point Id */
+            delivery_point_id: string | null;
+            /** Delivery Point Code */
+            delivery_point_code: string | null;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string;
+            /** Note */
+            note: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
         /** CustomerCreate */
         CustomerCreate: {
             /** Address */
@@ -2045,7 +2122,7 @@ export interface components {
          * ImportKind
          * @enum {string}
          */
-        ImportKind: "products" | "warehouses" | "vehicles" | "customers" | "orders" | "inventory";
+        ImportKind: "products" | "warehouses" | "vehicles" | "customers" | "customer_contacts" | "orders" | "inventory";
         /** ImportResultOut */
         ImportResultOut: {
             /**
@@ -4438,6 +4515,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CustomerOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_customer_contacts_api_v1_customers__customer_id__contacts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerContactOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_customer_contact_api_v1_customers__customer_id__contacts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerContactIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerContactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_customer_contact_api_v1_customers__customer_id__contacts__contact_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerContactIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerContactOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_customer_contact_api_v1_customers__customer_id__contacts__contact_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

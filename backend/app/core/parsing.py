@@ -144,6 +144,26 @@ def enum_parser[E: Enum](enum_cls: type[E], aliases: dict[str, E]) -> Callable[[
     return parse
 
 
+def normalize_phone(value: Any) -> str:
+    """Chuẩn hóa SĐT Việt Nam về dạng 0xxxxxxxxx (bỏ khoảng trắng/dấu, +84/84 → 0).
+
+    Excel lưu SĐT dạng số nên mất số 0 đầu → 9-10 chữ số không bắt đầu bằng 0 được thêm 0.
+    """
+    raw = _to_str(value)
+    if raw is None:
+        raise ValueError("Thiếu số điện thoại")
+    digits = re.sub(r"[\s.()-]", "", str(raw))
+    if digits.startswith("+84"):
+        digits = "0" + digits[3:]
+    elif digits.startswith("84") and len(digits) in (11, 12):
+        digits = "0" + digits[2:]
+    elif not digits.startswith("0") and len(digits) in (9, 10):
+        digits = "0" + digits
+    if not re.fullmatch(r"0\d{9,10}", digits):
+        raise ValueError("Số điện thoại không hợp lệ")
+    return digits
+
+
 Code = Annotated[
     str, BeforeValidator(_to_str), StringConstraints(strip_whitespace=True, max_length=64)
 ]
@@ -153,5 +173,6 @@ Num = Annotated[Decimal, BeforeValidator(_to_decimal)]
 OptionalNum = Annotated[Decimal | None, BeforeValidator(_to_decimal)]
 Day = Annotated[date, BeforeValidator(_to_date)]
 OptionalBool = Annotated[bool | None, BeforeValidator(_to_bool)]
+Phone = Annotated[str, BeforeValidator(normalize_phone)]
 Weekdays = Annotated[list[int], BeforeValidator(_to_weekdays)]
 CodeList = Annotated[list[str], BeforeValidator(_to_code_list)]

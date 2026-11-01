@@ -25,6 +25,7 @@ from app.core.parsing import (
     Num,
     OptionalBool,
     OptionalText,
+    Phone,
     Text,
     Weekdays,
     enum_parser,
@@ -34,6 +35,7 @@ from app.modules.master_data.models import (
     CargoClass,
     CostAllocationMethod,
     Customer,
+    CustomerContact,
     Product,
     TempClass,
     Vehicle,
@@ -423,5 +425,115 @@ CUSTOMERS = ImportSpec(
     ],
     row_model=CustomerRow,
     apply=apply_customers,
+    allowed_roles=ADMIN_OR_MANAGER,
+)
+
+
+# --- Liên hệ khách hàng ------------------------------------------------------------------
+
+
+class CustomerContactRow(RowModel):
+    ma_kh: Code
+    ma_diem_giao: Annotated[OptionalText, Field(max_length=32)] = None
+    ten_lien_he: Annotated[Text, Field(max_length=255)]
+    dien_thoai: Phone
+    ghi_chu: Annotated[OptionalText, Field(max_length=255)] = None
+    hoat_dong: OptionalBool = None
+
+
+def _contact_key(row: CustomerContactRow) -> tuple[str, str, str]:
+    return (row.ma_kh.lower(), (row.ma_diem_giao or "").lower(), row.dien_thoai)
+
+
+async def apply_customer_contacts(
+    session: AsyncSession, ctx: ImportContext, rows: Sequence[ParsedRow[CustomerContactRow]]
+) -> ApplyResult:
+    result = ApplyResult(errors=duplicate_errors(rows, _contact_key, "Điện thoại"))
+    if result.errors:
+        return result
+
+    customers = await load_by_codes(session, Customer, (r.data.ma_kh for r in rows))
+    existing = {
+        (c.customer_id, c.delivery_point_id, c.phone): c
+        for c in await session.scalars(
+            select(CustomerContact).where(
+                CustomerContact.customer_id.in_([c.id for c in customers.values()])
+            )
+        )
+    }
+    for row in rows:
+        data = row.data
+        customer = customers.get(data.ma_kh.lower())
+        if customer is None:
+            result.errors.append(RowError(row.row_no, "Mã KH", f"Không có khách hàng {data.ma_kh}"))
+            continue
+        point_id = None
+        if data.ma_diem_giao:
+            point = next(
+                (
+                    dp
+                    for dp in customer.delivery_points
+                    if dp.code.lower() == data.ma_diem_giao.lower()
+                ),
+                None,
+            )
+            if point is None:
+                result.errors.append(
+                    RowError(
+                        row.row_no,
+                        "Mã điểm giao",
+                        f"Khách hàng {data.ma_kh} không có điểm giao {data.ma_diem_giao}",
+                    )
+                )
+                continue
+            point_id = point.id
+        values = {
+            "name": data.ten_lien_he,
+            "note": data.ghi_chu,
+            "is_active": data.hoat_dong is not False,
+        }
+        contact = existing.get((customer.id, point_id, data.dien_thoai))
+        if contact is not None:
+            _assign(contact, values)
+            result.updated += 1
+        else:
+            session.add(
+                CustomerContact(
+                    company_id=ctx.company_id,
+                    customer_id=customer.id,
+                    delivery_point_id=point_id,
+                    phone=data.dien_thoai,
+                    **values,
+                )
+            )
+            result.created += 1
+    return result
+
+
+CUSTOMER_CONTACTS = ImportSpec(
+    kind="customer_contacts",
+    title="Liên hệ khách hàng",
+    description=(
+        "Người liên hệ dùng Zalo Mini App. Để trống mã điểm giao = liên hệ chủ (xem mọi đơn của "
+        "khách hàng kèm giá trị); có mã điểm giao = chỉ xem đơn đến điểm giao đó (mặt hàng, số "
+        "lượng). Ghi theo (mã KH, mã điểm giao, điện thoại); liên hệ không có trong file được "
+        "giữ nguyên."
+    ),
+    columns=[
+        Column("ma_kh", "Mã KH", True, "KH001"),
+        Column("ma_diem_giao", "Mã điểm giao", False, "DG1", "Trống = liên hệ chủ của khách hàng"),
+        Column("ten_lien_he", "Tên liên hệ", True, "Nguyễn Văn A"),
+        Column(
+            "dien_thoai",
+            "Điện thoại",
+            True,
+            "0912345678",
+            "SĐT dùng Zalo; nhận dạng 0912 345 678, +84912345678",
+        ),
+        Column("ghi_chu", "Ghi chú", False, "Thủ kho đại lý"),
+        Column("hoat_dong", "Hoạt động", False, "C", "C (mặc định) / K"),
+    ],
+    row_model=CustomerContactRow,
+    apply=apply_customer_contacts,
     allowed_roles=ADMIN_OR_MANAGER,
 )

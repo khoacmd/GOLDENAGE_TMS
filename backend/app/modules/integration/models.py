@@ -15,6 +15,7 @@ class ImportKind(StrEnum):
     WAREHOUSES = "warehouses"
     VEHICLES = "vehicles"
     CUSTOMERS = "customers"
+    CUSTOMER_CONTACTS = "customer_contacts"
     ORDERS = "orders"
     INVENTORY = "inventory"
 

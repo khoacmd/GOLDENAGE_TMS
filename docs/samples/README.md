@@ -14,5 +14,6 @@ Import theo đúng thứ tự số trong tên file, ở màn hình **Import dữ
 | `4-khach-hang.csv` | Khách hàng & điểm giao (`customers`) |
 | `5-ton-kho.csv` | Tồn kho (`inventory`) |
 | `6-don-hang.csv` | Đơn hàng (`orders`) |
+| `7-lien-he-khach-hang.csv` | Liên hệ khách hàng (`customer_contacts`) - người dùng Zalo Mini App |
 
 Tọa độ là vị trí gần đúng trên bản đồ, chỉ dùng cho demo.

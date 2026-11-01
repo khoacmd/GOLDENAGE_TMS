@@ -423,9 +423,62 @@ async def test_sample_files_import_in_order(client: AsyncClient, admin_token: st
     """Bộ dữ liệu mẫu trong docs/samples luôn import được."""
     from pathlib import Path
 
-    kinds = ["warehouses", "vehicles", "products", "customers", "inventory", "orders"]
+    kinds = [
+        "warehouses",
+        "vehicles",
+        "products",
+        "customers",
+        "inventory",
+        "orders",
+        "customer_contacts",
+    ]
     samples = sorted((Path(__file__).parents[2] / "docs" / "samples").glob("*.csv"))
     assert len(samples) == len(kinds)
     for path, kind in zip(samples, kinds, strict=True):
         result = await upload(client, admin_token, kind, path.read_bytes(), path.name)
         assert result["status"] == "SUCCEEDED", (path.name, result["errors"])
+
+
+async def test_import_customer_contacts(client: AsyncClient, admin_token: str) -> None:
+    customers = (
+        "ma_kh,ten_kh,ma_diem_giao,dia_chi_diem_giao,vi_do,kinh_do\n"
+        "KH001,Đại lý A,DG1,HN,21,105\nKH001,Đại lý A,DG2,HN,21.01,105\n"
+    )
+    await upload(client, admin_token, "customers", customers.encode(), "kh.csv")
+    contacts = (
+        "Mã KH,Mã điểm giao,Tên liên hệ,Điện thoại,Ghi chú\n"
+        "KH001,,Chủ,912000001,Excel mất số 0\n"
+        "KH001,DG2,Thủ kho,0912 000 002,\n"
+    )
+    result = await upload(client, admin_token, "customer_contacts", contacts.encode(), "lh.csv")
+    assert (result["status"], result["created"]) == ("SUCCEEDED", 2), result["errors"]
+
+    # Lần 2: cập nhật theo (KH, điểm giao, SĐT); dòng lỗi → không ghi gì (all-or-nothing).
+    again = (
+        "Mã KH,Mã điểm giao,Tên liên hệ,Điện thoại,Hoạt động\n"
+        "KH001,,Chủ mới,+84912000001,C\n"
+        "KH001,DG9,X,0912000003,C\n"
+        "KH009,,X,0912000004,C\n"
+        "KH001,,X,0912000001,C\n"
+    )
+    result = await upload(client, admin_token, "customer_contacts", again.encode(), "lh.csv")
+    assert result["status"] == "FAILED"
+    assert {e["column"] for e in result["errors"]} == {"Điện thoại"}  # trùng dòng 2
+    again = "\n".join(again.splitlines()[:-1]) + "\n"
+    result = await upload(client, admin_token, "customer_contacts", again.encode(), "lh.csv")
+    assert {(e["row"], e["column"]) for e in result["errors"]} == {
+        (3, "Mã điểm giao"),
+        (4, "Mã KH"),
+    }
+    ok = "Mã KH,Mã điểm giao,Tên liên hệ,Điện thoại,Hoạt động\nKH001,,Chủ mới,+84912000001,K\n"
+    result = await upload(client, admin_token, "customer_contacts", ok.encode(), "lh.csv")
+    assert (result["created"], result["updated"]) == (0, 1)
+
+    customer = (await client.get("/api/v1/customers", headers=auth(admin_token))).json()["items"][0]
+    listed = (
+        await client.get(f"/api/v1/customers/{customer['id']}/contacts", headers=auth(admin_token))
+    ).json()
+    assert [(c["name"], c["delivery_point_code"], c["is_active"]) for c in listed] == [
+        ("Chủ mới", None, False),
+        ("Thủ kho", "DG2", True),
+    ]

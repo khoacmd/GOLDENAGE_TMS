@@ -177,6 +177,44 @@ class DeliveryPoint(UUIDPrimaryKeyMixin, TenantMixin, GeoPointMixin, TimestampMi
     customer: Mapped[Customer] = relationship(back_populates="delivery_points", lazy="joined")
 
 
+class CustomerContact(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
+    """Người liên hệ của khách hàng (chủ) hoặc của 1 điểm giao - đối tượng dùng Zalo Mini App.
+
+    `delivery_point_id` trống = liên hệ chủ: xem mọi đơn của khách hàng kèm giá trị;
+    có giá trị = chỉ xem đơn đến điểm giao đó, không thấy giá trị (D35).
+    """
+
+    __tablename__ = "customer_contacts"
+    __table_args__ = (
+        Index(
+            "uq_customer_contacts_phone",
+            "customer_id",
+            "delivery_point_id",
+            "phone",
+            unique=True,
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
+
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), index=True
+    )
+    delivery_point_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("delivery_points.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    # Chuẩn hóa dạng 0xxxxxxxxx (xem `normalize_phone`).
+    phone: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+
+    delivery_point: Mapped["DeliveryPoint | None"] = relationship(lazy="joined")
+
+    @property
+    def delivery_point_code(self) -> str | None:
+        return self.delivery_point.code if self.delivery_point else None
+
+
 class Product(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "products"
     __table_args__ = (

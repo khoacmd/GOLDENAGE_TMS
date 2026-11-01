@@ -17,6 +17,7 @@ import {
   Table,
   Tag,
 } from 'antd'
+import { useState } from 'react'
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
@@ -24,6 +25,7 @@ import { unwrap, usePaging } from '../../lib/api-helpers'
 import { CoordinateFields } from '../../lib/CoordinateFields'
 import { mapLink, useEntityModal } from '../../lib/crud'
 import { VEHICLE_REQUIREMENT, WEEKDAYS, options, weekdayText } from '../../lib/labels'
+import { CustomerContactsModal } from './CustomerContacts'
 
 type Customer = components['schemas']['CustomerOut']
 type CustomerForm = components['schemas']['CustomerCreate']
@@ -33,6 +35,7 @@ export function CustomersPage() {
   const { hasRole } = useAuth()
   const canEdit = hasRole('company_admin', 'manager')
   const paging = usePaging()
+  const [contactsOf, setContactsOf] = useState<Customer | null>(null)
   const query = useQuery({
     queryKey: ['customers', paging.params],
     queryFn: async () =>
@@ -143,9 +146,18 @@ export function CustomersPage() {
             width: 110,
             render: (v: boolean) => (v ? <Tag color="green">Hoạt động</Tag> : <Tag>Ngưng</Tag>),
           },
-          ...(canEdit
-            ? [{ title: '', width: 60, render: (_: unknown, r: Customer) => <a onClick={() => modal.show(r)}>Sửa</a> }]
-            : []),
+          {
+            title: '',
+            width: 130,
+            render: (_: unknown, r: Customer) => (
+              <Space>
+                <a onClick={() => setContactsOf(r)} style={{ whiteSpace: 'nowrap' }}>
+                  Liên hệ
+                </a>
+                {canEdit && <a onClick={() => modal.show(r)}>Sửa</a>}
+              </Space>
+            ),
+          },
         ]}
       />
       {modal.render(
@@ -266,6 +278,7 @@ export function CustomersPage() {
         ),
         760,
       )}
+      <CustomerContactsModal customer={contactsOf} canEdit={canEdit} onClose={() => setContactsOf(null)} />
     </Card>
   )
 }

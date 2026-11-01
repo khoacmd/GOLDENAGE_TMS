@@ -211,3 +211,68 @@ async def test_system_admin_cannot_access_company_data(
 ) -> None:
     resp = await client.get("/api/v1/warehouses", headers=auth(sysadmin_token))
     assert resp.status_code == 403
+
+
+async def test_customer_contacts(client: AsyncClient, admin_token: str) -> None:
+    customer = (
+        await client.post("/api/v1/customers", headers=auth(admin_token), json=_customer())
+    ).json()
+    dg2 = next(p for p in customer["delivery_points"] if p["code"] == "DG2")
+    url = f"/api/v1/customers/{customer['id']}/contacts"
+
+    owner = await client.post(
+        url, headers=auth(admin_token), json={"name": "Chủ đại lý", "phone": "+84 912.000.001"}
+    )
+    assert owner.status_code == 201, owner.text
+    assert owner.json()["phone"] == "0912000001"  # chuẩn hóa SĐT
+    assert owner.json()["delivery_point_id"] is None
+    point = await client.post(
+        url,
+        headers=auth(admin_token),
+        json={"name": "Thủ kho", "phone": "0912000001", "delivery_point_id": dg2["id"]},
+    )
+    assert point.status_code == 201  # cùng SĐT nhưng khác phạm vi (chủ / điểm giao)
+    assert point.json()["delivery_point_code"] == "DG2"
+
+    # Trùng SĐT trong cùng phạm vi, SĐT sai, điểm giao của khách hàng khác → từ chối.
+    dup = await client.post(
+        url, headers=auth(admin_token), json={"name": "X", "phone": "0912000001"}
+    )
+    assert dup.status_code == 409
+    bad = await client.post(url, headers=auth(admin_token), json={"name": "X", "phone": "12345"})
+    assert bad.status_code == 422
+    other = (
+        await client.post(
+            "/api/v1/customers", headers=auth(admin_token), json=_customer(code="KH002")
+        )
+    ).json()
+    resp = await client.post(
+        url,
+        headers=auth(admin_token),
+        json={
+            "name": "X",
+            "phone": "0912000009",
+            "delivery_point_id": other["delivery_points"][0]["id"],
+        },
+    )
+    assert resp.json()["error"]["code"] == "invalid_delivery_point"
+
+    contact_url = f"{url}/{point.json()['id']}"
+    resp = await client.put(
+        contact_url,
+        headers=auth(admin_token),
+        json={"name": "Thủ kho mới", "phone": "0912000002", "delivery_point_id": dg2["id"]},
+    )
+    assert resp.json()["name"] == "Thủ kho mới"
+    # Liên hệ của khách hàng khác không sửa được qua URL của khách hàng này.
+    resp = await client.put(
+        f"/api/v1/customers/{other['id']}/contacts/{point.json()['id']}",
+        headers=auth(admin_token),
+        json={"name": "X", "phone": "0912000003"},
+    )
+    assert resp.status_code == 404
+
+    contacts = (await client.get(url, headers=auth(admin_token))).json()
+    assert [c["name"] for c in contacts] == ["Chủ đại lý", "Thủ kho mới"]  # chủ trước
+    assert (await client.delete(contact_url, headers=auth(admin_token))).status_code == 204
+    assert len((await client.get(url, headers=auth(admin_token))).json()) == 1

@@ -118,7 +118,7 @@
 ## M7 – Zalo Mini App (khách hàng + tài xế kênh phụ)
 - [ ] Đăng ký Zalo OA doanh nghiệp (công ty vận hành TMS đứng tên) + tạo Zalo Mini App, xin quyền SĐT/vị trí, khai báo domain API `tms.thanhxuan.me`
 - [x] Chốt yêu cầu, kiến trúc, phương án mã kích hoạt (D32–D35, ARCHITECTURE mục 11b)
-- [ ] Liên hệ khách hàng: bảng `customer_contacts` (chủ / điểm giao), web thêm/sửa, loại import "Liên hệ khách hàng"
+- [x] Liên hệ khách hàng: bảng `customer_contacts` (chủ / điểm giao, SĐT chuẩn hóa), web thêm/sửa/xóa (Khách hàng → Liên hệ), loại import "Liên hệ khách hàng" + mẫu `docs/samples/7-lien-he-khach-hang.csv`
 - [ ] Mã kích hoạt: tạo / tạo lại / thu hồi cho liên hệ khách và tài xế, link + QR, chống dò, audit (web: trang Khách hàng, Người dùng)
 - [ ] Xác thực Zalo (`POST /auth/zalo`), liên kết bằng mã, chọn công ty, JWT chủ thể khách hàng; test bảo mật cho khách
 - [ ] API khách hàng: đơn theo ngày, chi tiết + log giao (ảnh chứng từ), phân quyền chủ/điểm giao, ẩn giá trị với điểm giao

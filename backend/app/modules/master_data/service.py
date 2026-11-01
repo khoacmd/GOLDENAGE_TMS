@@ -2,13 +2,14 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.core.schemas import PageParams, paginate
 from app.modules.master_data.models import (
     Customer,
+    CustomerContact,
     DeliveryPoint,
     Product,
     Vehicle,
@@ -16,6 +17,7 @@ from app.modules.master_data.models import (
     Warehouse,
 )
 from app.modules.master_data.schemas import (
+    CustomerContactIn,
     CustomerCreate,
     CustomerUpdate,
     DeliveryPointIn,
@@ -264,6 +266,83 @@ async def update_customer(
         )
     await session.flush()
     return customer
+
+
+# --- Liên hệ khách hàng ------------------------------------------------------------------
+
+
+async def list_contacts(session: AsyncSession, customer_id: uuid.UUID) -> list[CustomerContact]:
+    customer = await get_customer(session, customer_id)
+    rows = await session.scalars(
+        select(CustomerContact)
+        .where(CustomerContact.customer_id == customer.id)
+        .order_by(CustomerContact.delivery_point_id.is_not(None), CustomerContact.name)
+    )
+    return list(rows)
+
+
+async def get_contact(
+    session: AsyncSession, customer_id: uuid.UUID, contact_id: uuid.UUID
+) -> CustomerContact:
+    contact = await session.get(CustomerContact, contact_id)
+    if contact is None or contact.customer_id != customer_id:
+        raise NotFoundError("Không tìm thấy liên hệ")
+    return contact
+
+
+async def _check_contact(
+    session: AsyncSession, customer: Customer, data: CustomerContactIn, contact_id: uuid.UUID | None
+) -> None:
+    """Điểm giao phải thuộc khách hàng; mỗi SĐT chỉ 1 lần trong cùng phạm vi (chủ / điểm giao)."""
+    if data.delivery_point_id is not None and all(
+        dp.id != data.delivery_point_id for dp in customer.delivery_points
+    ):
+        raise AppError("Điểm giao không thuộc khách hàng", code="invalid_delivery_point")
+    duplicate = await session.scalar(
+        select(CustomerContact.id).where(
+            CustomerContact.customer_id == customer.id,
+            CustomerContact.delivery_point_id.is_not_distinct_from(data.delivery_point_id),
+            CustomerContact.phone == data.phone,
+            CustomerContact.id != contact_id if contact_id else true(),
+        )
+    )
+    if duplicate is not None:
+        raise ConflictError(f"Số điện thoại {data.phone} đã có trong danh sách liên hệ này")
+
+
+async def create_contact(
+    session: AsyncSession, customer_id: uuid.UUID, data: CustomerContactIn
+) -> CustomerContact:
+    customer = await get_customer(session, customer_id)
+    await _check_contact(session, customer, data, None)
+    contact = CustomerContact(
+        company_id=customer.company_id, customer_id=customer.id, **data.model_dump()
+    )
+    session.add(contact)
+    await session.flush()
+    await session.refresh(contact, ["delivery_point"])
+    return contact
+
+
+async def update_contact(
+    session: AsyncSession, customer_id: uuid.UUID, contact_id: uuid.UUID, data: CustomerContactIn
+) -> CustomerContact:
+    customer = await get_customer(session, customer_id)
+    contact = await get_contact(session, customer.id, contact_id)
+    await _check_contact(session, customer, data, contact.id)
+    for key, value in data.model_dump().items():
+        setattr(contact, key, value)
+    await session.flush()
+    await session.refresh(contact, ["delivery_point"])
+    return contact
+
+
+async def delete_contact(
+    session: AsyncSession, customer_id: uuid.UUID, contact_id: uuid.UUID
+) -> None:
+    contact = await get_contact(session, customer_id, contact_id)
+    await session.delete(contact)
+    await session.flush()
 
 
 # --- Mặt hàng ----------------------------------------------------------------------------

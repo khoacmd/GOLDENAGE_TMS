@@ -144,7 +144,15 @@ async def create_warehouse(client: AsyncClient, token: str, **overrides: str) ->
 
 PLAN_DATE = "2026-11-02"  # Thứ 2, ngày giao của đơn mẫu
 SAMPLES = Path(__file__).parents[2] / "docs" / "samples"
-KINDS = ["warehouses", "vehicles", "products", "customers", "inventory", "orders"]
+KINDS = [
+    "warehouses",
+    "vehicles",
+    "products",
+    "customers",
+    "inventory",
+    "orders",
+    "customer_contacts",
+]
 
 
 @dataclass

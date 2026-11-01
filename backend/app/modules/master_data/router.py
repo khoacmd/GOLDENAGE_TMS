@@ -8,6 +8,8 @@ from app.core.db import DbSession
 from app.core.schemas import Page, PageParams, page_params
 from app.modules.master_data import service
 from app.modules.master_data.schemas import (
+    CustomerContactIn,
+    CustomerContactOut,
     CustomerCreate,
     CustomerOut,
     CustomerUpdate,
@@ -132,6 +134,51 @@ async def update_customer(
     customer = await service.update_customer(session, customer_id, body)
     await session.commit()
     return CustomerOut.model_validate(customer)
+
+
+# --- Liên hệ khách hàng (đối tượng dùng Zalo Mini App) -------------------------------------
+
+
+@router.get("/customers/{customer_id}/contacts")
+async def list_customer_contacts(
+    customer_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
+) -> list[CustomerContactOut]:
+    return [
+        CustomerContactOut.model_validate(c)
+        for c in await service.list_contacts(session, customer_id)
+    ]
+
+
+@router.post("/customers/{customer_id}/contacts", status_code=status.HTTP_201_CREATED)
+async def create_customer_contact(
+    customer_id: uuid.UUID, body: CustomerContactIn, _: ManagerOrAdminDep, session: DbSession
+) -> CustomerContactOut:
+    contact = await service.create_contact(session, customer_id, body)
+    await session.commit()
+    return CustomerContactOut.model_validate(contact)
+
+
+@router.put("/customers/{customer_id}/contacts/{contact_id}")
+async def update_customer_contact(
+    customer_id: uuid.UUID,
+    contact_id: uuid.UUID,
+    body: CustomerContactIn,
+    _: ManagerOrAdminDep,
+    session: DbSession,
+) -> CustomerContactOut:
+    contact = await service.update_contact(session, customer_id, contact_id, body)
+    await session.commit()
+    return CustomerContactOut.model_validate(contact)
+
+
+@router.delete(
+    "/customers/{customer_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_customer_contact(
+    customer_id: uuid.UUID, contact_id: uuid.UUID, _: ManagerOrAdminDep, session: DbSession
+) -> None:
+    await service.delete_contact(session, customer_id, contact_id)
+    await session.commit()
 
 
 # --- Mặt hàng (quản lý / admin) -------------------------------------------------------------

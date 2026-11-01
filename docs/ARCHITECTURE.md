@@ -141,6 +141,7 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - `vehicle_warehouses(vehicle_id, warehouse_id)` – kho xe được phép lấy hàng
 - `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
 - `delivery_points(customer_id, address, location geography(Point))`
+- `customer_contacts(customer_id, delivery_point_id?, name, phone, note, is_active)` – người dùng Zalo Mini App (M7): trống điểm giao = liên hệ chủ; SĐT chuẩn hóa `0xxxxxxxxx`, duy nhất theo (khách hàng, điểm giao, SĐT); API `/customers/{id}/contacts`, import `customer_contacts`
 - `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg)` – đồng bộ từ hệ thống bán hàng
 - `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng = tồn snapshot − hàng của các lệnh `DRAFT/APPROVED/PREPARED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
 
@@ -238,7 +239,7 @@ Chi tiết triển khai:
 
 ## 10. Tích hợp
 
-- Đối tượng: đơn hàng, mặt hàng, khách hàng/điểm giao, tồn kho.
+- Đối tượng: đơn hàng, mặt hàng, khách hàng/điểm giao, liên hệ khách hàng, tồn kho.
 - Hai kênh dùng chung một pipeline (`app/core/importing.py` + `app/modules/integration`):
   - **Upload file** `.xlsx`/`.csv`: `POST /api/v1/imports/{loại}` (người dùng web).
   - **API tích hợp**: `POST /api/v1/integration/{loại}` với header `X-API-Key` (key theo công ty, chỉ lưu SHA-256, thu hồi được); body `{"rows": [...], "dry_run": false}`.
@@ -267,7 +268,7 @@ Chi tiết triển khai:
 - **Xác thực**: mini app `getAccessToken()` → `POST /auth/zalo` → backend gọi Open API của Zalo lấy Zalo ID (ID theo ứng dụng, người dùng/admin không tự biết) → nếu Zalo ID đã liên kết: cấp JWT TMS, nhiều công ty thì chọn công ty như đăng nhập web. Chưa liên kết → màn hình nhập mã kích hoạt.
 - **Mã kích hoạt (phương án A, D32)**: admin công ty tạo cho từng liên hệ khách hàng hoặc từng tài xế; mã 8 ký tự (bỏ ký tự dễ nhầm), kèm link/QR mở mini app có sẵn mã; dùng 1 lần, hết hạn 7 ngày (cấu hình); lưu hash. Nhập đúng → gắn Zalo ID vào liên hệ/tài khoản. Tạo lại mã → mã cũ mất hiệu lực; thu hồi liên kết bất kỳ lúc nào; audit mọi thao tác; nhập sai 5 lần/15 phút → khóa tạm.
 - **Dữ liệu**:
-  - `customer_contacts(customer_id, delivery_point_id?, name, phone, zalo_user_id?, status: NOT_INVITED|PENDING|ACTIVE|REVOKED, activated_at)` - `delivery_point_id` trống = liên hệ chủ (xem mọi đơn + giá trị), có = liên hệ điểm giao (chỉ đơn đến điểm đó, chỉ mặt hàng + số lượng). Quyền của một Zalo = hợp các liên hệ đã kích hoạt tại công ty đang chọn. Thêm/sửa trên web + loại import "Liên hệ khách hàng".
+  - `customer_contacts` (đã có, mục 7) - M7 bổ sung `zalo_user_id?, status: NOT_INVITED|PENDING|ACTIVE|REVOKED, activated_at` - `delivery_point_id` trống = liên hệ chủ (xem mọi đơn + giá trị), có = liên hệ điểm giao (chỉ đơn đến điểm đó, chỉ mặt hàng + số lượng). Quyền của một Zalo = hợp các liên hệ đã kích hoạt tại công ty đang chọn. Thêm/sửa trên web + loại import "Liên hệ khách hàng".
   - `zalo_links(zalo_user_id, company_id, user_id? | customer_contact_id?)` cho tài xế (cùng cơ chế mã) - chi tiết bảng chốt khi thiết kế.
   - `activation_codes(company_id, target, code_hash, expires_at, used_at, created_by)`.
 - **JWT**: thêm loại chủ thể `customer` (kèm danh sách liên hệ) bên cạnh user; endpoint khách `/customer/*` chỉ đọc. `test_security.py` thêm danh sách cho phép của khách và kiểm tra cô lập giữa khách/điểm giao.

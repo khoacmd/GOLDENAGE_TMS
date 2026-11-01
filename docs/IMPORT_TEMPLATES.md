@@ -113,3 +113,16 @@ Mỗi dòng 1 mặt hàng của đơn; các dòng cùng Số đơn được gom 
 | Mã hàng | `ma_hang` | Có |  | SUA-TT-180 |
 | Số lượng | `so_luong` | Có | Theo đơn vị tính của mặt hàng | 20 |
 | Thành tiền (đ) | `thanh_tien` |  | Giá trị dòng hàng (nếu có) | 7800000 |
+
+## Liên hệ khách hàng (`customer_contacts`)
+
+Người liên hệ dùng Zalo Mini App. Để trống mã điểm giao = liên hệ chủ (xem mọi đơn của khách hàng kèm giá trị); có mã điểm giao = chỉ xem đơn đến điểm giao đó (mặt hàng, số lượng). Ghi theo (mã KH, mã điểm giao, điện thoại); liên hệ không có trong file được giữ nguyên.
+
+| Cột | Mã cột | Bắt buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|
+| Mã KH | `ma_kh` | Có |  | KH001 |
+| Mã điểm giao | `ma_diem_giao` |  | Trống = liên hệ chủ của khách hàng | DG1 |
+| Tên liên hệ | `ten_lien_he` | Có |  | Nguyễn Văn A |
+| Điện thoại | `dien_thoai` | Có | SĐT dùng Zalo; nhận dạng 0912 345 678, +84912345678 | 0912345678 |
+| Ghi chú | `ghi_chu` |  |  | Thủ kho đại lý |
+| Hoạt động | `hoat_dong` |  | C (mặc định) / K | C |

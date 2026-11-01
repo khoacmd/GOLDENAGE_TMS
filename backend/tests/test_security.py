@@ -92,10 +92,12 @@ async def tenant_a(client: AsyncClient, env: Env, sysadmin_token: str) -> Tenant
         "/api/v1/planning/runs", headers=m, json={"plan_date": PLAN_DATE, "replace_drafts": False}
     )
     companies = (await client.get("/api/v1/admin/companies", headers=auth(sysadmin_token))).json()
+    customer_id = await first("/api/v1/customers")
     ids = {
         "trip_id": trip["id"],
         "item_id": trip["stops"][0]["items"][0]["id"],
-        "customer_id": await first("/api/v1/customers"),
+        "customer_id": customer_id,
+        "contact_id": await first(f"/api/v1/customers/{customer_id}/contacts"),
         "product_id": await first("/api/v1/products"),
         "vehicle_id": env.vehicles["XE01"],
         "warehouse_id": env.warehouses["KHO01"],
@@ -131,6 +133,11 @@ def write_body(path: str, a: TenantA) -> Any:
         "/api/v1/trips/{trip_id}/items/{item_id}": {"status": "SUCCESS"},
         "/api/v1/trips/{trip_id}/cost": {"extra_cost": 1},
         "/api/v1/orders/{order_id}/cancel": {"reason": "thử"},
+        "/api/v1/customers/{customer_id}/contacts": {"name": "B", "phone": "0912999999"},
+        "/api/v1/customers/{customer_id}/contacts/{contact_id}": {
+            "name": "B",
+            "phone": "0912999999",
+        },
         "/api/v1/users/{user_id}/roles": {"roles": ["manager"]},
         "/api/v1/users/{user_id}/pin": {"pin": "246810"},
         "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {
@@ -151,6 +158,7 @@ async def snapshot(client: AsyncClient, a: TenantA) -> list[Any]:
         f"/api/v1/trips/{a.ids['trip_id']}",
         f"/api/v1/trips/{a.ids['trip_id']}/cost",
         f"/api/v1/customers/{a.ids['customer_id']}",
+        f"/api/v1/customers/{a.ids['customer_id']}/contacts",
         f"/api/v1/products/{a.ids['product_id']}",
         f"/api/v1/vehicles/{a.ids['vehicle_id']}",
         f"/api/v1/warehouses/{a.ids['warehouse_id']}",
