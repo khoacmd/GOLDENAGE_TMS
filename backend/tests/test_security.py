@@ -23,11 +23,13 @@ PUBLIC = {
     ("post", "/api/v1/auth/login"),
     ("post", "/api/v1/auth/login-pin"),
     ("post", "/api/v1/auth/refresh"),
+    ("post", "/api/v1/auth/logout"),  # tự xác thực bằng refresh token trong body
     ("post", "/api/v1/integration/{kind}"),  # X-API-Key, kiểm tra riêng bên dưới
 }
 # Endpoint tài khoản chỉ có vai trò lái xe được gọi.
 DRIVER_ALLOWED = {
     ("get", "/api/v1/auth/me"),
+    ("post", "/api/v1/auth/change-password"),
     ("post", "/api/v1/trips/{trip_id}/dispatch"),
 } | {
     (m, p)

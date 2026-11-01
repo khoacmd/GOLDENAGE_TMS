@@ -7,6 +7,7 @@ import {
   HomeOutlined,
   ImportOutlined,
   InboxOutlined,
+  KeyOutlined,
   LogoutOutlined,
   MobileOutlined,
   SettingOutlined,
@@ -14,10 +15,11 @@ import {
 } from '@ant-design/icons'
 import type { CompanyRole } from '@tms/api-client'
 import { Button, Layout, Menu, Space, Spin, Typography, type MenuProps } from 'antd'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router'
 
 import { useAuth } from '../auth-context'
+import { ChangePasswordModal } from './ChangePasswordModal'
 
 interface NavItem {
   path: string
@@ -64,6 +66,7 @@ export function AppLayout() {
   const { me, loading, logout, hasRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [changingPassword, setChangingPassword] = useState(false)
 
   if (loading) return <Spin fullscreen />
   if (!me) return <Navigate to="/login" replace />
@@ -103,6 +106,9 @@ export function AppLayout() {
               {me.full_name}
               {me.company && ` · ${me.company.name}`}
             </Typography.Text>
+            <Button icon={<KeyOutlined />} onClick={() => setChangingPassword(true)}>
+              Đổi mật khẩu
+            </Button>
             <Button icon={<LogoutOutlined />} onClick={logout}>
               Đăng xuất
             </Button>
@@ -111,6 +117,7 @@ export function AppLayout() {
         <Layout.Content style={{ margin: 16 }}>
           <Outlet />
         </Layout.Content>
+        <ChangePasswordModal open={changingPassword} onClose={() => setChangingPassword(false)} />
       </Layout>
     </Layout>
   )

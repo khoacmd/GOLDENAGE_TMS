@@ -1,6 +1,6 @@
 import { createApiClient, type TokenPair, type TokenStore } from '@tms/api-client'
 
-const STORAGE_KEY = 'tms.tokens'
+export const STORAGE_KEY = 'tms.tokens'
 
 export const tokenStore: TokenStore = {
   get() {
@@ -14,3 +14,13 @@ export const tokenStore: TokenStore = {
 }
 
 export const api = createApiClient(window.location.origin, tokenStore)
+
+/** Báo server thu hồi token của phiên (không chờ kết quả - đăng xuất cục bộ luôn diễn ra). */
+export function revokeSession(tokens: TokenPair) {
+  void api
+    .POST('/api/v1/auth/logout', {
+      body: { refresh_token: tokens.refresh_token },
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    })
+    .catch(() => undefined)
+}

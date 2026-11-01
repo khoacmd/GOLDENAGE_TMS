@@ -33,6 +33,9 @@ class TokenPayload:
     user_id: uuid.UUID
     company_id: uuid.UUID | None
     kind: TokenKind
+    issued_at: datetime | None = None
+    expires_at: datetime | None = None
+    jti: str | None = None
 
 
 def create_token(user_id: uuid.UUID, company_id: uuid.UUID | None, kind: TokenKind) -> str:
@@ -70,6 +73,9 @@ def decode_token(token: str, expected_kind: TokenKind) -> TokenPayload:
             user_id=uuid.UUID(claims["sub"]),
             company_id=uuid.UUID(cid) if cid else None,
             kind=expected_kind,
+            issued_at=datetime.fromtimestamp(claims["iat"], UTC) if "iat" in claims else None,
+            expires_at=datetime.fromtimestamp(claims["exp"], UTC),
+            jti=claims.get("jti"),
         )
     except (jwt.PyJWTError, ValueError) as exc:
         raise AuthenticationError("Token không hợp lệ hoặc đã hết hạn") from exc

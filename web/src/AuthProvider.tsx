@@ -1,8 +1,8 @@
 import { errorMessage } from '@tms/api-client'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 
-import { api, tokenStore } from './api'
+import { STORAGE_KEY, api, revokeSession, tokenStore } from './api'
 import { AuthContext, LoginError, type AuthContextValue } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,11 +36,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   )
 
-  const logout = useCallback(() => {
-    tokenStore.set(null)
-    queryClient.clear()
-    void queryClient.invalidateQueries({ queryKey: ['me'] })
+  // Xóa phiên phía trình duyệt. Không dùng `queryClient.clear()`: observer của ['me'] vẫn giữ
+  // dữ liệu cũ nên giao diện tiếp tục như đã đăng nhập → đặt `me = null` để về trang đăng nhập.
+  const endLocalSession = useCallback(() => {
+    void queryClient.cancelQueries()
+    queryClient.setQueryData(['me'], null)
+    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' })
   }, [queryClient])
+
+  const logout = useCallback(() => {
+    const tokens = tokenStore.get()
+    tokenStore.set(null)
+    if (tokens) revokeSession(tokens)
+    endLocalSession()
+  }, [endLocalSession])
+
+  // Đăng xuất ở tab khác (xóa token trong localStorage) → tab này cũng kết thúc phiên.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue === null) endLocalSession()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [endLocalSession])
 
   const value = useMemo<AuthContextValue>(() => {
     const me = meQuery.data ?? null

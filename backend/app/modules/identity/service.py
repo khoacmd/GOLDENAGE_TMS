@@ -1,9 +1,11 @@
 import uuid
 from collections import defaultdict
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import revocation
 from app.core.db import set_tenant_context
 from app.core.errors import (
     AppError,
@@ -12,7 +14,13 @@ from app.core.errors import (
     NotFoundError,
     PermissionDeniedError,
 )
-from app.core.security import create_token, decode_token, hash_password, verify_password
+from app.core.security import (
+    TokenPayload,
+    create_token,
+    decode_token,
+    hash_password,
+    verify_password,
+)
 from app.modules.identity.models import CompanyRole, User, UserRole
 from app.modules.identity.schemas import CompanyRef, Membership, TokenPair
 from app.modules.tenancy.models import Company
@@ -44,11 +52,37 @@ async def list_memberships(session: AsyncSession, user_id: uuid.UUID) -> list[Me
     ]
 
 
-def _issue_tokens(user_id: uuid.UUID, company_id: uuid.UUID | None) -> TokenPair:
+def issue_tokens(user_id: uuid.UUID, company_id: uuid.UUID | None) -> TokenPair:
     return TokenPair(
         access_token=create_token(user_id, company_id, "access"),
         refresh_token=create_token(user_id, company_id, "refresh"),
     )
+
+
+def set_password(user: User, password: str) -> None:
+    """Đặt mật khẩu mới; mọi token cấp trước thời điểm này hết hiệu lực."""
+    user.password_hash = hash_password(password)
+    user.password_changed_at = datetime.now(UTC)
+
+
+def token_revoked(user: User, payload: TokenPayload) -> bool:
+    """Token cấp trước lần đổi mật khẩu gần nhất (iat tính theo giây)."""
+    if user.password_changed_at is None or payload.issued_at is None:
+        return False
+    return payload.issued_at.timestamp() < int(user.password_changed_at.timestamp())
+
+
+async def change_password(
+    session: AsyncSession, user: User, current_password: str, new_password: str
+) -> None:
+    """Người dùng tự đổi mật khẩu (cần mật khẩu hiện tại)."""
+    valid, _ = verify_password(current_password, user.password_hash)
+    if not valid:
+        raise AppError("Mật khẩu hiện tại không đúng", code="wrong_password")
+    if new_password == current_password:
+        raise AppError("Mật khẩu mới phải khác mật khẩu hiện tại", code="same_password")
+    set_password(user, new_password)
+    await session.flush()
 
 
 async def login(
@@ -61,7 +95,7 @@ async def login(
     if new_hash:
         user.password_hash = new_hash
     company_id, _ = await _resolve_company(session, user, company_code)
-    return _issue_tokens(user.id, company_id)
+    return issue_tokens(user.id, company_id)
 
 
 async def login_pin(
@@ -79,7 +113,7 @@ async def login_pin(
         raise AuthenticationError(
             "Mã PIN chỉ dùng cho tài khoản lái xe, vui lòng đăng nhập bằng mật khẩu"
         )
-    return _issue_tokens(user.id, company_id)
+    return issue_tokens(user.id, company_id)
 
 
 async def _resolve_company(
@@ -105,17 +139,41 @@ async def _resolve_company(
     raise AppError("Tài khoản thuộc nhiều công ty, cần chọn company_code", code="company_required")
 
 
+async def logout(refresh_token: str, access_token: str | None) -> None:
+    """Thu hồi refresh token (và access token đi kèm nếu cùng tài khoản); token sai thì bỏ qua."""
+    try:
+        refresh_payload = decode_token(refresh_token, "refresh")
+    except AuthenticationError:
+        return
+    payloads = [refresh_payload]
+    if access_token:
+        try:
+            access_payload = decode_token(access_token, "access")
+        except AuthenticationError:
+            pass
+        else:
+            if access_payload.user_id == refresh_payload.user_id:
+                payloads.append(access_payload)
+    for p in payloads:
+        if p.jti and p.expires_at:
+            await revocation.revoke(p.jti, p.expires_at)
+
+
 async def refresh(session: AsyncSession, refresh_token: str) -> TokenPair:
     payload = decode_token(refresh_token, "refresh")
+    if await revocation.is_revoked(payload.jti):
+        raise AuthenticationError("Phiên đăng nhập đã kết thúc")
     await set_tenant_context(session, company_id=payload.company_id, user_id=payload.user_id)
     user = await session.get(User, payload.user_id)
     if user is None or not user.is_active:
         raise AuthenticationError("Tài khoản không tồn tại hoặc đã bị khóa")
+    if token_revoked(user, payload):
+        raise AuthenticationError("Mật khẩu đã thay đổi, vui lòng đăng nhập lại")
     if payload.company_id is not None:
         memberships = await list_memberships(session, user.id)
         if all(m.company.id != payload.company_id for m in memberships):
             raise AuthenticationError("Tài khoản không còn quyền trong công ty này")
-    return _issue_tokens(user.id, payload.company_id)
+    return issue_tokens(user.id, payload.company_id)
 
 
 async def create_user(

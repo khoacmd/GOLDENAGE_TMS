@@ -119,6 +119,10 @@ Một user có thể có nhiều vai trò trong một công ty. Phân quyền ki
 
 **Đăng nhập bằng mã PIN** (app mobile, `POST /auth/login-pin`): tên đăng nhập + PIN 6 số do admin công ty đặt (`PUT/DELETE /users/{id}/pin`, chỉ cho tài khoản thuộc công ty). Lưu hash (`users.pin_hash`, Argon2 như mật khẩu), không nhận dãy trùng/liên tiếp. Chỉ cấp token khi tài khoản **chỉ có vai trò `driver`** tại công ty đăng nhập (thêm vai trò khác → PIN hết tác dụng, phải dùng mật khẩu). Dùng chung bộ đếm chống dò với mật khẩu (5 lần sai/15 phút → khóa tạm). Mật khẩu vẫn dùng song song. App nhớ tên đăng nhập và cách đăng nhập lần trước.
 
+**Đổi mật khẩu** (`POST /auth/change-password`, mọi tài khoản đã đăng nhập, kể cả lái xe và admin hệ thống): cần mật khẩu hiện tại, mật khẩu mới ≥ 8 ký tự và khác mật khẩu cũ; nhập sai mật khẩu hiện tại tính vào bộ đếm chống dò. Đổi (hoặc admin công ty đặt lại qua `PATCH /users/{id}`) ghi `users.password_changed_at` → mọi access/refresh token có `iat` trước mốc đó bị từ chối (đăng xuất các phiên khác); phiên đang đổi nhận cặp token mới. Không áp dụng cho mã PIN. Web: nút "Đổi mật khẩu" trên thanh đầu trang; mobile: liên kết ở màn hình danh sách chuyến.
+
+**Đăng xuất** (`POST /auth/logout`, body `refresh_token`, kèm access token nếu có): thu hồi ngay refresh token và access token của phiên - `jti` vào danh sách chặn ở Redis (`app/core/revocation.py`, hết hạn cùng token; Redis lỗi thì lưu trong tiến trình), kiểm tra ở mọi request và khi làm mới token. Phiên trên máy khác không bị ảnh hưởng; luôn trả 204. Phía client: xóa token, hủy request đang chạy, đặt `me = null` (không dùng `queryClient.clear()` vì observer giữ dữ liệu cũ) và xóa cache; web đồng bộ đăng xuất giữa các tab qua sự kiện `storage`.
+
 Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét **mọi** endpoint trong OpenAPI nên endpoint mới tự được kiểm tra):
 - Công ty B (tài khoản đủ mọi vai trò) gọi mọi endpoint có id với id của công ty A → chỉ 403/404, dữ liệu A không đổi; API danh sách của B không chứa id/mã của A.
 - Tham chiếu id công ty khác trong body (xe, kho, phần đơn, lái xe, thiết bị, chuyển điểm dừng) bị từ chối - khóa ngoại PostgreSQL **không** chịu RLS nên service phải tự nạp đối tượng qua session có RLS.
@@ -314,3 +318,4 @@ Ghi nhận khi dựng M0 trên Spark:
 | D28 | Thời gian di chuyển từ OSRM nhân hệ số kẹt xe cấu hình theo công ty (mặc định 1,8, chưa có số liệu thực tế để kiểm định), chưa dùng dữ liệu giao thông theo giờ | Chốt (M4) |
 | D29 | Thêm bước "Đã soạn hàng" (`PREPARED`) trước xuất kho; lệnh đã soạn vẫn sửa/hủy được (hàng còn trong kho), sửa thì phải duyệt và soạn lại | Chốt |
 | D30 | Lái xe đăng nhập app bằng tên đăng nhập + mã PIN 6 số do admin công ty đặt (song song với mật khẩu); PIN chỉ hiệu lực với tài khoản chỉ có vai trò lái xe | Chốt |
+| D31 | Người dùng tự đổi mật khẩu (cần mật khẩu hiện tại); đổi/đặt lại mật khẩu vô hiệu mọi token cấp trước đó (`users.password_changed_at` so với `iat`) | Chốt |

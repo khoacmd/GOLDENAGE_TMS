@@ -9,9 +9,11 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 
+from app.core import revocation
 from app.core.db import DbSession, set_tenant_context
 from app.core.errors import AuthenticationError, PermissionDeniedError
 from app.core.security import decode_token
+from app.modules.identity import service as identity_service
 from app.modules.identity.models import CompanyRole, User, UserRole
 from app.modules.tenancy.models import Company
 
@@ -50,6 +52,10 @@ async def get_current_user(
     user = await session.get(User, payload.user_id)
     if user is None or not user.is_active:
         raise AuthenticationError("Tài khoản không tồn tại hoặc đã bị khóa")
+    if identity_service.token_revoked(user, payload):
+        raise AuthenticationError("Mật khẩu đã thay đổi, vui lòng đăng nhập lại")
+    if await revocation.is_revoked(payload.jti):
+        raise AuthenticationError("Phiên đăng nhập đã kết thúc")
 
     roles: frozenset[CompanyRole] = frozenset()
     if payload.company_id is not None:

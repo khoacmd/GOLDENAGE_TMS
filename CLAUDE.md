@@ -115,6 +115,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   + Quản lý thực hiện việc lập, phê duyệt, điều chỉnh kế hoạch/lệnh giao hàng, phân công lái xe, phụ xe, cập nhật thủ công trạng thái đơn hàng trong từng chuyến, xác nhận kết thúc chuyến.
   + Thủ kho: xác nhận xuất hàng/soạn hàng cho các lệnh giao hàng.
   + Nhân viên giao hàng: nhận kế hoạch, thực hiện giao hàng, cập nhật tình trạng giao của từng đơn.
+  + Mọi người dùng (kể cả admin hệ thống) tự đổi được mật khẩu của mình trên web và mobile (cần nhập mật khẩu hiện tại); đổi xong các phiên đăng nhập khác bị đăng xuất. Admin công ty đặt lại mật khẩu cho tài khoản thuộc công ty khi người dùng quên.
 
 ## Nguyên tắc vận hành
 - Thủ kho chỉ xác nhận được trạng thái xuất hàng cho các lệnh đã được duyệt.

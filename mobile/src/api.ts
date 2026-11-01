@@ -32,3 +32,13 @@ export async function refreshSession(): Promise<boolean> {
   if (data) tokenStore.set(data)
   return Boolean(data)
 }
+
+/** Báo server thu hồi token của phiên (không chờ kết quả - đăng xuất cục bộ luôn diễn ra). */
+export function revokeSession(tokens: TokenPair) {
+  void api
+    .POST('/api/v1/auth/logout', {
+      body: { refresh_token: tokens.refresh_token },
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    })
+    .catch(() => undefined)
+}

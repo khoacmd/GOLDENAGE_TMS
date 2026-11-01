@@ -105,6 +105,9 @@
 - [x] Tạo tài khoản admin hệ thống trên production (`systemadmin`, 01/11/2026)
 - [ ] Đồng bộ backup ra ngoài máy
 - [ ] (Khi cần) Chuyển sang cloud VPS: cùng bộ `infra/prod`, khôi phục từ backup
+- [x] Người dùng tự đổi mật khẩu trên web và mobile (`POST /auth/change-password`); đổi/đặt lại mật khẩu đăng xuất các phiên khác (D31)
+- [x] Vá lỗi đăng xuất không kết thúc phiên: web/mobile về màn hình đăng nhập ngay, server thu hồi token của phiên (`POST /auth/logout`), đồng bộ đăng xuất giữa các tab
+- [ ] Đưa tính năng đổi mật khẩu + vá đăng xuất lên production (image mới + migration), build lại APK
 - [x] Kiểm chứng multi-tenant trên stack production: 2 công ty cùng dữ liệu mẫu, lập kế hoạch song song, cô lập dữ liệu
 - [ ] Onboarding công ty thứ 2 thật (quy trình: `docs/DEPLOY.md` mục 7)
 - [ ] (Phase sau) Thể tích / số thùng cho xe & mặt hàng

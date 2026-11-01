@@ -4,8 +4,9 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, AppState, BackHandler, View } from 'react-native'
 
-import { api, loadStoredTokens, tokenStore } from './src/api'
+import { api, loadStoredTokens, revokeSession, tokenStore } from './src/api'
 import { processQueue } from './src/queue'
+import { ChangePasswordScreen } from './src/screens/ChangePasswordScreen'
 import { ConfirmScreen } from './src/screens/ConfirmScreen'
 import { LoginScreen } from './src/screens/LoginScreen'
 import { TripListScreen } from './src/screens/TripListScreen'
@@ -13,7 +14,7 @@ import { TripScreen, type Item, type Stop, type Trip } from './src/screens/TripS
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } })
 
-type Route = { name: 'list' } | { name: 'trip'; tripId: string } | { name: 'confirm'; trip: Trip; stop: Stop; item: Item }
+type Route = { name: 'list' } | { name: 'password' } | { name: 'trip'; tripId: string } | { name: 'confirm'; trip: Trip; stop: Stop; item: Item }
 
 /** Gửi hàng đợi xác nhận khi có mạng trở lại, khi mở lại app và định kỳ mỗi 30 giây. */
 function useQueueSync() {
@@ -72,15 +73,22 @@ function Root() {
 
   if (route.name === 'trip')
     return <TripScreen tripId={route.tripId} onBack={back} onConfirm={(trip, stop, item) => push({ name: 'confirm', trip, stop, item })} />
+  if (route.name === 'password') return <ChangePasswordScreen onBack={back} />
   if (route.name === 'confirm') return <ConfirmScreen trip={route.trip} stop={route.stop} item={route.item} onDone={back} />
   return (
     <TripListScreen
       me={meQuery.data}
       onOpen={(tripId) => push({ name: 'trip', tripId })}
+      onChangePassword={() => push({ name: 'password' })}
       onLogout={() => {
+        const tokens = tokenStore.get()
         tokenStore.set(null)
-        client.clear()
-        refreshMe()
+        if (tokens) revokeSession(tokens)
+        // Không dùng `client.clear()`: observer của ['me'] giữ dữ liệu cũ, app vẫn như đã đăng nhập.
+        void client.cancelQueries()
+        client.setQueryData(['me'], null)
+        client.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' })
+        setStack([{ name: 'list' }])
       }}
     />
   )

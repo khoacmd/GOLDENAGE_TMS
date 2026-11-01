@@ -12,7 +12,17 @@ import { useQueue } from '../lib/useQueue'
 type Me = components['schemas']['MeResponse']
 type Trip = components['schemas']['TripSummaryOut']
 
-export function TripListScreen({ me, onOpen, onLogout }: { me: Me; onOpen: (id: string) => void; onLogout: () => void }) {
+export function TripListScreen({
+  me,
+  onOpen,
+  onChangePassword,
+  onLogout,
+}: {
+  me: Me
+  onOpen: (id: string) => void
+  onChangePassword: () => void
+  onLogout: () => void
+}) {
   const [date, setDate] = useState(todayISO)
   const queue = useQueue()
   const isDriver = me.roles.includes('driver')
@@ -33,7 +43,19 @@ export function TripListScreen({ me, onOpen, onLogout }: { me: Me; onOpen: (id: 
 
   return (
     <View style={styles.screen}>
-      <Header title={`Xin chào, ${me.full_name}`} right={<Text onPress={onLogout} style={{ color: colors.primary }}>Đăng xuất</Text>} />
+      <Header
+        title={`Xin chào, ${me.full_name}`}
+        right={
+          <View style={styles.headerLinks}>
+            <Text onPress={onChangePassword} style={{ color: colors.primary }}>
+              Đổi mật khẩu
+            </Text>
+            <Text onPress={onLogout} style={{ color: colors.primary }}>
+              Đăng xuất
+            </Text>
+          </View>
+        }
+      />
       {!isDriver ? (
         <Card>
           <Text>Tài khoản không có vai trò nhân viên giao hàng.</Text>
@@ -100,6 +122,7 @@ export function TripListScreen({ me, onOpen, onLogout }: { me: Me; onOpen: (id: 
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f2f3f5' },
+  headerLinks: { flexDirection: 'row', gap: 16 },
   dateBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
   dateBtn: { paddingVertical: 6, paddingHorizontal: 14 },
   date: { fontSize: 16, fontWeight: '600' },

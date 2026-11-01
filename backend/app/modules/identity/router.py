@@ -1,6 +1,8 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core import throttle
 from app.core.auth import CompanyAdminDep, CurrentUserDep, OfficeStaffDep
@@ -14,7 +16,9 @@ from app.modules.identity.schemas import (
     CompanyUserOut,
     CompanyUserUpdate,
     LoginRequest,
+    LogoutRequest,
     MeResponse,
+    PasswordChange,
     PinLoginRequest,
     PinUpdate,
     RefreshRequest,
@@ -23,6 +27,7 @@ from app.modules.identity.schemas import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+_bearer = HTTPBearer(auto_error=False)
 
 
 @router.post("/login")
@@ -59,6 +64,15 @@ async def refresh(body: RefreshRequest, session: DbSession) -> TokenPair:
     return await service.refresh(session, body.refresh_token)
 
 
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    body: LogoutRequest,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> None:
+    """Kết thúc phiên: thu hồi refresh token và access token hiện tại (luôn trả 204)."""
+    await service.logout(body.refresh_token, credentials.credentials if credentials else None)
+
+
 @router.get("/me")
 async def me(current: CurrentUserDep, session: DbSession) -> MeResponse:
     user = await session.get(User, current.id)
@@ -75,6 +89,27 @@ async def me(current: CurrentUserDep, session: DbSession) -> MeResponse:
         roles=sorted(current.roles),
         memberships=memberships,
     )
+
+
+@router.post("/change-password")
+async def change_password(
+    body: PasswordChange, request: Request, current: CurrentUserDep, session: DbSession
+) -> TokenPair:
+    """Tự đổi mật khẩu; phiên khác bị đăng xuất, phiên hiện tại nhận cặp token mới."""
+    user = await session.get(User, current.id)
+    if user is None:
+        raise NotFoundError("Không tìm thấy tài khoản")
+    ip = request.client.host if request.client else None
+    await throttle.check(user.username, ip)
+    try:
+        await service.change_password(session, user, body.current_password, body.new_password)
+    except AppError as exc:
+        if exc.code == "wrong_password":
+            await throttle.failed(user.username, ip)
+        raise
+    await session.commit()
+    await throttle.succeeded(user.username)
+    return service.issue_tokens(user.id, current.company_id)
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
@@ -127,7 +162,7 @@ async def update_user(
         if user.id == admin.id and changes.get("is_active") is False:
             raise AppError("Không thể tự khóa tài khoản của chính mình", code="self_lockout")
     if (password := changes.pop("password", None)) is not None:
-        user.password_hash = hash_password(password)
+        service.set_password(user, password)
     for field, value in changes.items():
         setattr(user, field, value)
     await session.commit()
