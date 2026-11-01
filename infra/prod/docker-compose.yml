@@ -136,12 +136,24 @@ services:
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:?}
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - "${BIND_ADDR:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${BIND_ADDR:-0.0.0.0}:${HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ${DATA_DIR}/caddy:/data
     depends_on: [web]
+
+  # Public qua Cloudflare Tunnel (profile "tunnel"): không cần mở cổng/IP public.
+  # Trên Cloudflare: Public hostname <tên-miền> → Service http://caddy:80
+  cloudflared:
+    image: cloudflare/cloudflared:2025.10.1
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    logging: *logging
+    command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on: [caddy]
 
   osrm-car:
     image: ghcr.io/project-osrm/osrm-backend:v6.0.0

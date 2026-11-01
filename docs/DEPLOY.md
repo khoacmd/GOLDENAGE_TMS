@@ -50,6 +50,32 @@ docker compose up -d
 
 App mobile: chạy workflow **Mobile APK** với `api_url = https://<tên-miền>`.
 
+## 3b. Public qua Cloudflare Tunnel (không cần IP public / mở cổng)
+
+Đang dùng cho production trên máy Spark (arm64, `DATA_DIR=/home/khoanx/tms-prod`, image build tại chỗ `IMAGE_PREFIX=local`).
+
+1. Cloudflare Zero Trust → Networks → Tunnels → **Create tunnel** (Cloudflared) → copy **token**.
+2. Tab **Public Hostname**: `<tên-miền>` (zone đã ở Cloudflare) → Service `HTTP` · `caddy:80`.
+3. `.env`:
+   ```
+   SITE_ADDRESS=:80                       # HTTPS do Cloudflare đảm nhận
+   PUBLIC_URL=https://<tên-miền>
+   BIND_ADDR=127.0.0.1                    # Caddy chỉ nghe trên máy (kiểm tra: http://127.0.0.1:$HTTP_PORT)
+   COMPOSE_PROFILES=routing,tunnel
+   CLOUDFLARE_TUNNEL_TOKEN=<token>
+   ```
+4. `docker compose up -d` → `docker compose logs cloudflared` có `Registered tunnel connection` → `curl -fsS https://<tên-miền>/health`.
+
+Caddy tin header `CF-Connecting-IP` / `X-Forwarded-Proto` từ dải IP private (cloudflared trong mạng compose) nên log và chống dò mật khẩu thấy IP thật của người dùng. Nên bật thêm trên Cloudflare: SSL/TLS "Full", "Always Use HTTPS"; giới hạn upload 100 MB của gói Free đủ cho ảnh (8 MB) và file import (20 MB).
+
+Build image tại chỗ (thay cho `docker compose pull`) mỗi lần cập nhật:
+
+```bash
+V=$(git rev-parse --short HEAD)
+docker build --build-arg RELEASE=$V -t local/tms-api:$V backend && docker build -t local/tms-web:$V -f web/Dockerfile .
+# .env: TMS_VERSION=$V  →  cd infra/prod && ./backup.sh && docker compose up -d
+```
+
 ## 4. Cập nhật phiên bản
 
 ```bash

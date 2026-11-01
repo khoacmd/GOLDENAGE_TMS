@@ -99,7 +99,10 @@
 - [x] Bộ triển khai production `infra/prod` (Caddy HTTPS, nginx, api/worker/scheduler/migrate, OSRM tùy chọn), chạy thử đầy đủ trên máy arm64
 - [x] Giám sát: `/health` + healthcheck, log JSON, Sentry tùy chọn; backup/restore (đã diễn tập khôi phục)
 - [x] Hướng dẫn triển khai, cập nhật, onboarding: `docs/DEPLOY.md`
-- [ ] Triển khai thật trên cloud VPS (chờ máy chủ + tên miền)
+- [x] Triển khai production trên máy Spark (Docker Compose, `DATA_DIR=/home/khoanx/tms-prod`, OSRM + bản đồ), public qua Cloudflare Tunnel (service `cloudflared`, profile `tunnel`; Caddy lấy IP thật từ `CF-Connecting-IP`)
+- [x] Gắn tên miền `tms.thanhxuan.me` + token Cloudflare Tunnel; cron backup 2h sáng hằng ngày
+- [ ] Tạo `sysadmin`, đồng bộ backup ra ngoài máy, build APK với URL production
+- [ ] (Khi cần) Chuyển sang cloud VPS: cùng bộ `infra/prod`, khôi phục từ backup
 - [x] Kiểm chứng multi-tenant trên stack production: 2 công ty cùng dữ liệu mẫu, lập kế hoạch song song, cô lập dữ liệu
 - [ ] Onboarding công ty thứ 2 thật (quy trình: `docs/DEPLOY.md` mục 7)
 - [ ] (Phase sau) Thể tích / số thùng cho xe & mặt hàng

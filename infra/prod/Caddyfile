@@ -1,5 +1,14 @@
 # Cổng vào duy nhất: HTTPS tự động (Let's Encrypt) khi SITE_ADDRESS là tên miền thật.
-# Thử trên máy: SITE_ADDRESS=:80 (HTTP thường).
+# Thử trên máy hoặc chạy sau Cloudflare Tunnel: SITE_ADDRESS=:80 (HTTP nội bộ, Cloudflare lo HTTPS).
+{
+	servers {
+		# cloudflared/LAN nằm trong dải private → tin header IP thật của Cloudflare và X-Forwarded-Proto.
+		# Truy cập trực tiếp từ Internet (VPS) không thuộc dải này → dùng IP kết nối.
+		trusted_proxies static private_ranges
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
 {$SITE_ADDRESS} {
 	encode zstd gzip
 	header {
@@ -10,7 +19,8 @@
 		-Server
 	}
 	reverse_proxy web:80 {
-		header_up X-Forwarded-Proto {scheme}
+		# IP thật của người dùng (đã xác định ở trên) → nginx → uvicorn (chống dò mật khẩu, log).
+		header_up X-Forwarded-For {client_ip}
 	}
 	log {
 		output stdout
