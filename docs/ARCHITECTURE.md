@@ -261,6 +261,21 @@ Chi tiết triển khai:
 - Thiết bị: app sinh mã cài đặt (SecureStore), tự đăng ký `POST /driver/device` khi mở app và gửi kèm `device_id` trong mỗi xác nhận. Thiết bị `BLOCKED` (hoặc `PENDING`/chưa đăng ký khi công ty bật `require_device_approval`) → xác nhận bị từ chối (vẫn lưu). PC/máy in do admin công ty khai báo; in vẫn qua trình duyệt (D17).
 - Build APK: GitHub Actions x86-64 (`mobile-apk.yml`), `expo prebuild` + Gradle; URL API gắn vào bản build; HTTP thường chỉ bật khi URL là `http://` (`app.config.ts`). Bản pilot ký bằng debug keystore của template.
 
+## 11b. Zalo Mini App (M7 - đã chốt yêu cầu, chưa triển khai)
+
+- **Một mini app chung** cho mọi công ty, OA doanh nghiệp do công ty vận hành TMS đứng tên. Thư mục `zalo/` trong pnpm workspace (React + ZaUI + `zmp-sdk`), dùng chung `packages/api-client`; domain API `tms.thanhxuan.me` khai báo trong cấu hình mini app.
+- **Xác thực**: mini app `getAccessToken()` → `POST /auth/zalo` → backend gọi Open API của Zalo lấy Zalo ID (ID theo ứng dụng, người dùng/admin không tự biết) → nếu Zalo ID đã liên kết: cấp JWT TMS, nhiều công ty thì chọn công ty như đăng nhập web. Chưa liên kết → màn hình nhập mã kích hoạt.
+- **Mã kích hoạt (phương án A, D32)**: admin công ty tạo cho từng liên hệ khách hàng hoặc từng tài xế; mã 8 ký tự (bỏ ký tự dễ nhầm), kèm link/QR mở mini app có sẵn mã; dùng 1 lần, hết hạn 7 ngày (cấu hình); lưu hash. Nhập đúng → gắn Zalo ID vào liên hệ/tài khoản. Tạo lại mã → mã cũ mất hiệu lực; thu hồi liên kết bất kỳ lúc nào; audit mọi thao tác; nhập sai 5 lần/15 phút → khóa tạm.
+- **Dữ liệu**:
+  - `customer_contacts(customer_id, delivery_point_id?, name, phone, zalo_user_id?, status: NOT_INVITED|PENDING|ACTIVE|REVOKED, activated_at)` - `delivery_point_id` trống = liên hệ chủ (xem mọi đơn + giá trị), có = liên hệ điểm giao (chỉ đơn đến điểm đó, chỉ mặt hàng + số lượng). Quyền của một Zalo = hợp các liên hệ đã kích hoạt tại công ty đang chọn. Thêm/sửa trên web + loại import "Liên hệ khách hàng".
+  - `zalo_links(zalo_user_id, company_id, user_id? | customer_contact_id?)` cho tài xế (cùng cơ chế mã) - chi tiết bảng chốt khi thiết kế.
+  - `activation_codes(company_id, target, code_hash, expires_at, used_at, created_by)`.
+- **JWT**: thêm loại chủ thể `customer` (kèm danh sách liên hệ) bên cạnh user; endpoint khách `/customer/*` chỉ đọc. `test_security.py` thêm danh sách cho phép của khách và kiểm tra cô lập giữa khách/điểm giao.
+- **Giờ đến dự kiến (ETA)**: lưu `trip_stops.planned_arrival` khi lập kế hoạch (bộ giải đã tính) / khi lập tay (ước lượng); khi chuyến đang giao: mốc = giờ giao thực tế gần nhất (hoặc giờ xuất phát) + thời gian di chuyển (OSRM × hệ số kẹt xe) + thời gian phục vụ các điểm còn lại trước điểm của khách; hiển thị dạng khoảng, cập nhật sau mỗi lần xác nhận giao.
+- **Tuyến đã đi (D33)**: tuyến OSRM theo đường qua kho → các điểm **đã giao** → điểm của khách (sau khi giao xong); không trả tọa độ/marker điểm dừng khác; cắt bớt đoạn đường sát các điểm dừng khác để không lộ vị trí khách khác. Chưa dùng GPS thực của xe.
+- **Tài xế trên Zalo (D34)**: kênh phụ, dùng chung API `/driver/*`; vị trí qua `getLocation` (token đổi qua server Zalo), không phát hiện được vị trí giả lập, offline giới hạn (Native Storage 10 MB) → công ty bật/tắt "cho phép xác nhận giao qua Zalo". App native vẫn là kênh chính.
+- **Liên hệ tài xế**: khách thấy SĐT/Zalo tài xế (và phụ xe) chỉ khi chuyến đang giao.
+
 ## 12. Triển khai
 
 Docker Compose (`infra/prod`, hướng dẫn `docs/DEPLOY.md`): `caddy` (HTTPS tự động, cổng vào duy nhất) → `web` (nginx: SPA, proxy `/api`, `/tiles`, ảnh S3 qua URL ký sẵn) → `api`; `migrate` (alembic, chạy trước), `worker`, `scheduler` dùng chung image `tms-api`; `postgres`, `redis`, `storage` (SeaweedFS S3), `osrm-car`, `osrm-motorbike` (profile `routing`). Image đa kiến trúc build bởi workflow Images (QEMU + buildx) lên GHCR. Log JSON ra stdout, Sentry tùy chọn (`TMS_SENTRY_DSN`), backup/restore bằng `infra/prod/backup.sh`/`restore.sh`.
@@ -319,3 +334,7 @@ Ghi nhận khi dựng M0 trên Spark:
 | D29 | Thêm bước "Đã soạn hàng" (`PREPARED`) trước xuất kho; lệnh đã soạn vẫn sửa/hủy được (hàng còn trong kho), sửa thì phải duyệt và soạn lại | Chốt |
 | D30 | Lái xe đăng nhập app bằng tên đăng nhập + mã PIN 6 số do admin công ty đặt (song song với mật khẩu); PIN chỉ hiệu lực với tài khoản chỉ có vai trò lái xe | Chốt |
 | D31 | Người dùng tự đổi mật khẩu (cần mật khẩu hiện tại); đổi/đặt lại mật khẩu vô hiệu mọi token cấp trước đó (`users.password_changed_at` so với `iat`) | Chốt |
+| D32 | Liên kết Zalo với khách hàng/tài xế bằng mã kích hoạt dùng 1 lần, hết hạn, do admin công ty cấp cho từng liên hệ (phương án A); không cần admin hệ thống | Chốt |
+| D33 | Khách xem tuyến xe đã đi = tuyến OSRM qua các điểm đã giao (không hiện điểm dừng khác), chưa dùng GPS thực | Chốt |
+| D34 | Zalo Mini App là kênh phụ cho tài xế; app native vẫn là kênh chính | Chốt |
+| D35 | Khách có nhiều liên hệ: liên hệ chủ xem mọi đơn + giá trị; liên hệ điểm giao chỉ xem đơn của điểm đó, chỉ mặt hàng + số lượng; trùng thì theo quyền cao hơn | Chốt |

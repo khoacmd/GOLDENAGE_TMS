@@ -62,7 +62,8 @@
 - [x] Định vị dự phòng khi máy không có Google Play Services: module native `mobile/modules/tms-location` (LocationManager), chỉ có trong bản APK
 - [x] Workflow build APK trên GitHub Actions x86-64 (`.github/workflows/mobile-apk.yml`, chạy tay, nhập URL API)
 - [x] Đăng nhập app bằng mã PIN 6 số do admin công ty đặt (chỉ tài khoản lái xe; trang Người dùng: đặt/đổi/xóa PIN)
-- [ ] Kiểm tra APK trên điện thoại thật (GPS dự phòng, camera); keystore phát hành riêng
+- [ ] Kiểm tra APK trên điện thoại thật (GPS dự phòng, camera, mở chỉ đường Google Maps); keystore phát hành riêng
+- [ ] (Cải tiến) Mở chỉ đường: ưu tiên `google.navigation:` (Google Maps dẫn đường) → `geo:` (ứng dụng bản đồ khác) → link web; không mở được thì báo lỗi kèm tọa độ (hiện `Linking.openURL` lỗi bị bỏ qua im lặng). Giả lập Redroid không có Google Maps/trình duyệt thật nên chỉ đường không chạy được ở đó (`ERR_UNKNOWN_URL_SCHEME`), không phải lỗi app
 - [x] Thiết bị: admin quản lý PC/máy in, điện thoại tự đăng ký khi mở app, tùy chọn bắt buộc duyệt, khóa máy → từ chối xác nhận giao
 - [x] Bản đồ tự host trên web: PMTiles + style Protomaps (tiếng Việt), service `tiles` (nginx), tự quay về tile OSM nếu chưa có dữ liệu
 - [x] Tải dữ liệu bản đồ Việt Nam (zoom 0–14, 638 MB) và kiểm tra hiển thị
@@ -113,3 +114,16 @@
 - [ ] (Phase sau) Thể tích / số thùng cho xe & mặt hàng
 - [ ] (Phase sau) Đưa lựa chọn kho vào trong bộ giải
 - [ ] (Phase sau) Theo dõi vị trí xe thời gian thực
+
+## M7 – Zalo Mini App (khách hàng + tài xế kênh phụ)
+- [ ] Đăng ký Zalo OA doanh nghiệp (công ty vận hành TMS đứng tên) + tạo Zalo Mini App, xin quyền SĐT/vị trí, khai báo domain API `tms.thanhxuan.me`
+- [x] Chốt yêu cầu, kiến trúc, phương án mã kích hoạt (D32–D35, ARCHITECTURE mục 11b)
+- [ ] Liên hệ khách hàng: bảng `customer_contacts` (chủ / điểm giao), web thêm/sửa, loại import "Liên hệ khách hàng"
+- [ ] Mã kích hoạt: tạo / tạo lại / thu hồi cho liên hệ khách và tài xế, link + QR, chống dò, audit (web: trang Khách hàng, Người dùng)
+- [ ] Xác thực Zalo (`POST /auth/zalo`), liên kết bằng mã, chọn công ty, JWT chủ thể khách hàng; test bảo mật cho khách
+- [ ] API khách hàng: đơn theo ngày, chi tiết + log giao (ảnh chứng từ), phân quyền chủ/điểm giao, ẩn giá trị với điểm giao
+- [ ] Giờ đến dự kiến: `trip_stops.planned_arrival` + tính lại theo giờ giao thực tế
+- [ ] Tuyến đã đi (OSRM, không lộ điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao
+- [ ] Mini app `zalo/` (React + ZaUI + zmp-sdk): phần khách hàng
+- [ ] Mini app: phần tài xế (kênh phụ), cấu hình công ty "cho phép xác nhận giao qua Zalo"
+- [ ] Kiểm thử trên Zalo thật, gửi duyệt và phát hành mini app

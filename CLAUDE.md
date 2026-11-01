@@ -115,6 +115,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   + Quản lý thực hiện việc lập, phê duyệt, điều chỉnh kế hoạch/lệnh giao hàng, phân công lái xe, phụ xe, cập nhật thủ công trạng thái đơn hàng trong từng chuyến, xác nhận kết thúc chuyến.
   + Thủ kho: xác nhận xuất hàng/soạn hàng cho các lệnh giao hàng.
   + Nhân viên giao hàng: nhận kế hoạch, thực hiện giao hàng, cập nhật tình trạng giao của từng đơn.
+  + Khách hàng (qua Zalo Mini App): xem tình trạng đơn của mình, không thao tác dữ liệu.
   + Mọi người dùng (kể cả admin hệ thống) tự đổi được mật khẩu của mình trên web và mobile (cần nhập mật khẩu hiện tại); đổi xong các phiên đăng nhập khác bị đăng xuất. Admin công ty đặt lại mật khẩu cho tài khoản thuộc công ty khi người dùng quên.
 
 ## Nguyên tắc vận hành
@@ -130,7 +131,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Cách thức truy cập
 - Web app: dùng cho quản lý, thủ kho
-- mobile app: dùng cho nhân viên giao hàng
+- mobile app: dùng cho nhân viên giao hàng (kênh chính)
+- Zalo Mini App (một mini app chung cho mọi công ty, công ty vận hành TMS đứng tên OA):
+  + Tài xế: chức năng như mobile app, là kênh phụ (online là chính).
+  + Khách hàng: xem tình trạng đơn (mặc định đơn có ngày giao hôm nay, tự đổi ngày); giờ hàng đến dự kiến của đơn đang giao; tuyến xe đã đi từ kho qua các điểm đã giao (chỉ vẽ đường, không hiện điểm dừng của khách khác), kết thúc tại điểm giao của mình sau khi giao xong; log từng đơn (thời gian giao, tài xế, ảnh chứng từ); số điện thoại/Zalo của tài xế khi chuyến đang giao.
+  + Xác thực bằng Zalo; liên kết Zalo với khách hàng/tài xế bằng mã kích hoạt do admin công ty cấp (không cần admin hệ thống). Một Zalo có thể liên kết nhiều công ty.
+  + Khách hàng có nhiều liên hệ (SĐT + Zalo): liên hệ của khách hàng (chủ) xem mọi đơn và giá trị đơn; liên hệ của điểm giao chỉ xem đơn đến điểm đó, chỉ thấy mặt hàng và số lượng. Một Zalo vừa là chủ vừa là liên hệ điểm giao thì có quyền như chủ. Liên hệ thêm/sửa trên web và import file/API.
 
 ## Kiến trúc
 Xem @docs/ARCHITECTURE.md trước khi thêm module mới.
