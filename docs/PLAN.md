@@ -101,7 +101,8 @@
 - [x] Hướng dẫn triển khai, cập nhật, onboarding: `docs/DEPLOY.md`
 - [x] Triển khai production trên máy Spark (Docker Compose, `DATA_DIR=/home/khoanx/tms-prod`, OSRM + bản đồ), public qua Cloudflare Tunnel (service `cloudflared`, profile `tunnel`; Caddy lấy IP thật từ `CF-Connecting-IP`)
 - [x] Gắn tên miền `tms.thanhxuan.me` + token Cloudflare Tunnel; cron backup 2h sáng hằng ngày
-- [ ] Tạo `sysadmin`, đồng bộ backup ra ngoài máy, build APK với URL production
+- [x] Build APK với URL production (`https://tms.thanhxuan.me`, workflow Mobile APK, 01/11/2026)
+- [ ] Tạo `sysadmin`, đồng bộ backup ra ngoài máy
 - [ ] (Khi cần) Chuyển sang cloud VPS: cùng bộ `infra/prod`, khôi phục từ backup
 - [x] Kiểm chứng multi-tenant trên stack production: 2 công ty cùng dữ liệu mẫu, lập kế hoạch song song, cô lập dữ liệu
 - [ ] Onboarding công ty thứ 2 thật (quy trình: `docs/DEPLOY.md` mục 7)
