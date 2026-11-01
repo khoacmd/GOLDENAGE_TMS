@@ -4,6 +4,7 @@ from itertools import pairwise
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.modules.identity.models import CompanyRole
+from app.modules.zalo.schemas import ZaloLinkInfo
 
 
 class LoginRequest(BaseModel):
@@ -110,3 +111,4 @@ class CompanyUserOut(BaseModel):
     is_active: bool
     has_pin: bool = False
     roles: list[CompanyRole]
+    zalo: ZaloLinkInfo | None = None  # chỉ với tài khoản lái xe

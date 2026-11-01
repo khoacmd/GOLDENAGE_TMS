@@ -61,3 +61,5 @@ class CompanySettings(TimestampMixin, Base):
     require_device_approval: Mapped[bool] = mapped_column(
         default=False, server_default=text("false")
     )
+    # Hạn dùng mã kích hoạt Zalo Mini App (ngày).
+    activation_code_ttl_days: Mapped[int] = mapped_column(default=7, server_default=text("7"))

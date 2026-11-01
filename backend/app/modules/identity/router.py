@@ -25,6 +25,7 @@ from app.modules.identity.schemas import (
     RolesUpdate,
     TokenPair,
 )
+from app.modules.zalo import service as zalo_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 _bearer = HTTPBearer(auto_error=False)
@@ -130,7 +131,10 @@ def _user_out(user: User, roles: list[CompanyRole]) -> CompanyUserOut:
 
 @users_router.get("")
 async def list_users(admin: CompanyAdminDep, session: DbSession) -> list[CompanyUserOut]:
-    return [_user_out(u, r) for u, r in await service.list_company_users(session, admin.cid)]
+    users = await service.list_company_users(session, admin.cid)
+    drivers = [u.id for u, roles in users if CompanyRole.DRIVER in roles]
+    zalo = await zalo_service.link_info(session, user_ids=drivers)
+    return [_user_out(u, r).model_copy(update={"zalo": zalo.get(u.id)}) for u, r in users]
 
 
 @users_router.post("", status_code=status.HTTP_201_CREATED)

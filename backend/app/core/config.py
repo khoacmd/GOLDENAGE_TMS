@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     osrm_motorbike_url: str | None = None
     # Chạy tác vụ nền ngay trong tiến trình gọi (test / dev không chạy worker).
     tasks_eager: bool = False
+    # Link mở Zalo Mini App kèm mã kích hoạt (QR gửi khách/tài xế); có "{code}". Trống → chỉ có mã.
+    zalo_activation_url: str | None = None
     # Giới hạn trên thời gian chạy bộ giải (giây), bất kể cấu hình công ty (test đặt nhỏ).
     planning_time_cap_s: int | None = None
 

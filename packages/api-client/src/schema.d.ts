@@ -1155,10 +1155,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue Contact Code */
+        post: operations["issue_contact_code_api_v1_customers__customer_id__contacts__contact_id__activation_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{customer_id}/contacts/{contact_id}/zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Contact Zalo */
+        delete: operations["revoke_contact_zalo_api_v1_customers__customer_id__contacts__contact_id__zalo_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/activation-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue Driver Code */
+        post: operations["issue_driver_code_api_v1_users__user_id__activation_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Driver Zalo */
+        delete: operations["revoke_driver_zalo_api_v1_users__user_id__zalo_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActivationCodeOut
+         * @description Mã chỉ hiển thị 1 lần lúc tạo (server chỉ lưu hash).
+         */
+        ActivationCodeOut: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Link */
+            link: string | null;
+        };
         /** AdhocItemIn */
         AdhocItemIn: {
             /** Description */
@@ -1464,6 +1547,8 @@ export interface components {
             cutover_time: string;
             /** Timezone */
             timezone: string;
+            /** Activation Code Ttl Days */
+            activation_code_ttl_days: number;
         };
         /** CompanySettingsUpdate */
         CompanySettingsUpdate: {
@@ -1493,6 +1578,8 @@ export interface components {
             offline_max_delay_minutes?: number | null;
             /** Require Device Approval */
             require_device_approval?: boolean | null;
+            /** Activation Code Ttl Days */
+            activation_code_ttl_days?: number | null;
             /** Auto Plan Enabled */
             auto_plan_enabled?: boolean | null;
             /** Service Minutes */
@@ -1554,6 +1641,7 @@ export interface components {
             has_pin: boolean;
             /** Roles */
             roles: components["schemas"]["CompanyRole"][];
+            zalo?: components["schemas"]["ZaloLinkInfo"] | null;
         };
         /** CompanyUserUpdate */
         CompanyUserUpdate: {
@@ -1725,6 +1813,7 @@ export interface components {
             note: string | null;
             /** Is Active */
             is_active: boolean;
+            zalo?: components["schemas"]["ZaloLinkInfo"];
         };
         /** CustomerCreate */
         CustomerCreate: {
@@ -3547,6 +3636,22 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** ZaloLinkInfo */
+        ZaloLinkInfo: {
+            /** @default NOT_INVITED */
+            status: components["schemas"]["ZaloStatus"];
+            /** Display Name */
+            display_name?: string | null;
+            /** Activated At */
+            activated_at?: string | null;
+            /** Code Expires At */
+            code_expires_at?: string | null;
+        };
+        /**
+         * ZaloStatus
+         * @enum {string}
+         */
+        ZaloStatus: "NOT_INVITED" | "PENDING" | "ACTIVE";
     };
     responses: never;
     parameters: never;
@@ -6255,6 +6360,128 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ImportResultOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_contact_code_api_v1_customers__customer_id__contacts__contact_id__activation_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationCodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_contact_zalo_api_v1_customers__customer_id__contacts__contact_id__zalo_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_driver_code_api_v1_users__user_id__activation_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationCodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_driver_zalo_api_v1_users__user_id__zalo_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -12,6 +12,7 @@ from app.modules.master_data.models import (
     VehicleRequirement,
     VehicleType,
 )
+from app.modules.zalo.schemas import ZaloLinkInfo
 
 CodeStr = Annotated[str, Field(min_length=1, max_length=32, pattern=r"^[A-Za-z0-9._/-]+$")]
 Latitude = Annotated[Decimal, Field(ge=-90, le=90, max_digits=9, decimal_places=6)]
@@ -168,6 +169,7 @@ class CustomerContactOut(_Out):
     phone: str
     note: str | None
     is_active: bool
+    zalo: ZaloLinkInfo = Field(default_factory=ZaloLinkInfo)
 
 
 class CustomerOut(_Out):

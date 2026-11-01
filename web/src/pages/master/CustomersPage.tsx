@@ -278,7 +278,12 @@ export function CustomersPage() {
         ),
         760,
       )}
-      <CustomerContactsModal customer={contactsOf} canEdit={canEdit} onClose={() => setContactsOf(null)} />
+      <CustomerContactsModal
+        customer={contactsOf}
+        canEdit={canEdit}
+        canIssueCodes={hasRole('company_admin')}
+        onClose={() => setContactsOf(null)}
+      />
     </Card>
   )
 }

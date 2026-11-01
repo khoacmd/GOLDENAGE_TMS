@@ -7,6 +7,8 @@ import { api } from '../api'
 import { unwrap } from '../lib/api-helpers'
 import { useEntityModal } from '../lib/crud'
 import { ROLE, options } from '../lib/labels'
+import { useZaloActivation } from '../lib/useZaloActivation'
+import { ZaloStatusTag } from '../lib/zalo'
 
 type User = components['schemas']['CompanyUserOut']
 type UserForm = components['schemas']['CompanyUserCreate'] & { is_active?: boolean }
@@ -59,6 +61,13 @@ export function UsersPage() {
       void queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (e: Error) => message.error(e.message),
+  })
+  const zalo = useZaloActivation({
+    queryKey: 'users',
+    issue: async (id) =>
+      unwrap(await api.POST('/api/v1/users/{user_id}/activation-code', { params: { path: { user_id: id } } })),
+    revoke: async (id) =>
+      unwrap(await api.DELETE('/api/v1/users/{user_id}/zalo', { params: { path: { user_id: id } } })),
   })
   const query = useQuery({
     queryKey: ['users'],
@@ -128,10 +137,22 @@ export function UsersPage() {
                 </Space>
               ) : null,
           },
+          {
+            title: 'Zalo Mini App',
+            width: 230,
+            render: (_, r) =>
+              r.zalo && (
+                <Space orientation="vertical" size={2}>
+                  <ZaloStatusTag info={r.zalo} />
+                  {zalo.actions(r.id, r.full_name, r.zalo)}
+                </Space>
+              ),
+          },
           { title: '', width: 60, render: (_, r) => <a onClick={() => modal.show(r)}>Sửa</a> },
         ]}
       />
       <PinModal user={pinUser} onClose={() => setPinUser(null)} />
+      {zalo.modal}
       {modal.render((_, editing) => (
         <>
           <Form.Item

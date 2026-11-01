@@ -42,6 +42,7 @@ export function SettingsPage() {
       <ShiftSettings />
       <PlanningSettingsCard />
       <DeliveryRulesSettings />
+      <ZaloSettings />
       <ApiKeys />
     </Space>
   )
@@ -255,6 +256,41 @@ function DeliveryRulesSettings() {
           extra="Điện thoại mới đăng nhập app phải được duyệt ở màn hình Thiết bị mới xác nhận giao được. Thiết bị bị khóa luôn bị từ chối."
         >
           <Switch />
+        </Form.Item>
+        <Button type="primary" htmlType="submit" loading={save.isPending}>
+          Lưu
+        </Button>
+      </Form>
+    </Card>
+  )
+}
+
+function ZaloSettings() {
+  const { message } = App.useApp()
+  const [form] = Form.useForm<{ activation_code_ttl_days: number }>()
+  const query = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/company/settings')),
+  })
+  useEffect(() => {
+    if (query.data) form.setFieldsValue({ activation_code_ttl_days: query.data.activation_code_ttl_days })
+  }, [query.data, form])
+  const save = useMutation({
+    mutationFn: async (v: { activation_code_ttl_days: number }) =>
+      unwrap(await api.PUT('/api/v1/company/settings', { body: v })),
+    onSuccess: () => message.success('Đã lưu cấu hình Zalo Mini App'),
+    onError: (e: Error) => message.error(e.message),
+  })
+
+  return (
+    <Card title="Zalo Mini App" loading={query.isLoading}>
+      <Form form={form} layout="vertical" style={{ maxWidth: 640 }} onFinish={(v) => save.mutate(v)}>
+        <Form.Item
+          name="activation_code_ttl_days"
+          label="Hạn dùng mã kích hoạt (ngày)"
+          extra="Mã cấp cho liên hệ khách hàng (Khách hàng → Liên hệ) và lái xe (Người dùng); dùng 1 lần."
+        >
+          <InputNumber min={1} max={30} />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={save.isPending}>
           Lưu

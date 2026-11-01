@@ -5,6 +5,8 @@ import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Switch, Tab
 import { api } from '../../api'
 import { unwrap } from '../../lib/api-helpers'
 import { useEntityModal } from '../../lib/crud'
+import { useZaloActivation } from '../../lib/useZaloActivation'
+import { ZaloStatusTag } from '../../lib/zalo'
 
 type Customer = components['schemas']['CustomerOut']
 type Contact = components['schemas']['CustomerContactOut']
@@ -14,10 +16,13 @@ type ContactForm = components['schemas']['CustomerContactIn']
 export function CustomerContactsModal({
   customer,
   canEdit,
+  canIssueCodes,
   onClose,
 }: {
   customer: Customer | null
   canEdit: boolean
+  /** Cấp / thu hồi mã kích hoạt Zalo: chỉ admin công ty. */
+  canIssueCodes: boolean
   onClose(): void
 }) {
   const { message } = App.useApp()
@@ -54,6 +59,22 @@ export function CustomerContactsModal({
           ),
   })
 
+  const zalo = useZaloActivation({
+    queryKey: 'customer-contacts',
+    issue: async (id) =>
+      unwrap(
+        await api.POST('/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code', {
+          params: { path: { customer_id: customerId, contact_id: id } },
+        }),
+      ),
+    revoke: async (id) =>
+      unwrap(
+        await api.DELETE('/api/v1/customers/{customer_id}/contacts/{contact_id}/zalo', {
+          params: { path: { customer_id: customerId, contact_id: id } },
+        }),
+      ),
+  })
+
   const remove = useMutation({
     mutationFn: async (contact: Contact) =>
       unwrap(
@@ -77,7 +98,7 @@ export function CustomerContactsModal({
     <Modal
       open={Boolean(customer)}
       title={`Liên hệ - ${customer?.code ?? ''} ${customer?.name ?? ''}`}
-      width={820}
+      width={1000}
       footer={null}
       onCancel={onClose}
       destroyOnHidden
@@ -109,6 +130,16 @@ export function CustomerContactsModal({
             },
             { title: 'Ghi chú', dataIndex: 'note' },
             {
+              title: 'Zalo',
+              width: 210,
+              render: (_, c) => (
+                <Space orientation="vertical" size={2}>
+                  <ZaloStatusTag info={c.zalo} />
+                  {canIssueCodes && c.is_active && zalo.actions(c.id, c.name, c.zalo)}
+                </Space>
+              ),
+            },
+            {
               title: 'Trạng thái',
               dataIndex: 'is_active',
               width: 100,
@@ -133,6 +164,7 @@ export function CustomerContactsModal({
           ]}
         />
       </Space>
+      {zalo.modal}
       {modal.render(() => (
         <>
           <Form.Item name="name" label="Tên liên hệ" rules={[{ required: true }]}>

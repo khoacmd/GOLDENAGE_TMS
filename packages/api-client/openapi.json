@@ -4645,10 +4645,240 @@
           }
         }
       }
+    },
+    "/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code": {
+      "post": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Issue Contact Code",
+        "operationId": "issue_contact_code_api_v1_customers__customer_id__contacts__contact_id__activation_code_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "contact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contact Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationCodeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{customer_id}/contacts/{contact_id}/zalo": {
+      "delete": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Revoke Contact Zalo",
+        "operationId": "revoke_contact_zalo_api_v1_customers__customer_id__contacts__contact_id__zalo_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "contact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contact Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/activation-code": {
+      "post": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Issue Driver Code",
+        "operationId": "issue_driver_code_api_v1_users__user_id__activation_code_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationCodeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/zalo": {
+      "delete": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Revoke Driver Zalo",
+        "operationId": "revoke_driver_zalo_api_v1_users__user_id__zalo_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActivationCodeOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "expires_at",
+          "link"
+        ],
+        "title": "ActivationCodeOut",
+        "description": "Mã chỉ hiển thị 1 lần lúc tạo (server chỉ lưu hash)."
+      },
       "AdhocItemIn": {
         "properties": {
           "description": {
@@ -5322,6 +5552,10 @@
           "timezone": {
             "type": "string",
             "title": "Timezone"
+          },
+          "activation_code_ttl_days": {
+            "type": "integer",
+            "title": "Activation Code Ttl Days"
           }
         },
         "type": "object",
@@ -5345,7 +5579,8 @@
           "shift_start",
           "shift_end",
           "cutover_time",
-          "timezone"
+          "timezone",
+          "activation_code_ttl_days"
         ],
         "title": "CompanySettingsOut"
       },
@@ -5508,6 +5743,19 @@
               }
             ],
             "title": "Require Device Approval"
+          },
+          "activation_code_ttl_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activation Code Ttl Days"
           },
           "auto_plan_enabled": {
             "anyOf": [
@@ -5746,6 +5994,16 @@
             },
             "type": "array",
             "title": "Roles"
+          },
+          "zalo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ZaloLinkInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6227,6 +6485,9 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "zalo": {
+            "$ref": "#/components/schemas/ZaloLinkInfo"
           }
         },
         "type": "object",
@@ -11372,6 +11633,60 @@
         },
         "type": "object",
         "title": "WarehouseUpdate"
+      },
+      "ZaloLinkInfo": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ZaloStatus",
+            "default": "NOT_INVITED"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "activated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated At"
+          },
+          "code_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Expires At"
+          }
+        },
+        "type": "object",
+        "title": "ZaloLinkInfo"
+      },
+      "ZaloStatus": {
+        "type": "string",
+        "enum": [
+          "NOT_INVITED",
+          "PENDING",
+          "ACTIVE"
+        ],
+        "title": "ZaloStatus"
       }
     },
     "securitySchemes": {

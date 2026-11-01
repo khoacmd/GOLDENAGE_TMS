@@ -23,6 +23,7 @@ from app.modules.master_data.schemas import (
     WarehouseOut,
     WarehouseUpdate,
 )
+from app.modules.zalo import service as zalo_service
 
 router = APIRouter(tags=["master-data"])
 
@@ -143,9 +144,11 @@ async def update_customer(
 async def list_customer_contacts(
     customer_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
 ) -> list[CustomerContactOut]:
+    contacts = await service.list_contacts(session, customer_id)
+    zalo = await zalo_service.link_info(session, contact_ids=[c.id for c in contacts])
     return [
-        CustomerContactOut.model_validate(c)
-        for c in await service.list_contacts(session, customer_id)
+        CustomerContactOut.model_validate(c).model_copy(update={"zalo": zalo[c.id]})
+        for c in contacts
     ]
 
 

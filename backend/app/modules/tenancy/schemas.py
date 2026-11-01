@@ -74,6 +74,7 @@ class CompanySettingsOut(DeliveryRules, PlanningSettings):
     shift_end: time
     cutover_time: time
     timezone: str
+    activation_code_ttl_days: int
 
 
 class CompanySettingsUpdate(BaseModel):
@@ -92,6 +93,7 @@ class CompanySettingsUpdate(BaseModel):
     photo_required_failed: bool | None = None
     offline_max_delay_minutes: int | None = Field(default=None, ge=5, le=24 * 60)
     require_device_approval: bool | None = None
+    activation_code_ttl_days: int | None = Field(default=None, ge=1, le=30)
     auto_plan_enabled: bool | None = None
     service_minutes: int | None = Field(default=None, ge=0, le=240)
     turnaround_minutes: int | None = Field(default=None, ge=0, le=240)
