@@ -1334,6 +1334,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customer/orders/{order_id}/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customer Order Routes
+         * @description Tuyến xe đã đi: chỉ vẽ đường, không lộ điểm dừng của khách khác.
+         */
+        get: operations["customer_order_routes_api_v1_customer_orders__order_id__routes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1988,6 +2008,8 @@ export interface components {
             reason: string | null;
             /** Driver Name */
             driver_name: string | null;
+            /** Driver Contacts */
+            driver_contacts: components["schemas"]["DriverContact"][];
             /** Photo Urls */
             photo_urls: string[];
         };
@@ -2149,6 +2171,23 @@ export interface components {
             is_active: boolean;
             /** Delivery Points */
             delivery_points: components["schemas"]["DeliveryPointOut"][];
+        };
+        /**
+         * CustomerRoute
+         * @description Tuyến xe đã đi trên 1 chuyến của đơn; chỉ có kho và điểm giao của khách là tọa độ rõ.
+         */
+        CustomerRoute: {
+            /** Trip Code */
+            trip_code: string;
+            warehouse: components["schemas"]["RoutePoint"];
+            destination: components["schemas"]["RoutePoint"];
+            /** Reached */
+            reached: boolean;
+            /** Segments */
+            segments: [
+                number,
+                number
+            ][][];
         };
         /** CustomerRow */
         CustomerRow: {
@@ -2471,6 +2510,15 @@ export interface components {
          * @enum {string}
          */
         DistanceSource: "ODOMETER" | "MANUAL" | "PLANNED" | "ESTIMATE";
+        /** DriverContact */
+        DriverContact: {
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string | null;
+            /** Is Assistant */
+            is_assistant: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -3060,6 +3108,13 @@ export interface components {
         RolesUpdate: {
             /** Roles */
             roles: components["schemas"]["CompanyRole"][];
+        };
+        /** RoutePoint */
+        RoutePoint: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
         };
         /** RowErrorOut */
         RowErrorOut: {
@@ -7014,6 +7069,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    customer_order_routes_api_v1_customer_orders__order_id__routes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerRoute"][];
                 };
             };
             /** @description Validation Error */

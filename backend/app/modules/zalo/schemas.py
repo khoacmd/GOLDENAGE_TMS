@@ -157,6 +157,12 @@ class CustomerOrderLine(BaseModel):
     amount: Decimal | None  # None với liên hệ điểm giao
 
 
+class DriverContact(BaseModel):
+    name: str
+    phone: str | None  # Zalo của tài xế = số điện thoại (mở qua zalo.me/<sđt>)
+    is_assistant: bool
+
+
 class CustomerDeliveryAttempt(BaseModel):
     """Một lượt giao (1 phần đơn trên 1 chuyến đã duyệt)."""
 
@@ -169,6 +175,8 @@ class CustomerDeliveryAttempt(BaseModel):
     delivered_at: datetime | None
     reason: str | None
     driver_name: str | None
+    # Chỉ khi chuyến đang giao (còn đơn chưa giao); kết thúc chuyến thì không còn hiện.
+    driver_contacts: list[DriverContact]
     photo_urls: list[str]
 
 
@@ -176,3 +184,18 @@ class CustomerOrderDetail(CustomerOrderSummary):
     note: str | None
     lines: list[CustomerOrderLine]
     deliveries: list[CustomerDeliveryAttempt]
+
+
+class RoutePoint(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class CustomerRoute(BaseModel):
+    """Tuyến xe đã đi trên 1 chuyến của đơn; chỉ có kho và điểm giao của khách là tọa độ rõ."""
+
+    trip_code: str
+    warehouse: RoutePoint
+    destination: RoutePoint  # điểm giao của khách
+    reached: bool  # xe đã đến điểm của khách (tuyến kết thúc tại đó)
+    segments: list[list[tuple[float, float]]]  # các đoạn đường [(kinh độ, vĩ độ)], có thể rỗng

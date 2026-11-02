@@ -16,6 +16,7 @@ from app.modules.zalo.schemas import (
     CustomerMe,
     CustomerOrderDetail,
     CustomerOrderList,
+    CustomerRoute,
     ZaloActivateRequest,
     ZaloLoginOut,
     ZaloLoginRequest,
@@ -124,3 +125,11 @@ async def customer_order(
 ) -> CustomerOrderDetail:
     """Chi tiết đơn: mặt hàng, số lượng, các lượt giao (giờ giao, tài xế, ảnh chứng từ)."""
     return await portal.get_order(session, customer, order_id)
+
+
+@router.get("/customer/orders/{order_id}/routes")
+async def customer_order_routes(
+    order_id: uuid.UUID, customer: CurrentCustomerDep, session: DbSession
+) -> list[CustomerRoute]:
+    """Tuyến xe đã đi: chỉ vẽ đường, không lộ điểm dừng của khách khác."""
+    return await portal.order_routes(session, customer, order_id)

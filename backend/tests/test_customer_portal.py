@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from itertools import pairwise
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -7,9 +8,11 @@ from httpx import AsyncClient
 
 from app.modules.delivery import service as delivery_service
 from app.modules.dispatch.models import ItemStatus, Trip, TripOrderStatus
+from app.modules.routing import service as routing_service
 from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
 from app.modules.zalo import eta as eta_service
+from app.modules.zalo.route import TRIM_RADIUS_M, trim_line
 from optimization.model import Matrix
 from tests.conftest import (
     PLAN_DATE,
@@ -229,6 +232,115 @@ async def test_eta_anchors_on_last_delivery_and_is_never_in_the_past(
     assert etas["stop-0"].earliest == late
     assert etas["stop-0"].latest == late + timedelta(minutes=10)
     assert etas["stop-1"].earliest >= late + timedelta(minutes=30)
+
+
+def test_trim_line_cuts_around_other_stops() -> None:
+    line = [(105.0 + i * 0.001, 21.0) for i in range(11)]  # mỗi đỉnh cách nhau ~104 m
+    assert trim_line(line, [], 200) == [line]
+    # Đỉnh giữa nằm đúng điểm dừng khác: mất 3-5 đỉnh quanh đó, còn 2 đoạn.
+    segments = trim_line(line, [(21.0, 105.005)], 200)
+    assert len(segments) == 2
+    assert all(
+        routing_service.haversine_m((lat, lng), (21.0, 105.005)) > 200
+        for segment in segments
+        for lng, lat in segment
+    )
+    # Điểm dừng ở cuối đường: không còn đoạn nào kết thúc tại đó.
+    assert trim_line(line, [(21.0, 105.01)], 200) == [line[:9]]
+    assert trim_line(line[:2], [(21.0, 105.0)], 200) == []
+
+
+async def test_route_hides_other_stops_and_ends_at_own_point(
+    client: AsyncClient, env: Env, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[list[Point]] = []
+
+    async def fake_geometry(points: list[Point], profile: Profile) -> list[tuple[float, float]]:
+        # Đường thẳng qua các điểm, chia nhỏ để có đỉnh xa các điểm dừng.
+        calls.append(points)
+        line = []
+        for (lat1, lng1), (lat2, lng2) in pairwise(points):
+            for t in range(50):
+                line.append((lng1 + (lng2 - lng1) * t / 50, lat1 + (lat2 - lat1) * t / 50))
+        line.append((points[-1][1], points[-1][0]))
+        return line
+
+    monkeypatch.setattr(routing_service, "geometry", fake_geometry)
+    owner = await customer_token(client, env, "0912000001", "zalo-owner")
+
+    trip = await dispatched_trip(client, env)  # điểm 1: DH2610-001 (KH001), điểm 2: DH2610-007
+    order_id = by_ref(await orders(client, owner))["DH2610-001"]["id"]
+    routes_url = f"{ORDERS}/{order_id}/routes"
+
+    # Xe chưa đến đâu: chỉ có kho + điểm của khách, chưa có đường.
+    routes = (await client.get(routes_url, headers=auth(owner))).json()
+    assert [(r["trip_code"], r["reached"], r["segments"]) for r in routes] == [
+        (trip["code"], False, [])
+    ]
+    own = routes[0]["destination"]
+
+    # Giao điểm 2 (khách khác) trước: tuyến đi tới gần đó rồi dừng, không chạm điểm đó.
+    point2 = next(s for s in trip["stops"] if s["seq"] == 2)
+    resp = await confirm(
+        client,
+        env,
+        trip,
+        point2["items"][0]["id"],
+        status="FAILED",
+        reason="Đóng cửa",
+        latitude=float(point2["latitude"]),
+        longitude=float(point2["longitude"]),
+    )
+    assert resp.json()["accepted"], resp.text
+    route = (await client.get(routes_url, headers=auth(owner))).json()[0]
+    assert route["reached"] is False and route["segments"]
+    target = (float(point2["latitude"]), float(point2["longitude"]))
+    vertices = [v for segment in route["segments"] for v in segment]
+    assert all(routing_service.haversine_m((v[1], v[0]), target) > TRIM_RADIUS_M for v in vertices)
+
+    # Giao xong điểm của khách: tuyến kết thúc đúng tại đó.
+    key = await photo(client, env.driver_token)
+    for item in trip["stops"][0]["items"]:
+        resp = await confirm(client, env, trip, item["id"], photo_keys=[key])
+        assert resp.json()["accepted"], resp.text
+    route = (await client.get(routes_url, headers=auth(owner))).json()[0]
+    assert route["reached"] is True
+    vertices = [v for segment in route["segments"] for v in segment]
+    assert all(routing_service.haversine_m((v[1], v[0]), target) > TRIM_RADIUS_M for v in vertices)
+    end = route["segments"][-1][-1]
+    assert routing_service.haversine_m((end[1], end[0]), (own["latitude"], own["longitude"])) < 1
+
+
+async def test_driver_contact_only_while_trip_in_progress(client: AsyncClient, env: Env) -> None:
+    resp = await client.patch(
+        f"/api/v1/users/{env.driver_id}", headers=auth(env.admin), json={"phone": "0987000111"}
+    )
+    assert resp.status_code == 200, resp.text
+    owner = await customer_token(client, env, "0912000001", "zalo-owner")
+    trip = await dispatched_trip(client, env)
+    order_id = by_ref(await orders(client, owner))["DH2610-001"]["id"]
+
+    async def contacts() -> list[list[dict[str, Any]]]:
+        detail = (await client.get(f"{ORDERS}/{order_id}", headers=auth(owner))).json()
+        return [d["driver_contacts"] for d in detail["deliveries"]]
+
+    for found in await contacts():
+        assert found == [{"name": "laixe1", "phone": "0987000111", "is_assistant": False}]
+
+    key = await photo(client, env.driver_token)
+    for stop_ in trip["stops"]:
+        for item in stop_["items"]:
+            resp = await confirm(
+                client,
+                env,
+                trip,
+                item["id"],
+                photo_keys=[key],
+                latitude=float(stop_["latitude"]),
+                longitude=float(stop_["longitude"]),
+            )
+            assert resp.json()["accepted"], resp.text
+    assert all(found == [] for found in await contacts())
 
 
 async def test_customer_cannot_read_other_company_orders(

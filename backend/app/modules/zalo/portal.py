@@ -17,10 +17,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError
 from app.core.storage import get_storage
 from app.modules.delivery.models import DeliveryConfirmation
-from app.modules.dispatch.models import ItemStatus, Trip, TripItem, TripOrderStatus
+from app.modules.dispatch.models import (
+    ItemStatus,
+    Trip,
+    TripDeliveryStatus,
+    TripItem,
+    TripOrderStatus,
+)
 from app.modules.orders.models import OrderPart, OrderPartStatus, OrderStatus, SalesOrder
 from app.modules.tenancy.models import CompanySettings
 from app.modules.zalo import eta as eta_service
+from app.modules.zalo import route as route_service
 from app.modules.zalo.auth import CurrentCustomer
 from app.modules.zalo.schemas import (
     CustomerDeliveryAttempt,
@@ -30,7 +37,9 @@ from app.modules.zalo.schemas import (
     CustomerOrderList,
     CustomerOrderStatus,
     CustomerOrderSummary,
+    CustomerRoute,
     DeliveryAttemptStatus,
+    DriverContact,
 )
 
 _IN_TRANSIT = DeliveryAttemptStatus.IN_TRANSIT
@@ -219,15 +228,31 @@ async def list_orders(
     return CustomerOrderList(date=day, items=items)
 
 
-async def get_order(
-    session: AsyncSession, customer: CurrentCustomer, order_id: uuid.UUID
-) -> CustomerOrderDetail:
-    scope = _scope(customer)
+async def _visible_order(session: AsyncSession, scope: _Scope, order_id: uuid.UUID) -> SalesOrder:
     order = await session.scalar(
         select(SalesOrder).where(SalesOrder.id == order_id, scope.condition())
     )
     if order is None:
         raise NotFoundError("Không tìm thấy đơn hàng")
+    return order
+
+
+def _driver_contacts(trip: Trip) -> list[DriverContact]:
+    if trip.delivery_status != TripDeliveryStatus.IN_PROGRESS:
+        return []
+    crew = [(trip.driver, False), (trip.assistant, True)]
+    return [
+        DriverContact(name=user.full_name, phone=user.phone, is_assistant=is_assistant)
+        for user, is_assistant in crew
+        if user is not None
+    ]
+
+
+async def get_order(
+    session: AsyncSession, customer: CurrentCustomer, order_id: uuid.UUID
+) -> CustomerOrderDetail:
+    scope = _scope(customer)
+    order = await _visible_order(session, scope, order_id)
     attempts = (await _attempts(session, [order.id])).get(order.id, [])
     sees_value = scope.sees_value(order)
     etas = await _etas(session, customer.company.id, attempts)
@@ -268,8 +293,19 @@ async def get_order(
                 delivered_at=a.item.delivered_at,
                 reason=a.item.reason if a.item.status == ItemStatus.FAILED else None,
                 driver_name=a.trip.driver.full_name if a.trip.driver else None,
+                driver_contacts=_driver_contacts(a.trip),
                 photo_urls=photos.get(a.item.id, []),
             )
             for a in attempts
         ],
     )
+
+
+async def order_routes(
+    session: AsyncSession, customer: CurrentCustomer, order_id: uuid.UUID
+) -> list[CustomerRoute]:
+    """Tuyến đã đi của từng chuyến đã xuất phát chở đơn này."""
+    order = await _visible_order(session, _scope(customer), order_id)
+    attempts = (await _attempts(session, [order.id])).get(order.id, [])
+    stops = {a.trip.id: (a.trip, a.item.stop_id) for a in attempts if a.trip.dispatched_at}
+    return [await route_service.customer_route(trip, stop) for trip, stop in stops.values()]

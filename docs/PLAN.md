@@ -124,7 +124,7 @@
 - [ ] Kiểm chứng gọi Graph API của Zalo (`appsecret_proof`) với App ID/secret thật
 - [x] API khách hàng (`GET /customer/orders`, `/customer/orders/{id}`): đơn theo ngày, chi tiết + log giao (tài xế, ảnh chứng từ), trạng thái cho khách, phân quyền chủ/điểm giao, ẩn giá trị với điểm giao
 - [x] Giờ đến dự kiến cho đơn đang giao: tính khi đọc theo lần xác nhận gần nhất + OSRM × hệ số kẹt xe + thời gian phục vụ, trả dạng khoảng (không lưu `planned_arrival`)
-- [ ] Tuyến đã đi (OSRM, không lộ điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao
+- [x] Tuyến đã đi (`GET /customer/orders/{id}/routes`, OSRM, cắt đường quanh điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao
 - [ ] Mini app `zalo/` (React + ZaUI + zmp-sdk): phần khách hàng; `packages/api-client` cho chọn đường dẫn làm mới token (`/auth/zalo/refresh`); CORS cho domain của Zalo Mini App
 - [ ] Mini app: phần tài xế (kênh phụ), cấu hình công ty "cho phép xác nhận giao qua Zalo"
 - [ ] Kiểm thử trên Zalo thật, gửi duyệt và phát hành mini app

@@ -5100,6 +5100,59 @@
           }
         }
       }
+    },
+    "/api/v1/customer/orders/{order_id}/routes": {
+      "get": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Customer Order Routes",
+        "description": "Tuyến xe đã đi: chỉ vẽ đường, không lộ điểm dừng của khách khác.",
+        "operationId": "customer_order_routes_api_v1_customer_orders__order_id__routes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerRoute"
+                  },
+                  "title": "Response Customer Order Routes Api V1 Customer Orders  Order Id  Routes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6966,6 +7019,13 @@
             ],
             "title": "Driver Name"
           },
+          "driver_contacts": {
+            "items": {
+              "$ref": "#/components/schemas/DriverContact"
+            },
+            "type": "array",
+            "title": "Driver Contacts"
+          },
           "photo_urls": {
             "items": {
               "type": "string"
@@ -6985,6 +7045,7 @@
           "delivered_at",
           "reason",
           "driver_name",
+          "driver_contacts",
           "photo_urls"
         ],
         "title": "CustomerDeliveryAttempt",
@@ -7473,6 +7534,54 @@
           "delivery_points"
         ],
         "title": "CustomerOut"
+      },
+      "CustomerRoute": {
+        "properties": {
+          "trip_code": {
+            "type": "string",
+            "title": "Trip Code"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/RoutePoint"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/RoutePoint"
+          },
+          "reached": {
+            "type": "boolean",
+            "title": "Reached"
+          },
+          "segments": {
+            "items": {
+              "items": {
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Segments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip_code",
+          "warehouse",
+          "destination",
+          "reached",
+          "segments"
+        ],
+        "title": "CustomerRoute",
+        "description": "Tuyến xe đã đi trên 1 chuyến của đơn; chỉ có kho và điểm giao của khách là tọa độ rõ."
       },
       "CustomerRow": {
         "properties": {
@@ -8525,6 +8634,36 @@
           "ESTIMATE"
         ],
         "title": "DistanceSource"
+      },
+      "DriverContact": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "is_assistant": {
+            "type": "boolean",
+            "title": "Is Assistant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "phone",
+          "is_assistant"
+        ],
+        "title": "DriverContact"
       },
       "HTTPValidationError": {
         "properties": {
@@ -10018,6 +10157,24 @@
           "roles"
         ],
         "title": "RolesUpdate"
+      },
+      "RoutePoint": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "RoutePoint"
       },
       "RowErrorOut": {
         "properties": {
