@@ -95,6 +95,7 @@ export function MapView({
   const map = useRef<maplibregl.Map | null>(null)
   const markerRefs = useRef<maplibregl.Marker[]>([])
   const pickRef = useRef(onPick)
+  const centered = useRef(false)
   const [style, setStyle] = useState<maplibregl.StyleSpecification | null>(null)
   useEffect(() => {
     pickRef.current = onPick
@@ -181,6 +182,9 @@ export function MapView({
     if (m.isStyleLoaded()) drawRoute()
     else m.once('load', drawRoute)
 
+    // Đang chọn tọa độ: chỉ căn giữa lần đầu, giữ nguyên khung nhìn sau mỗi lần bấm.
+    if (pickRef.current && centered.current) return
+    centered.current = true
     if (markers.length === 1) m.jumpTo({ center: [markers[0].lng, markers[0].lat], zoom: 14 })
     else if (markers.length > 1) {
       const bounds = new maplibregl.LngLatBounds()

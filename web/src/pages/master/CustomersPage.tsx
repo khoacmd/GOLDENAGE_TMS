@@ -250,7 +250,7 @@ export function CustomersPage() {
                       <Form.Item name={[field.name, 'address']} label="Địa chỉ" rules={[{ required: true }]}>
                         <Input />
                       </Form.Item>
-                      <CoordinateFields prefix={[field.name]} />
+                      <CoordinateFields prefix={[field.name]} listPath={['delivery_points']} />
                       <Form.Item name={[field.name, 'is_default']} valuePropName="checked" noStyle>
                         <Checkbox
                           onChange={(e) => {

@@ -127,6 +127,6 @@
 - [x] Tuyến đã đi (`GET /customer/orders/{id}/routes`, OSRM, cắt đường quanh điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao
 - [x] Mini app `zalo/` (React + ZaUI + zmp-sdk): phần khách hàng (kích hoạt, chọn tài khoản, đơn theo ngày, chi tiết + log + ảnh, ETA, bản đồ tuyến, gọi/Zalo tài xế), đã thử trên trình duyệt bằng chế độ giả lập; `packages/api-client` chọn được đường dẫn làm mới token; CORS cho webview Zalo (API + `/tiles`)
 - [x] Đưa CORS mini app lên production; đã khai báo domain `tms.thanhxuan.me` trong trang quản trị Mini App
-- [ ] `zmp deploy` bản thử để chạy trên Zalo thật
+- [x] `zmp deploy` bản thử, kích hoạt mã thành công trên Zalo thật (iPhone, 02/11/2026)
 - [ ] Mini app: phần tài xế (kênh phụ), cấu hình công ty "cho phép xác nhận giao qua Zalo"
 - [ ] Kiểm thử trên Zalo thật, gửi duyệt và phát hành mini app
