@@ -1,13 +1,37 @@
-import { errorMessage } from '@tms/api-client'
+import { errorFields, errorMessage, type ApiFieldError } from '@tms/api-client'
 import { useState } from 'react'
 
-/** Lấy `data` từ kết quả openapi-fetch, ném Error (thông báo tiếng Việt) nếu lỗi. */
+/** Lỗi từ API; `fields` chỉ rõ từng trường sai để form hiện ngay dưới ô nhập. */
+export class ApiError extends Error {
+  readonly fields: ApiFieldError[]
+
+  constructor(message: string, fields: ApiFieldError[] = []) {
+    super(message)
+    this.fields = fields
+  }
+}
+
+/** Lấy `data` từ kết quả openapi-fetch, ném ApiError (thông báo tiếng Việt) nếu lỗi. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.data !== undefined) return result.data
-  const status = result.response.status
-  if (status === 422) throw new Error('Dữ liệu nhập chưa hợp lệ')
-  if (status === 403) throw new Error('Bạn không có quyền thực hiện thao tác này')
-  throw new Error(errorMessage(result.error))
+  if (result.response.status === 403) throw new ApiError('Bạn không có quyền thực hiện thao tác này')
+  throw new ApiError(errorMessage(result.error), errorFields(result.error))
+}
+
+/** Rule form cho mã (khớp `CodeStr` của backend). */
+export const CODE_RULE = {
+  pattern: /^[A-Za-z0-9._/-]+$/,
+  message: 'Chỉ gồm chữ không dấu, số và các ký tự . _ / - (không có dấu cách)',
+}
+
+/** Ô bỏ trống (chuỗi rỗng) gửi lên là null, không phải giá trị sai định dạng. */
+export function blankToNull<T>(value: T): T {
+  if (value === '') return null as T
+  if (Array.isArray(value)) return value.map(blankToNull) as T
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, blankToNull(v)])) as T
+  }
+  return value
 }
 
 export interface Paging {

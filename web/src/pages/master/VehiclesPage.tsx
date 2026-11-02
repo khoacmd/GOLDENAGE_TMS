@@ -4,7 +4,7 @@ import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, T
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
-import { unwrap, usePaging } from '../../lib/api-helpers'
+import { CODE_RULE, unwrap, usePaging } from '../../lib/api-helpers'
 import { useEntityModal } from '../../lib/crud'
 import { CARGO_CLASS, COST_METHOD, VEHICLE_TYPE, fmtNumber, options } from '../../lib/labels'
 
@@ -96,7 +96,7 @@ export function VehiclesPage() {
       {modal.render((_, editing) => (
         <>
           <Space size="middle" wrap>
-            <Form.Item name="code" label="Mã xe" rules={[{ required: true }]}>
+            <Form.Item name="code" label="Mã xe" rules={[{ required: true }, CODE_RULE]}>
               <Input disabled={Boolean(editing)} style={{ width: 140 }} />
             </Form.Item>
             <Form.Item name="plate_no" label="Biển số" rules={[{ required: true }]}>

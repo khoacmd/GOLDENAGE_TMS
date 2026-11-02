@@ -1,0 +1,6 @@
+{
+  "name": "TMS Giao hàng",
+  "framework": "react-typescript",
+  "package": "zmp-ui",
+  "template": "single-view"
+}

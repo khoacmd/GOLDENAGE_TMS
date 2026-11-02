@@ -121,7 +121,7 @@
 - [x] Liên hệ khách hàng: bảng `customer_contacts` (chủ / điểm giao, SĐT chuẩn hóa), web thêm/sửa/xóa (Khách hàng → Liên hệ), loại import "Liên hệ khách hàng" + mẫu `docs/samples/7-lien-he-khach-hang.csv`
 - [x] Mã kích hoạt: tạo / tạo lại / thu hồi cho liên hệ khách và tài xế, link + QR, chống dò, audit (web: Khách hàng → Liên hệ, Người dùng; Cấu hình → hạn mã); nhập mã `zalo.service.redeem` (endpoint ở bước xác thực Zalo)
 - [x] Xác thực Zalo (`POST /auth/zalo/login|activate|refresh`), liên kết bằng mã, chọn tài khoản (công ty / lái xe / khách hàng), JWT khách hàng (`customer_*`), `GET /customer/me`; chế độ giả lập `TMS_ZALO_MOCK`; test bảo mật cho token khách
-- [ ] Kiểm chứng gọi Graph API của Zalo (`appsecret_proof`) với App ID/secret thật
+- [x] Kiểm chứng gọi Graph API của Zalo (`appsecret_proof`) với App ID/secret thật: bản thử trên iPhone lấy được Zalo ID từ token thật qua production (02/11/2026)
 - [x] API khách hàng (`GET /customer/orders`, `/customer/orders/{id}`): đơn theo ngày, chi tiết + log giao (tài xế, ảnh chứng từ), trạng thái cho khách, phân quyền chủ/điểm giao, ẩn giá trị với điểm giao
 - [x] Giờ đến dự kiến cho đơn đang giao: tính khi đọc theo lần xác nhận gần nhất + OSRM × hệ số kẹt xe + thời gian phục vụ, trả dạng khoảng (không lưu `planned_arrival`)
 - [x] Tuyến đã đi (`GET /customer/orders/{id}/routes`, OSRM, cắt đường quanh điểm dừng khác); SĐT/Zalo tài xế khi chuyến đang giao

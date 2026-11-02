@@ -21,7 +21,7 @@ import { useState } from 'react'
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
-import { unwrap, usePaging } from '../../lib/api-helpers'
+import { CODE_RULE, unwrap, usePaging } from '../../lib/api-helpers'
 import { CoordinateFields } from '../../lib/CoordinateFields'
 import { mapLink, useEntityModal } from '../../lib/crud'
 import { VEHICLE_REQUIREMENT, WEEKDAYS, options, weekdayText } from '../../lib/labels'
@@ -165,7 +165,7 @@ export function CustomersPage() {
           <>
             <Row gutter={12}>
               <Col span={8}>
-                <Form.Item name="code" label="Mã KH" rules={[{ required: true }]}>
+                <Form.Item name="code" label="Mã KH" rules={[{ required: true }, CODE_RULE]}>
                   <Input disabled={Boolean(editing)} />
                 </Form.Item>
               </Col>
@@ -237,7 +237,7 @@ export function CustomersPage() {
                     >
                       <Row gutter={12}>
                         <Col span={8}>
-                          <Form.Item name={[field.name, 'code']} label="Mã điểm" rules={[{ required: true }]}>
+                          <Form.Item name={[field.name, 'code']} label="Mã điểm" rules={[{ required: true }, CODE_RULE]}>
                             <Input />
                           </Form.Item>
                         </Col>

@@ -18,12 +18,12 @@ export function CoordinateFields({ prefix = [] }: { prefix?: (string | number)[]
     <Row gutter={12} align="bottom">
       <Col span={10}>
         <Form.Item name={latName} label="Vĩ độ" rules={[{ required: true }]}>
-          <InputNumber style={{ width: '100%' }} min={-90} max={90} step={0.000001} stringMode />
+          <InputNumber style={{ width: '100%' }} min={-90} max={90} step={0.000001} precision={6} stringMode />
         </Form.Item>
       </Col>
       <Col span={10}>
         <Form.Item name={lngName} label="Kinh độ" rules={[{ required: true }]}>
-          <InputNumber style={{ width: '100%' }} min={-180} max={180} step={0.000001} stringMode />
+          <InputNumber style={{ width: '100%' }} min={-180} max={180} step={0.000001} precision={6} stringMode />
         </Form.Item>
       </Col>
       <Col span={4}>

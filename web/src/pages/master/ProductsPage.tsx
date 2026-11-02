@@ -4,7 +4,7 @@ import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, T
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
-import { unwrap, usePaging } from '../../lib/api-helpers'
+import { CODE_RULE, unwrap, usePaging } from '../../lib/api-helpers'
 import { useEntityModal } from '../../lib/crud'
 import { TEMP_CLASS, fmtNumber, options } from '../../lib/labels'
 
@@ -82,7 +82,7 @@ export function ProductsPage() {
       />
       {modal.render((_, editing) => (
         <>
-          <Form.Item name="code" label="Mã hàng" rules={[{ required: true }]}>
+          <Form.Item name="code" label="Mã hàng" rules={[{ required: true }, CODE_RULE]}>
             <Input disabled={Boolean(editing)} />
           </Form.Item>
           <Form.Item name="name" label="Tên hàng" rules={[{ required: true }]}>

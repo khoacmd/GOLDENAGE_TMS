@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.core.validation import register_validation_handler
+
 
 class AppError(Exception):
     """Lỗi nghiệp vụ, trả về client dạng {"error": {"code", "message"}}."""
@@ -39,6 +41,8 @@ class PermissionDeniedError(AppError):
 
 
 def register_error_handlers(app: FastAPI) -> None:
+    register_validation_handler(app)
+
     @app.exception_handler(AppError)
     async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
         return JSONResponse(

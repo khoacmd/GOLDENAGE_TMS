@@ -131,6 +131,8 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - Chống dò mật khẩu (`app/core/throttle.py`): sai 5 lần / 15 phút theo tài khoản (50 lần theo IP) → 429; đếm ở Redis, Redis lỗi thì đếm trong tiến trình. Sau proxy cần `uvicorn --proxy-headers` để lấy IP thật.
 - Giới hạn file: ảnh 8 MB, file import 20 MB.
 
+**Báo lỗi dữ liệu nhập** (`app/core/validation.py`): 422 trả `{"error": {"code": "validation_error", "message", "details": ["Điểm giao 1 - Vĩ độ: Tối đa 6 chữ số sau dấu phẩy"], "fields": [{"path", "label", "message"}]}}`, liệt kê mọi trường sai cùng lúc, tiếng Việt, không trả lại giá trị đã nhập. Web: `useEntityModal` hiện lỗi dưới từng ô theo `path`, thông báo chung liệt kê đủ; ô để trống gửi `null`. Lỗi nghiệp vụ (`AppError`) cũng hiện kèm `details`.
+
 ## 7. Mô hình dữ liệu (lõi)
 
 ### Dữ liệu gốc

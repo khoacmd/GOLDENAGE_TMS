@@ -50,6 +50,12 @@ server {
   }
 
   location /assets/ {
+    # Worker của MapLibre là .mjs, mime.types mặc định không có: thiếu kiểu JS thì trình duyệt
+    # từ chối chạy (Caddy đặt nosniff) và bản đồ không hiện.
+    include /etc/nginx/mime.types;
+    types {
+      text/javascript mjs;
+    }
     add_header Cache-Control "public, max-age=31536000, immutable" always;
     try_files $uri =404;
   }

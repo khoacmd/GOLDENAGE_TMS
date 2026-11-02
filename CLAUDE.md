@@ -43,11 +43,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - API dùng role DB `tms_app` (chịu RLS); context công ty đặt qua `set_tenant_context`, tự áp lại sau mỗi commit.
   - Route ghi dữ liệu tự gọi `await session.commit()`; service chỉ `flush()`.
   - Lỗi nghiệp vụ raise `AppError` và các lớp con (`app/core/errors.py`).
+  - Lỗi kiểm tra đầu vào (422) trả `error.details` + `error.fields` tiếng Việt (`app/core/validation.py`): trường API mới phải thêm nhãn vào `FIELD_LABELS` (có test), pattern mới thêm vào `PATTERN_MESSAGES`.
   - Danh sách trả `Page[T]` (`app/core/schemas.py`), tham số `q/limit/offset` qua `page_params`.
   - Quan hệ ORM nạp bằng `lazy="selectin"`/`"joined"` (async không lazy-load được). Eager-load đi vòng (vd. `OrderPart → order → parts`) bị SQLAlchemy cắt → truy vấn tường minh. Sau khi đổi khóa ngoại rồi commit, nạp lại object (`expunge_all` + get) trước khi serialize.
   - Thay đổi trạng thái nghiệp vụ ghi `audit.record(...)` (`app/modules/audit`).
   - Thêm/sửa loại import: khai báo `ImportSpec` ở module sở hữu dữ liệu, đăng ký trong `integration/registry.py`, rồi chạy `uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md` (CI kiểm tra file này khớp code). Dữ liệu mẫu `docs/samples/` phải luôn import được (có test).
-- Quy ước code web: gọi API qua `api` (openapi-fetch) + `unwrap()`; bảng phân trang dùng `usePaging()`; form tạo/sửa dùng `useEntityModal()` (`web/src/lib/`); nhãn tiếng Việt cho enum ở `web/src/lib/labels.ts`. antd 6: dùng `orientation` thay `direction`. Bản đồ dùng `web/src/lib/MapView.tsx` (MapLibre, worker URL đặt tường minh).
+- Quy ước code web: gọi API qua `api` (openapi-fetch) + `unwrap()` (ném `ApiError`, thông báo kèm chi tiết; `useEntityModal` tự hiện lỗi dưới từng ô); bảng phân trang dùng `usePaging()`; form tạo/sửa dùng `useEntityModal()` (`web/src/lib/`); nhãn tiếng Việt cho enum ở `web/src/lib/labels.ts`. antd 6: dùng `orientation` thay `direction`. Bản đồ dùng `web/src/lib/MapView.tsx` (MapLibre, worker URL đặt tường minh).
 
 ## Nghiệp vụ
 - Nghiệp vụ này được thiết kế chung cho nhiều Công ty cùng sử dụng chung hệ thống.

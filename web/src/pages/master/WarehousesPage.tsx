@@ -4,7 +4,7 @@ import { Button, Card, Form, Input, Space, Switch, Table, Tag } from 'antd'
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
-import { unwrap, usePaging } from '../../lib/api-helpers'
+import { CODE_RULE, unwrap, usePaging } from '../../lib/api-helpers'
 import { CoordinateFields } from '../../lib/CoordinateFields'
 import { mapLink, useEntityModal } from '../../lib/crud'
 
@@ -82,7 +82,7 @@ export function WarehousesPage() {
       />
       {modal.render((_, editing) => (
         <>
-          <Form.Item name="code" label="Mã kho" rules={[{ required: true }]}>
+          <Form.Item name="code" label="Mã kho" rules={[{ required: true }, CODE_RULE]}>
             <Input disabled={Boolean(editing)} />
           </Form.Item>
           <Form.Item name="name" label="Tên kho" rules={[{ required: true }]}>

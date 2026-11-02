@@ -9,9 +9,20 @@ export type TokenPair = components["schemas"]["TokenPair"];
 export type Me = components["schemas"]["MeResponse"];
 export type CompanyRole = components["schemas"]["CompanyRole"];
 
+export interface ApiFieldError {
+  /** Đường dẫn trường, vd. ["delivery_points", 0, "latitude"]. */
+  path: (string | number)[];
+  label: string;
+  message: string;
+}
+
 export interface ApiErrorBody {
-  error?: { code: string; message: string };
-  detail?: unknown;
+  error?: {
+    code: string;
+    message: string;
+    details?: string[];
+    fields?: ApiFieldError[];
+  };
 }
 
 export interface TokenStore {
@@ -78,7 +89,18 @@ export function createApiClient(
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
-export function errorMessage(error: unknown, fallback = "Đã có lỗi xảy ra"): string {
-  const body = error as ApiErrorBody | undefined;
-  return body?.error?.message ?? fallback;
+/** Thông báo kèm chi tiết từng lỗi, vd. "Dữ liệu chưa hợp lệ: Mã: Không được để trống". */
+export function errorMessage(
+  error: unknown,
+  fallback = "Đã có lỗi xảy ra",
+): string {
+  const body = (error as ApiErrorBody | undefined)?.error;
+  if (!body?.message) return fallback;
+  return body.details?.length
+    ? `${body.message}: ${body.details.join("; ")}`
+    : body.message;
+}
+
+export function errorFields(error: unknown): ApiFieldError[] {
+  return (error as ApiErrorBody | undefined)?.error?.fields ?? [];
 }
