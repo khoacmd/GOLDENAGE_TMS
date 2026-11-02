@@ -66,3 +66,22 @@ export function money(value: string | number): string {
 export function quantity(value: string | number): string {
   return Number(value).toLocaleString('vi-VN', { maximumFractionDigits: 3 })
 }
+
+export function today(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: TZ })
+}
+
+export const TRIP_STATUS: Record<string, { label: string; color: string }> = {
+  APPROVED: { label: 'Đã duyệt', color: '#0369a1' },
+  PREPARED: { label: 'Đã soạn hàng', color: '#0369a1' },
+  PICKED: { label: 'Đã xuất kho', color: '#b45309' },
+  DISPATCHED: { label: 'Đang giao', color: '#006af5' },
+  CLOSED: { label: 'Đã kết thúc', color: '#6b7280' },
+}
+
+export const ITEM_STATUS: Record<string, { label: string; color: string }> = {
+  PENDING: { label: 'Chờ giao', color: '#6b7280' },
+  SUCCESS: { label: 'Đã giao', color: '#15803d' },
+  FAILED: { label: 'Không thành công', color: '#b91c1c' },
+  CANCELLED: { label: 'Đã hủy', color: '#6b7280' },
+}

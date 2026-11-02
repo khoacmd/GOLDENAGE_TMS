@@ -5845,6 +5845,11 @@
             "type": "boolean",
             "title": "Require Device Approval"
           },
+          "zalo_confirm_enabled": {
+            "type": "boolean",
+            "title": "Zalo Confirm Enabled",
+            "default": false
+          },
           "working_weekdays": {
             "items": {
               "type": "integer"
@@ -6074,6 +6079,17 @@
               }
             ],
             "title": "Activation Code Ttl Days"
+          },
+          "zalo_confirm_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zalo Confirm Enabled"
           },
           "auto_plan_enabled": {
             "anyOf": [
@@ -6504,6 +6520,30 @@
             ],
             "title": "Device Id",
             "description": "Mã cài đặt của app (đã đăng ký thiết bị)"
+          },
+          "zalo_access_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zalo Access Token"
+          },
+          "zalo_location_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zalo Location Token"
           }
         },
         "type": "object",
@@ -8141,6 +8181,11 @@
           "require_device_approval": {
             "type": "boolean",
             "title": "Require Device Approval"
+          },
+          "zalo_confirm_enabled": {
+            "type": "boolean",
+            "title": "Zalo Confirm Enabled",
+            "default": false
           }
         },
         "type": "object",

@@ -50,6 +50,7 @@ class DeliveryRules(BaseModel):
     photo_required_failed: bool
     offline_max_delay_minutes: int = Field(ge=5, le=24 * 60)
     require_device_approval: bool
+    zalo_confirm_enabled: bool = False
 
 
 class PlanningSettings(BaseModel):
@@ -94,6 +95,7 @@ class CompanySettingsUpdate(BaseModel):
     offline_max_delay_minutes: int | None = Field(default=None, ge=5, le=24 * 60)
     require_device_approval: bool | None = None
     activation_code_ttl_days: int | None = Field(default=None, ge=1, le=30)
+    zalo_confirm_enabled: bool | None = None
     auto_plan_enabled: bool | None = None
     service_minutes: int | None = Field(default=None, ge=0, le=240)
     turnaround_minutes: int | None = Field(default=None, ge=0, le=240)

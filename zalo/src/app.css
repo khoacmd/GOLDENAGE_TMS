@@ -25,3 +25,9 @@ body { background: #f2f3f5; }
 .photos img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
 .map, .map-placeholder { width: 100%; height: 260px; border-radius: 8px; margin-top: 8px; background: #e5e7eb; overflow: hidden; }
 .map-marker { color: #fff; border-radius: 12px; font-size: 12px; padding: 2px 8px; }
+.error-text { color: #b91c1c; }
+.notice { display: block; margin: 8px 16px; }
+.inline-link { background: none; border: 0; color: #006af5; font-size: 14px; min-height: 36px; white-space: nowrap; }
+.choice-row { display: flex; gap: 8px; margin-top: 4px; }
+.reason { background: #fff; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-top: 6px; min-height: 44px; padding: 8px 10px; text-align: left; }
+.reason.active { background: #fef2f2; border-color: #b91c1c; }

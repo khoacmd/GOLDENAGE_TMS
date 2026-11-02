@@ -1664,6 +1664,11 @@ export interface components {
             offline_max_delay_minutes: number;
             /** Require Device Approval */
             require_device_approval: boolean;
+            /**
+             * Zalo Confirm Enabled
+             * @default false
+             */
+            zalo_confirm_enabled: boolean;
             /** Working Weekdays */
             working_weekdays: number[];
             /**
@@ -1716,6 +1721,8 @@ export interface components {
             require_device_approval?: boolean | null;
             /** Activation Code Ttl Days */
             activation_code_ttl_days?: number | null;
+            /** Zalo Confirm Enabled */
+            zalo_confirm_enabled?: boolean | null;
             /** Auto Plan Enabled */
             auto_plan_enabled?: boolean | null;
             /** Service Minutes */
@@ -1833,6 +1840,10 @@ export interface components {
              * @description Mã cài đặt của app (đã đăng ký thiết bị)
              */
             device_id?: string | null;
+            /** Zalo Access Token */
+            zalo_access_token?: string | null;
+            /** Zalo Location Token */
+            zalo_location_token?: string | null;
         };
         /** ConfirmationOut */
         ConfirmationOut: {
@@ -2400,6 +2411,11 @@ export interface components {
             offline_max_delay_minutes: number;
             /** Require Device Approval */
             require_device_approval: boolean;
+            /**
+             * Zalo Confirm Enabled
+             * @default false
+             */
+            zalo_confirm_enabled: boolean;
         };
         /** DeviceCreate */
         DeviceCreate: {

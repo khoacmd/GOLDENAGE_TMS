@@ -19,6 +19,7 @@ from app.modules.devices import service as devices
 from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import ItemStatus, Trip, TripOrderStatus, TripStop
 from app.modules.tenancy.models import CompanySettings
+from app.modules.zalo import client as zalo_client
 
 ALLOWED_PHOTO_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 # Cho phép đồng hồ thiết bị chạy nhanh hơn server tối đa 5 phút.
@@ -136,6 +137,29 @@ async def check_rules(
     return violations, check, distance
 
 
+async def from_zalo(session: AsyncSession, company_id: uuid.UUID, data: ConfirmIn) -> ConfirmIn:
+    """Xác nhận qua Zalo Mini App: công ty phải cho phép; vị trí chỉ lấy từ server Zalo."""
+    rules = await session.get(CompanySettings, company_id)
+    if rules is None or not rules.zalo_confirm_enabled:
+        raise PermissionDeniedError("Công ty chưa cho phép xác nhận giao qua Zalo")
+    location = None
+    if data.zalo_access_token and data.zalo_location_token:
+        location = await zalo_client.fetch_location(
+            data.zalo_access_token, data.zalo_location_token
+        )
+    return data.model_copy(
+        update={
+            "latitude": location.latitude if location else None,
+            "longitude": location.longitude if location else None,
+            "accuracy_m": None,
+            "is_mock_location": False,
+            "device_id": None,
+            "zalo_access_token": None,
+            "zalo_location_token": None,
+        }
+    )
+
+
 async def confirm(
     session: AsyncSession,
     company_id: uuid.UUID,
@@ -143,6 +167,8 @@ async def confirm(
     item_id: uuid.UUID,
     user_id: uuid.UUID,
     data: ConfirmIn,
+    *,
+    via_zalo: bool = False,
 ) -> DeliveryConfirmation:
     existing = await session.scalar(
         select(DeliveryConfirmation).where(DeliveryConfirmation.client_id == data.client_id)
@@ -170,9 +196,12 @@ async def confirm(
     violations, check, distance = await check_rules(
         rules, trip, stop, data, received_at, company_id
     )
+    # Qua Zalo không có thiết bị đăng ký: liên kết do admin công ty cấp mã thay cho duyệt máy.
     device, device_violation = await devices.check_mobile(
-        session, data.device_id, require_approval=rules.require_device_approval
+        session, data.device_id, require_approval=rules.require_device_approval and not via_zalo
     )
+    if via_zalo:
+        check["channel"] = "zalo"
     if device_violation:
         violations.append(device_violation)
     confirmation = DeliveryConfirmation(

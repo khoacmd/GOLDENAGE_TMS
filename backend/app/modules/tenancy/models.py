@@ -63,3 +63,5 @@ class CompanySettings(TimestampMixin, Base):
     )
     # Hạn dùng mã kích hoạt Zalo Mini App (ngày).
     activation_code_ttl_days: Mapped[int] = mapped_column(default=7, server_default=text("7"))
+    # Cho lái xe xác nhận giao qua Zalo Mini App (không phát hiện được vị trí giả lập, D34).
+    zalo_confirm_enabled: Mapped[bool] = mapped_column(default=False, server_default=text("false"))

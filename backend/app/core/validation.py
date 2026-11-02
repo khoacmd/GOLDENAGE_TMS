@@ -143,6 +143,9 @@ FIELD_LABELS = {
     "weight_kg": "Trọng lượng",
     "working_weekdays": "Ngày làm việc",
     "x-api-key": "API key",
+    "zalo_access_token": "Token Zalo",
+    "zalo_confirm_enabled": "Cho phép xác nhận giao qua Zalo",
+    "zalo_location_token": "Token vị trí Zalo",
 }
 
 PATTERN_MESSAGES = {

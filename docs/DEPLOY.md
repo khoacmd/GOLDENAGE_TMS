@@ -130,7 +130,7 @@ docker compose up -d
 
 Cấu hình backend trong `infra/prod/.env`: `TMS_ZALO_APP_ID` (ID của Mini App), `TMS_ZALO_APP_SECRET` (secret của Zalo App ở Zalo Developers, không commit), `TMS_ZALO_ACTIVATION_URL` (có `{code}`). Không bật `TMS_ZALO_MOCK` ở production (server từ chối khởi động).
 
-Trong trang quản trị Mini App: khai báo domain `tms.thanhxuan.me` cho API, ảnh chứng từ và bản đồ.
+Trong trang quản trị Mini App: khai báo domain `tms.thanhxuan.me` cho API, ảnh chứng từ và bản đồ; xin quyền vị trí (`scope.userLocation`, cần cho tài xế xác nhận giao khi công ty bật kiểm tra tọa độ).
 
 Phát hành bản thử (App ID ở `zalo/.env.production`, API `VITE_API_URL`):
 

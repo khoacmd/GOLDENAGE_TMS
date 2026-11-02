@@ -1,11 +1,12 @@
 import { errorMessage } from '@tms/api-client'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Box, Button, Icon, Page, Spinner, Text, useNavigate } from 'zmp-ui'
+import { Box, Button, Page, Spinner, Text, useNavigate } from 'zmp-ui'
 
 import { api } from '../lib/api'
-import { dayLabel, etaText, money, ORDER_STATUS, shiftDay, time } from '../lib/format'
+import { etaText, money, ORDER_STATUS, time } from '../lib/format'
 import { useSession } from '../lib/useSession'
+import { DayNav } from './DayNav'
 import { StatusTag } from './StatusTag'
 
 /** Đơn theo ngày giao; mặc định hôm nay (server tính theo múi giờ công ty). */
@@ -33,28 +34,7 @@ export function OrdersPage() {
         <Text.Title size="large">Đơn hàng</Text.Title>
         <Text className="muted">{company}</Text>
       </Box>
-      <div className="day-nav">
-        <button aria-label="Ngày trước" disabled={!shown} onClick={() => shown && setDay(shiftDay(shown, -1))}>
-          <Icon icon="zi-chevron-left" />
-        </button>
-        <label className="day-label">
-          <Text bold>{shown ? dayLabel(shown) : '...'}</Text>
-          <input
-            type="date"
-            aria-label="Chọn ngày giao"
-            value={shown ?? ''}
-            onChange={(e) => e.target.value && setDay(e.target.value)}
-          />
-        </label>
-        <button aria-label="Ngày sau" disabled={!shown} onClick={() => shown && setDay(shiftDay(shown, 1))}>
-          <Icon icon="zi-chevron-right" />
-        </button>
-      </div>
-      {day && (
-        <button className="link-button" onClick={() => setDay(null)}>
-          Về hôm nay
-        </button>
-      )}
+      <DayNav day={shown} onChange={setDay} canReset={Boolean(day)} onReset={() => setDay(null)} />
 
       {query.isLoading && (
         <Box className="center">

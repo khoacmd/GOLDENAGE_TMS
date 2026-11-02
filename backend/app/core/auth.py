@@ -27,6 +27,7 @@ class CurrentUser:
     is_system_admin: bool
     company_id: uuid.UUID | None
     roles: frozenset[CompanyRole]
+    via: str | None = None  # "zalo": phiên qua Zalo Mini App
 
     def has_any_role(self, *roles: CompanyRole) -> bool:
         return not self.roles.isdisjoint(roles)
@@ -77,6 +78,7 @@ async def get_current_user(
         is_system_admin=user.is_system_admin,
         company_id=payload.company_id,
         roles=roles,
+        via=payload.via,
     )
 
 

@@ -265,18 +265,28 @@ function DeliveryRulesSettings() {
   )
 }
 
+interface ZaloForm {
+  activation_code_ttl_days: number
+  zalo_confirm_enabled: boolean
+}
+
 function ZaloSettings() {
   const { message } = App.useApp()
-  const [form] = Form.useForm<{ activation_code_ttl_days: number }>()
+  const [form] = Form.useForm<ZaloForm>()
   const query = useQuery({
     queryKey: ['company-settings'],
     queryFn: async () => unwrap(await api.GET('/api/v1/company/settings')),
   })
   useEffect(() => {
-    if (query.data) form.setFieldsValue({ activation_code_ttl_days: query.data.activation_code_ttl_days })
+    if (query.data) {
+      form.setFieldsValue({
+        activation_code_ttl_days: query.data.activation_code_ttl_days,
+        zalo_confirm_enabled: query.data.zalo_confirm_enabled,
+      })
+    }
   }, [query.data, form])
   const save = useMutation({
-    mutationFn: async (v: { activation_code_ttl_days: number }) =>
+    mutationFn: async (v: ZaloForm) =>
       unwrap(await api.PUT('/api/v1/company/settings', { body: v })),
     onSuccess: () => message.success('Đã lưu cấu hình Zalo Mini App'),
     onError: (e: Error) => message.error(e.message),
@@ -291,6 +301,14 @@ function ZaloSettings() {
           extra="Mã cấp cho liên hệ khách hàng (Khách hàng → Liên hệ) và lái xe (Người dùng); dùng 1 lần."
         >
           <InputNumber min={1} max={30} />
+        </Form.Item>
+        <Form.Item
+          name="zalo_confirm_enabled"
+          label="Cho phép lái xe xác nhận giao qua Zalo"
+          valuePropName="checked"
+          extra="Zalo không phát hiện được vị trí giả lập và không lưu xác nhận khi mất mạng; ứng dụng TMS vẫn là kênh chính."
+        >
+          <Switch />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={save.isPending}>
           Lưu

@@ -22,6 +22,9 @@ class ConfirmIn(BaseModel):
     device_id: str | None = Field(
         default=None, max_length=128, description="Mã cài đặt của app (đã đăng ký thiết bị)"
     )
+    # Zalo Mini App: tọa độ do server đổi từ token của Zalo, bỏ qua latitude/longitude ở trên.
+    zalo_access_token: str | None = Field(default=None, max_length=2048)
+    zalo_location_token: str | None = Field(default=None, max_length=2048)
 
 
 class PhotoOut(BaseModel):

@@ -94,7 +94,12 @@ async def confirm_item(
 ) -> ConfirmationOut:
     """Xác nhận kết quả giao. `accepted=false` kèm `violations` nếu vi phạm quy tắc (vẫn lưu)."""
     trip = await dispatch.get_trip(session, trip_id)
-    confirmation = await service.confirm(session, user.cid, trip, item_id, user.id, body)
+    via_zalo = user.via == "zalo"
+    if via_zalo:
+        body = await service.from_zalo(session, user.cid, body)
+    confirmation = await service.confirm(
+        session, user.cid, trip, item_id, user.id, body, via_zalo=via_zalo
+    )
     await session.commit()
     return service.to_out(confirmation)
 

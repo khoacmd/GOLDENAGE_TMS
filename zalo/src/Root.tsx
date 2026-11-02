@@ -3,7 +3,9 @@ import { AnimationRoutes, Box, Button, Route, Spinner, Text, ZMPRouter } from 'z
 import { useSession } from './lib/useSession'
 import { ActivatePage } from './pages/Activate'
 import { ChooseAccountPage } from './pages/ChooseAccount'
-import { DriverNoticePage } from './pages/DriverNotice'
+import { ConfirmPage } from './pages/driver/Confirm'
+import { DriverTripPage } from './pages/driver/Trip'
+import { DriverTripsPage } from './pages/driver/Trips'
 import { OrderDetailPage } from './pages/OrderDetail'
 import { OrdersPage } from './pages/Orders'
 
@@ -29,7 +31,15 @@ function Screens() {
   if (state.status === 'not_linked') return <ActivatePage />
   if (activating) return <ActivatePage onCancel={() => setActivating(false)} />
   if (state.status === 'choose') return <ChooseAccountPage accounts={state.accounts} />
-  if (state.account.kind === 'driver') return <DriverNoticePage />
+  if (state.account.kind === 'driver') {
+    return (
+      <AnimationRoutes>
+        <Route path="/" element={<DriverTripsPage />} />
+        <Route path="/trips/:tripId" element={<DriverTripPage />} />
+        <Route path="/trips/:tripId/items/:itemId" element={<ConfirmPage />} />
+      </AnimationRoutes>
+    )
+  }
   return (
     <AnimationRoutes>
       <Route path="/" element={<OrdersPage />} />
