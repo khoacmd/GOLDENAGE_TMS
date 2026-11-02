@@ -199,7 +199,8 @@ async def test_other_company_cannot_touch_any_object(
     leaks = []
     for method, path, op in operations():
         names = PARAM.findall(path)
-        if not names or names == ["kind"] or (method, path) in PUBLIC:
+        # API khách hàng: cô lập công ty/phạm vi kiểm tra ở test_customer_portal.py.
+        if not names or names == ["kind"] or (method, path) in PUBLIC | CUSTOMER_ONLY:
             continue
         url = path.format(**{n: tenant_a.ids[n] for n in names})
         kwargs: dict[str, Any] = {"params": required_query(op)}

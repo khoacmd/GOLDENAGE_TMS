@@ -1,17 +1,21 @@
 import uuid
+from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 
 from app.core.auth import CompanyAdminDep
 from app.core.db import DbSession
 from app.modules.identity import service as identity_service
 from app.modules.master_data import service as master_data
 from app.modules.zalo import auth as zalo_auth
-from app.modules.zalo import client, service
+from app.modules.zalo import client, portal, service
 from app.modules.zalo.auth import CurrentCustomerDep
 from app.modules.zalo.schemas import (
     ActivationCodeOut,
     CustomerMe,
+    CustomerOrderDetail,
+    CustomerOrderList,
     ZaloActivateRequest,
     ZaloLoginOut,
     ZaloLoginRequest,
@@ -102,3 +106,21 @@ async def customer_me(customer: CurrentCustomerDep) -> CustomerMe:
     return CustomerMe(
         zalo_user_id=customer.zalo_user_id, company=customer.company, scopes=customer.scopes
     )
+
+
+@router.get("/customer/orders")
+async def customer_orders(
+    customer: CurrentCustomerDep,
+    session: DbSession,
+    date: Annotated[date | None, Query(description="Ngày giao, mặc định: hôm nay")] = None,
+) -> CustomerOrderList:
+    """Đơn của khách theo ngày giao (ngày yêu cầu hoặc ngày của chuyến giao)."""
+    return await portal.list_orders(session, customer, date)
+
+
+@router.get("/customer/orders/{order_id}")
+async def customer_order(
+    order_id: uuid.UUID, customer: CurrentCustomerDep, session: DbSession
+) -> CustomerOrderDetail:
+    """Chi tiết đơn: mặt hàng, số lượng, các lượt giao (giờ giao, tài xế, ảnh chứng từ)."""
+    return await portal.get_order(session, customer, order_id)

@@ -4993,6 +4993,113 @@
           }
         ]
       }
+    },
+    "/api/v1/customer/orders": {
+      "get": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Customer Orders",
+        "description": "Đơn của khách theo ngày giao (ngày yêu cầu hoặc ngày của chuyến giao).",
+        "operationId": "customer_orders_api_v1_customer_orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày giao, mặc định: hôm nay",
+              "title": "Date"
+            },
+            "description": "Ngày giao, mặc định: hôm nay"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "zalo"
+        ],
+        "summary": "Customer Order",
+        "description": "Chi tiết đơn: mặt hàng, số lượng, các lượt giao (giờ giao, tài xế, ảnh chứng từ).",
+        "operationId": "customer_order_api_v1_customer_orders__order_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6785,6 +6892,93 @@
         ],
         "title": "CustomerCreate"
       },
+      "CustomerDeliveryAttempt": {
+        "properties": {
+          "trip_code": {
+            "type": "string",
+            "title": "Trip Code"
+          },
+          "plan_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Plan Date"
+          },
+          "temp_group": {
+            "type": "string",
+            "title": "Temp Group"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeliveryAttemptStatus"
+          },
+          "dispatched_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispatched At"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "driver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Name"
+          },
+          "photo_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Photo Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip_code",
+          "plan_date",
+          "temp_group",
+          "status",
+          "dispatched_at",
+          "delivered_at",
+          "reason",
+          "driver_name",
+          "photo_urls"
+        ],
+        "title": "CustomerDeliveryAttempt",
+        "description": "Một lượt giao (1 phần đơn trên 1 chuyến đã duyệt)."
+      },
       "CustomerMe": {
         "properties": {
           "zalo_user_id": {
@@ -6809,6 +7003,301 @@
           "scopes"
         ],
         "title": "CustomerMe"
+      },
+      "CustomerOrderDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "external_ref": {
+            "type": "string",
+            "title": "External Ref"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "delivery_point_code": {
+            "type": "string",
+            "title": "Delivery Point Code"
+          },
+          "delivery_point_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Name"
+          },
+          "delivery_address": {
+            "type": "string",
+            "title": "Delivery Address"
+          },
+          "requested_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CustomerOrderStatus"
+          },
+          "can_see_value": {
+            "type": "boolean",
+            "title": "Can See Value"
+          },
+          "order_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Value"
+          },
+          "line_count": {
+            "type": "integer",
+            "title": "Line Count"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrderLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerDeliveryAttempt"
+            },
+            "type": "array",
+            "title": "Deliveries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "external_ref",
+          "customer_code",
+          "customer_name",
+          "delivery_point_code",
+          "delivery_point_name",
+          "delivery_address",
+          "requested_date",
+          "status",
+          "can_see_value",
+          "order_value",
+          "line_count",
+          "delivered_at",
+          "note",
+          "lines",
+          "deliveries"
+        ],
+        "title": "CustomerOrderDetail"
+      },
+      "CustomerOrderLine": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "qty": {
+            "type": "string",
+            "title": "Qty"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "uom",
+          "qty",
+          "amount"
+        ],
+        "title": "CustomerOrderLine"
+      },
+      "CustomerOrderList": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrderSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "items"
+        ],
+        "title": "CustomerOrderList"
+      },
+      "CustomerOrderStatus": {
+        "type": "string",
+        "enum": [
+          "WAITING",
+          "SCHEDULED",
+          "IN_TRANSIT",
+          "PARTIAL",
+          "DELIVERED",
+          "FAILED",
+          "CANCELLED"
+        ],
+        "title": "CustomerOrderStatus"
+      },
+      "CustomerOrderSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "external_ref": {
+            "type": "string",
+            "title": "External Ref"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "delivery_point_code": {
+            "type": "string",
+            "title": "Delivery Point Code"
+          },
+          "delivery_point_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Point Name"
+          },
+          "delivery_address": {
+            "type": "string",
+            "title": "Delivery Address"
+          },
+          "requested_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Requested Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CustomerOrderStatus"
+          },
+          "can_see_value": {
+            "type": "boolean",
+            "title": "Can See Value"
+          },
+          "order_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Value"
+          },
+          "line_count": {
+            "type": "integer",
+            "title": "Line Count"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "external_ref",
+          "customer_code",
+          "customer_name",
+          "delivery_point_code",
+          "delivery_point_name",
+          "delivery_address",
+          "requested_date",
+          "status",
+          "can_see_value",
+          "order_value",
+          "line_count",
+          "delivered_at"
+        ],
+        "title": "CustomerOrderSummary"
       },
       "CustomerOut": {
         "properties": {
@@ -7310,6 +7799,16 @@
           "plan_date"
         ],
         "title": "DayRow"
+      },
+      "DeliveryAttemptStatus": {
+        "type": "string",
+        "enum": [
+          "SCHEDULED",
+          "IN_TRANSIT",
+          "DELIVERED",
+          "FAILED"
+        ],
+        "title": "DeliveryAttemptStatus"
       },
       "DeliveryPointIn": {
         "properties": {

@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -96,3 +97,73 @@ class CustomerMe(BaseModel):
     zalo_user_id: str
     company: CompanyRef
     scopes: list[CustomerScope]
+
+
+# --- Đơn hàng của khách (Zalo Mini App) ---------------------------------------------------
+
+
+class CustomerOrderStatus(StrEnum):
+    WAITING = "WAITING"  # chưa lên lịch giao
+    SCHEDULED = "SCHEDULED"  # đã vào lệnh được duyệt, xe chưa xuất phát
+    IN_TRANSIT = "IN_TRANSIT"  # xe đang giao
+    PARTIAL = "PARTIAL"  # đã giao một phần (đơn có hàng khô + lạnh đi riêng)
+    DELIVERED = "DELIVERED"
+    FAILED = "FAILED"  # lần giao gần nhất không thành công, chờ giao lại
+    CANCELLED = "CANCELLED"
+
+
+class DeliveryAttemptStatus(StrEnum):
+    SCHEDULED = "SCHEDULED"
+    IN_TRANSIT = "IN_TRANSIT"
+    DELIVERED = "DELIVERED"
+    FAILED = "FAILED"
+
+
+class CustomerOrderSummary(BaseModel):
+    id: uuid.UUID
+    external_ref: str
+    customer_code: str
+    customer_name: str
+    delivery_point_code: str
+    delivery_point_name: str | None
+    delivery_address: str
+    requested_date: date
+    status: CustomerOrderStatus
+    # Chỉ liên hệ chủ thấy giá trị đơn; liên hệ điểm giao nhận None.
+    can_see_value: bool
+    order_value: Decimal | None
+    line_count: int
+    delivered_at: datetime | None  # lần giao thành công gần nhất
+
+
+class CustomerOrderList(BaseModel):
+    date: date
+    items: list[CustomerOrderSummary]
+
+
+class CustomerOrderLine(BaseModel):
+    product_code: str
+    product_name: str
+    uom: str
+    qty: Decimal
+    amount: Decimal | None  # None với liên hệ điểm giao
+
+
+class CustomerDeliveryAttempt(BaseModel):
+    """Một lượt giao (1 phần đơn trên 1 chuyến đã duyệt)."""
+
+    trip_code: str
+    plan_date: date
+    temp_group: str  # DRY / COLD
+    status: DeliveryAttemptStatus
+    dispatched_at: datetime | None
+    delivered_at: datetime | None
+    reason: str | None
+    driver_name: str | None
+    photo_urls: list[str]
+
+
+class CustomerOrderDetail(CustomerOrderSummary):
+    note: str | None
+    lines: list[CustomerOrderLine]
+    deliveries: list[CustomerDeliveryAttempt]

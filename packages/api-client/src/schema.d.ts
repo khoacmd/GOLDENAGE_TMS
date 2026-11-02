@@ -1294,6 +1294,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customer/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customer Orders
+         * @description Đơn của khách theo ngày giao (ngày yêu cầu hoặc ngày của chuyến giao).
+         */
+        get: operations["customer_orders_api_v1_customer_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customer Order
+         * @description Chi tiết đơn: mặt hàng, số lượng, các lượt giao (giờ giao, tài xế, ảnh chứng từ).
+         */
+        get: operations["customer_order_api_v1_customer_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1924,6 +1964,32 @@ export interface components {
             /** Delivery Points */
             delivery_points: components["schemas"]["DeliveryPointIn"][];
         };
+        /**
+         * CustomerDeliveryAttempt
+         * @description Một lượt giao (1 phần đơn trên 1 chuyến đã duyệt).
+         */
+        CustomerDeliveryAttempt: {
+            /** Trip Code */
+            trip_code: string;
+            /**
+             * Plan Date
+             * Format: date
+             */
+            plan_date: string;
+            /** Temp Group */
+            temp_group: string;
+            status: components["schemas"]["DeliveryAttemptStatus"];
+            /** Dispatched At */
+            dispatched_at: string | null;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Driver Name */
+            driver_name: string | null;
+            /** Photo Urls */
+            photo_urls: string[];
+        };
         /** CustomerMe */
         CustomerMe: {
             /** Zalo User Id */
@@ -1931,6 +1997,108 @@ export interface components {
             company: components["schemas"]["CompanyRef"];
             /** Scopes */
             scopes: components["schemas"]["CustomerScope"][];
+        };
+        /** CustomerOrderDetail */
+        CustomerOrderDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** External Ref */
+            external_ref: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Delivery Point Code */
+            delivery_point_code: string;
+            /** Delivery Point Name */
+            delivery_point_name: string | null;
+            /** Delivery Address */
+            delivery_address: string;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            status: components["schemas"]["CustomerOrderStatus"];
+            /** Can See Value */
+            can_see_value: boolean;
+            /** Order Value */
+            order_value: string | null;
+            /** Line Count */
+            line_count: number;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** Note */
+            note: string | null;
+            /** Lines */
+            lines: components["schemas"]["CustomerOrderLine"][];
+            /** Deliveries */
+            deliveries: components["schemas"]["CustomerDeliveryAttempt"][];
+        };
+        /** CustomerOrderLine */
+        CustomerOrderLine: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            /** Uom */
+            uom: string;
+            /** Qty */
+            qty: string;
+            /** Amount */
+            amount: string | null;
+        };
+        /** CustomerOrderList */
+        CustomerOrderList: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Items */
+            items: components["schemas"]["CustomerOrderSummary"][];
+        };
+        /**
+         * CustomerOrderStatus
+         * @enum {string}
+         */
+        CustomerOrderStatus: "WAITING" | "SCHEDULED" | "IN_TRANSIT" | "PARTIAL" | "DELIVERED" | "FAILED" | "CANCELLED";
+        /** CustomerOrderSummary */
+        CustomerOrderSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** External Ref */
+            external_ref: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Delivery Point Code */
+            delivery_point_code: string;
+            /** Delivery Point Name */
+            delivery_point_name: string | null;
+            /** Delivery Address */
+            delivery_address: string;
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            status: components["schemas"]["CustomerOrderStatus"];
+            /** Can See Value */
+            can_see_value: boolean;
+            /** Order Value */
+            order_value: string | null;
+            /** Line Count */
+            line_count: number;
+            /** Delivered At */
+            delivered_at: string | null;
         };
         /** CustomerOut */
         CustomerOut: {
@@ -2103,6 +2271,11 @@ export interface components {
              */
             plan_date: string;
         };
+        /**
+         * DeliveryAttemptStatus
+         * @enum {string}
+         */
+        DeliveryAttemptStatus: "SCHEDULED" | "IN_TRANSIT" | "DELIVERED" | "FAILED";
         /** DeliveryPointIn */
         DeliveryPointIn: {
             /** Code */
@@ -6768,6 +6941,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerMe"];
+                };
+            };
+        };
+    };
+    customer_orders_api_v1_customer_orders_get: {
+        parameters: {
+            query?: {
+                /** @description Ngày giao, mặc định: hôm nay */
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOrderList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    customer_order_api_v1_customer_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOrderDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
