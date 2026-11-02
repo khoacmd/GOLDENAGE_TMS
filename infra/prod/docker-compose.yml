@@ -24,7 +24,8 @@ x-backend: &backend
     TMS_S3_ACCESS_KEY: ${S3_ACCESS_KEY:-tms}
     TMS_S3_SECRET_KEY: ${S3_SECRET_KEY:?}
     TMS_S3_BUCKET: ${TMS_S3_BUCKET:-tms-photos}
-    TMS_CORS_ORIGINS: '["${PUBLIC_URL}"]'
+    # h5.zdn.vn: webview của Zalo Mini App.
+    TMS_CORS_ORIGINS: '["${PUBLIC_URL}", "https://h5.zdn.vn", "zbrowser://h5.zdn.vn"]'
     TMS_OSRM_CAR_URL: ${TMS_OSRM_CAR_URL:-}
     TMS_OSRM_MOTORBIKE_URL: ${TMS_OSRM_MOTORBIKE_URL:-}
     TMS_SENTRY_DSN: ${TMS_SENTRY_DSN:-}

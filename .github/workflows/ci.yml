@@ -61,3 +61,4 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm --filter web build
+      - run: pnpm --filter zalo build

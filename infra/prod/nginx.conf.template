@@ -1,4 +1,10 @@
-# Sinh từ template lúc container khởi động (envsubst biến môi trường: TMS_S3_BUCKET).
+# Sinh từ template lúc container khởi động (envsubst chỉ thay biến môi trường đã định nghĩa: TMS_S3_BUCKET).
+map $http_origin $tiles_cors_origin {
+  default "";
+  "https://h5.zdn.vn" $http_origin;
+  "zbrowser://h5.zdn.vn" $http_origin;
+}
+
 server {
   listen 80;
   server_tokens off;
@@ -24,9 +30,17 @@ server {
   }
 
   # Bản đồ tự host (PMTiles, đọc theo HTTP Range).
+  # CORS cho webview của Zalo Mini App (bản đồ tuyến xe của khách).
   location /tiles/ {
     alias /srv/tiles/;
     add_header Cache-Control "public, max-age=86400" always;
+    add_header Access-Control-Allow-Origin $tiles_cors_origin always;
+    add_header Access-Control-Allow-Headers "Range, If-Match" always;
+    add_header Access-Control-Expose-Headers "Content-Range, Content-Length, ETag" always;
+    add_header Vary Origin always;
+    if ($request_method = OPTIONS) {
+      return 204;
+    }
     types {
       application/json json;
       image/png png;

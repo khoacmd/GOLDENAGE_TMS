@@ -29,3 +29,6 @@ web-build/
 
 # Dữ liệu runtime
 infra/data/
+
+# Cấu hình công khai của mini app (URL API, ID Mini App), không chứa bí mật.
+!zalo/.env.production

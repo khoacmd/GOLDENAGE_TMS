@@ -6,6 +6,7 @@ WORKDIR /src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY web/package.json web/
 COPY mobile/package.json mobile/
+COPY zalo/package.json zalo/
 COPY packages/api-client/package.json packages/api-client/
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --filter web...

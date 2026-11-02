@@ -1,0 +1,13 @@
+{
+  "app": {
+    "title": "TMS Giao hàng",
+    "textColor": "black",
+    "statusBar": "normal",
+    "actionBarHidden": true,
+    "hideIOSSafeAreaBottom": false,
+    "hideAndroidBottomNavigationBar": false
+  },
+  "listCSS": [],
+  "listSyncJS": [],
+  "listAsyncJS": []
+}

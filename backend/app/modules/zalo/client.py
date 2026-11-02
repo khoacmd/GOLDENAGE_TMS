@@ -40,7 +40,8 @@ async def fetch_profile(access_token: str) -> ZaloProfile:
         async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
             resp = await client.get(
                 settings.zalo_graph_url,
-                params={"fields": "id,name"},
+                # Token mặc định chỉ cho phép lấy ID; tên cần người dùng cấp quyền scope.userInfo.
+                params={"fields": "id"},
                 headers={"access_token": access_token, "appsecret_proof": proof},
             )
         body = resp.json()

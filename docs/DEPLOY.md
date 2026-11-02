@@ -125,3 +125,20 @@ cd infra/prod && cp .env.example .env
 docker build -t local/tms-api:dev ../../backend && docker build -t local/tms-web:dev -f ../../web/Dockerfile ../..
 docker compose up -d
 ```
+
+## Zalo Mini App
+
+Cấu hình backend trong `infra/prod/.env`: `TMS_ZALO_APP_ID` (ID của Mini App), `TMS_ZALO_APP_SECRET` (secret của Zalo App ở Zalo Developers, không commit), `TMS_ZALO_ACTIVATION_URL` (có `{code}`). Không bật `TMS_ZALO_MOCK` ở production (server từ chối khởi động).
+
+Trong trang quản trị Mini App: khai báo domain `tms.thanhxuan.me` cho API, ảnh chứng từ và bản đồ.
+
+Phát hành bản thử (App ID ở `zalo/.env.production`, API `VITE_API_URL`):
+
+```bash
+pnpm add -g zmp-cli
+cd zalo
+zmp login     # quét QR bằng Zalo của tài khoản quản trị Mini App
+zmp deploy    # build và tải lên, cho mã QR mở bản thử trong Zalo
+```
+
+Sau đó gửi duyệt và phát hành trong trang quản trị Mini App. Lần đầu chạy trên Zalo thật cần kiểm tra: đăng nhập (`appsecret_proof`), link kích hoạt `?code=`, CORS, bản đồ (worker + WebGL trong webview).

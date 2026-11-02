@@ -29,4 +29,5 @@ unchanged packages/api-client/openapi.json packages/api-client/src/schema.d.ts
 pnpm typecheck
 pnpm lint
 pnpm --filter web build >/dev/null
+pnpm --filter zalo build >/dev/null
 echo "OK - tất cả kiểm tra đều qua"

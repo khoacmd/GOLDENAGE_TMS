@@ -1,6 +1,6 @@
 // Client API dùng chung cho web & mobile, type sinh từ OpenAPI của backend
 // (`pnpm api:generate` sau mỗi lần đổi API).
-import createClient, { type Middleware } from "openapi-fetch";
+import createClient, { type Client, type Middleware } from "openapi-fetch";
 
 import type { components, paths } from "./schema";
 
@@ -19,7 +19,19 @@ export interface TokenStore {
   set(tokens: TokenPair | null): void;
 }
 
-export function createApiClient(baseUrl: string, tokens: TokenStore) {
+export interface ApiClientOptions {
+  /** Cách làm mới token khác mặc định (Zalo Mini App dùng `/auth/zalo/refresh`). */
+  refresh?: (
+    refreshToken: string,
+    client: Client<paths>,
+  ) => Promise<TokenPair | null>;
+}
+
+export function createApiClient(
+  baseUrl: string,
+  tokens: TokenStore,
+  options: ApiClientOptions = {},
+) {
   const client = createClient<paths>({ baseUrl });
   // Client riêng cho refresh để không lặp vô hạn qua middleware.
   const refreshClient = createClient<paths>({ baseUrl });
@@ -28,6 +40,11 @@ export function createApiClient(baseUrl: string, tokens: TokenStore) {
   async function refreshTokens(): Promise<boolean> {
     const current = tokens.get();
     if (!current) return false;
+    if (options.refresh) {
+      const next = await options.refresh(current.refresh_token, refreshClient);
+      tokens.set(next);
+      return Boolean(next);
+    }
     const { data } = await refreshClient.POST("/api/v1/auth/refresh", {
       body: { refresh_token: current.refresh_token },
     });

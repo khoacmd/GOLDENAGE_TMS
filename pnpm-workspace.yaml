@@ -1,9 +1,12 @@
 packages:
   - web
   - mobile
+  - zalo
   - packages/*
 
 # Quyền chạy build script của dependency (pnpm chặn mặc định, CI báo lỗi nếu chưa khai báo).
 allowBuilds:
   # postinstall chỉ tải binding dự phòng; binding native đã có qua optionalDependencies.
   unrs-resolver: false
+  # Vite 5 của zalo/: binary đã có qua optionalDependencies, postinstall chỉ kiểm tra.
+  esbuild: false
