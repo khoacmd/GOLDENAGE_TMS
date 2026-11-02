@@ -1981,6 +1981,7 @@ export interface components {
             status: components["schemas"]["DeliveryAttemptStatus"];
             /** Dispatched At */
             dispatched_at: string | null;
+            eta: components["schemas"]["CustomerEta"] | null;
             /** Delivered At */
             delivered_at: string | null;
             /** Reason */
@@ -1989,6 +1990,22 @@ export interface components {
             driver_name: string | null;
             /** Photo Urls */
             photo_urls: string[];
+        };
+        /**
+         * CustomerEta
+         * @description Khoảng giờ hàng đến dự kiến.
+         */
+        CustomerEta: {
+            /**
+             * Earliest
+             * Format: date-time
+             */
+            earliest: string;
+            /**
+             * Latest
+             * Format: date-time
+             */
+            latest: string;
         };
         /** CustomerMe */
         CustomerMe: {
@@ -2031,6 +2048,7 @@ export interface components {
             line_count: number;
             /** Delivered At */
             delivered_at: string | null;
+            eta: components["schemas"]["CustomerEta"] | null;
             /** Note */
             note: string | null;
             /** Lines */
@@ -2099,6 +2117,7 @@ export interface components {
             line_count: number;
             /** Delivered At */
             delivered_at: string | null;
+            eta: components["schemas"]["CustomerEta"] | null;
         };
         /** CustomerOut */
         CustomerOut: {

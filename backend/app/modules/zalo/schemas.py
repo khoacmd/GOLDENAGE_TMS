@@ -119,6 +119,13 @@ class DeliveryAttemptStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class CustomerEta(BaseModel):
+    """Khoảng giờ hàng đến dự kiến."""
+
+    earliest: datetime
+    latest: datetime
+
+
 class CustomerOrderSummary(BaseModel):
     id: uuid.UUID
     external_ref: str
@@ -134,6 +141,7 @@ class CustomerOrderSummary(BaseModel):
     order_value: Decimal | None
     line_count: int
     delivered_at: datetime | None  # lần giao thành công gần nhất
+    eta: CustomerEta | None  # chỉ khi đơn đang giao (sớm nhất nếu các phần đi xe khác nhau)
 
 
 class CustomerOrderList(BaseModel):
@@ -157,6 +165,7 @@ class CustomerDeliveryAttempt(BaseModel):
     temp_group: str  # DRY / COLD
     status: DeliveryAttemptStatus
     dispatched_at: datetime | None
+    eta: CustomerEta | None  # chỉ khi đang giao
     delivered_at: datetime | None
     reason: str | None
     driver_name: str | None

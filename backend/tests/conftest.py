@@ -16,6 +16,7 @@ os.environ.setdefault(
 
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,7 @@ from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.main import app
 from app.modules.identity import service as identity_service
+from app.modules.planning import service as planning_service
 
 SYSADMIN = {"username": "sysadmin", "password": "sysadmin-pass"}
 
@@ -61,6 +63,13 @@ async def _clean_tables(owner_engine: AsyncEngine) -> AsyncIterator[None]:
 async def _reset_login_throttle() -> None:
     await throttle.clear()
     await revocation.clear()
+
+
+@pytest.fixture(autouse=True)
+def _planning_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Lập kế hoạch tính ca theo giờ hiện tại: cố định trước PLAN_DATE để test không phụ thuộc
+    lúc chạy (chạy đúng ngày PLAN_DATE sau giờ tan ca thì không xếp được chuyến nào)."""
+    monkeypatch.setattr(planning_service, "now", lambda: datetime(2026, 11, 1, 3, 0, tzinfo=UTC))
 
 
 @pytest.fixture

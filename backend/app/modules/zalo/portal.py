@@ -20,9 +20,11 @@ from app.modules.delivery.models import DeliveryConfirmation
 from app.modules.dispatch.models import ItemStatus, Trip, TripItem, TripOrderStatus
 from app.modules.orders.models import OrderPart, OrderPartStatus, OrderStatus, SalesOrder
 from app.modules.tenancy.models import CompanySettings
+from app.modules.zalo import eta as eta_service
 from app.modules.zalo.auth import CurrentCustomer
 from app.modules.zalo.schemas import (
     CustomerDeliveryAttempt,
+    CustomerEta,
     CustomerOrderDetail,
     CustomerOrderLine,
     CustomerOrderList,
@@ -31,6 +33,7 @@ from app.modules.zalo.schemas import (
     DeliveryAttemptStatus,
 )
 
+_IN_TRANSIT = DeliveryAttemptStatus.IN_TRANSIT
 VISIBLE_TRIPS = (
     TripOrderStatus.APPROVED,
     TripOrderStatus.PREPARED,
@@ -96,6 +99,24 @@ async def _attempts(
     return out
 
 
+async def _etas(
+    session: AsyncSession, company_id: uuid.UUID, attempts: list[_Attempt]
+) -> dict[uuid.UUID, CustomerEta]:
+    """Giờ đến dự kiến theo điểm dừng của các chuyến đang giao."""
+    trips = {a.trip.id: a.trip for a in attempts if _attempt_status(a) == _IN_TRANSIT}
+    if not trips:
+        return {}
+    settings = await session.get_one(CompanySettings, company_id)
+    etas: dict[uuid.UUID, CustomerEta] = {}
+    for trip in trips.values():
+        etas |= await eta_service.stop_etas(trip, settings)
+    return etas
+
+
+def _attempt_eta(a: _Attempt, etas: dict[uuid.UUID, CustomerEta]) -> CustomerEta | None:
+    return etas.get(a.item.stop_id) if _attempt_status(a) == _IN_TRANSIT else None
+
+
 def _attempt_status(a: _Attempt) -> DeliveryAttemptStatus:
     if a.item.status == ItemStatus.SUCCESS:
         return DeliveryAttemptStatus.DELIVERED
@@ -124,7 +145,12 @@ def _order_status(order: SalesOrder, attempts: list[_Attempt]) -> CustomerOrderS
     return CustomerOrderStatus.WAITING
 
 
-def _summary(order: SalesOrder, attempts: list[_Attempt], scope: _Scope) -> CustomerOrderSummary:
+def _summary(
+    order: SalesOrder,
+    attempts: list[_Attempt],
+    scope: _Scope,
+    etas: dict[uuid.UUID, CustomerEta],
+) -> CustomerOrderSummary:
     sees_value = scope.sees_value(order)
     delivered = [
         a.item.delivered_at
@@ -145,6 +171,11 @@ def _summary(order: SalesOrder, attempts: list[_Attempt], scope: _Scope) -> Cust
         order_value=order.order_value if sees_value else None,
         line_count=len(order.lines),
         delivered_at=max(delivered, default=None),
+        eta=min(
+            (e for a in attempts if (e := _attempt_eta(a, etas))),
+            key=lambda e: e.earliest,
+            default=None,
+        ),
     )
 
 
@@ -180,7 +211,10 @@ async def list_orders(
         )
     )
     attempts = await _attempts(session, [o.id for o in orders])
-    items = [_summary(o, attempts.get(o.id, []), scope) for o in orders]
+    etas = await _etas(
+        session, customer.company.id, [a for found in attempts.values() for a in found]
+    )
+    items = [_summary(o, attempts.get(o.id, []), scope, etas) for o in orders]
     items.sort(key=lambda o: (o.customer_code, o.delivery_point_code, o.external_ref))
     return CustomerOrderList(date=day, items=items)
 
@@ -196,6 +230,7 @@ async def get_order(
         raise NotFoundError("Không tìm thấy đơn hàng")
     attempts = (await _attempts(session, [order.id])).get(order.id, [])
     sees_value = scope.sees_value(order)
+    etas = await _etas(session, customer.company.id, attempts)
 
     # Ảnh chứng từ: của lần xác nhận hợp lệ (lần đã cập nhật trạng thái mục hàng).
     confirmations = await session.scalars(
@@ -210,7 +245,7 @@ async def get_order(
         photos[c.item_id].extend(storage.url(p.object_key) for p in c.photos)
 
     return CustomerOrderDetail(
-        **_summary(order, attempts, scope).model_dump(),
+        **_summary(order, attempts, scope, etas).model_dump(),
         note=order.note,
         lines=[
             CustomerOrderLine(
@@ -229,6 +264,7 @@ async def get_order(
                 temp_group=a.part.temp_group.value,
                 status=_attempt_status(a),
                 dispatched_at=a.trip.dispatched_at,
+                eta=_attempt_eta(a, etas),
                 delivered_at=a.item.delivered_at,
                 reason=a.item.reason if a.item.status == ItemStatus.FAILED else None,
                 driver_name=a.trip.driver.full_name if a.trip.driver else None,

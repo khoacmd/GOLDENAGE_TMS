@@ -1,9 +1,16 @@
-from typing import Any
+from datetime import datetime, timedelta
+from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from httpx import AsyncClient
 
 from app.modules.delivery import service as delivery_service
+from app.modules.dispatch.models import ItemStatus, Trip, TripOrderStatus
+from app.modules.routing.service import Point, Profile
+from app.modules.tenancy.models import CompanySettings
+from app.modules.zalo import eta as eta_service
+from optimization.model import Matrix
 from tests.conftest import (
     PLAN_DATE,
     Env,
@@ -22,6 +29,7 @@ ORDERS = "/api/v1/customer/orders"
 @pytest.fixture(autouse=True)
 def _frozen_now(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(delivery_service, "utcnow", lambda: NOW)
+    monkeypatch.setattr(eta_service, "utcnow", lambda: NOW)
 
 
 async def customer_token(client: AsyncClient, env: Env, phone: str, zalo_id: str) -> str:
@@ -124,6 +132,103 @@ async def test_delivery_progress_and_log(client: AsyncClient, env: Env) -> None:
     assert log["DRY"]["status"] == "FAILED"
     assert log["DRY"]["reason"] == "Khách đóng cửa"
     assert detail["delivered_at"] is not None
+
+
+async def test_eta_only_while_in_transit_and_moves_with_deliveries(
+    client: AsyncClient, env: Env
+) -> None:
+    owner = await customer_token(client, env, "0912000001", "zalo-owner")
+    assert by_ref(await orders(client, owner))["DH2610-001"]["eta"] is None
+
+    trip = await dispatched_trip(client, env)  # điểm 1: DH2610-001 (KH001), điểm 2: DH2610-007
+    listing = by_ref(await orders(client, owner))
+    eta = listing["DH2610-001"]["eta"]
+    assert NOW <= datetime.fromisoformat(eta["earliest"]) < datetime.fromisoformat(eta["latest"])
+    assert listing["DH2610-002"]["eta"] is None  # chưa vào chuyến
+
+    detail = (
+        await client.get(f"{ORDERS}/{listing['DH2610-001']['id']}", headers=auth(owner))
+    ).json()
+    assert {d["status"] for d in detail["deliveries"]} == {"IN_TRANSIT"}
+    assert all(d["eta"] == eta for d in detail["deliveries"])
+
+    key = await photo(client, env.driver_token)
+    for item in trip["stops"][0]["items"]:
+        resp = await confirm(client, env, trip, item["id"], photo_keys=[key])
+        assert resp.json()["accepted"], resp.text
+    assert by_ref(await orders(client, owner))["DH2610-001"]["eta"] is None
+
+
+def _fake_trip(items_by_stop: list[list[tuple[ItemStatus, datetime | None]]]) -> Trip:
+    stops = [
+        SimpleNamespace(
+            id=f"stop-{i}",
+            delivery_point=None,
+            latitude=21,
+            longitude=105 + i,
+            items=[SimpleNamespace(status=s, delivered_at=at) for s, at in items],
+        )
+        for i, items in enumerate(items_by_stop)
+    ]
+    return cast(
+        Trip,
+        SimpleNamespace(
+            order_status=TripOrderStatus.DISPATCHED,
+            dispatched_at=NOW,
+            stops=stops,
+            warehouse=SimpleNamespace(latitude=21, longitude=104),
+            vehicle=SimpleNamespace(vehicle_type="CAR"),
+        ),
+    )
+
+
+@pytest.fixture
+def _matrix_30_min(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mọi chặng di chuyển mất 30 phút (cùng điểm: 0)."""
+
+    async def fake(
+        points: list[Point], profile: Profile, factor: float = 1.0
+    ) -> tuple[Matrix, str]:
+        duration = [[0 if a == b else 1800 for b in points] for a in points]
+        return Matrix(distance_m=duration, duration_s=duration), "estimate"
+
+    monkeypatch.setattr(eta_service.routing, "matrix", fake)
+
+
+SETTINGS = cast(CompanySettings, SimpleNamespace(service_minutes=10, travel_time_factor=1.0))
+PENDING = (ItemStatus.PENDING, None)
+
+
+@pytest.mark.usefixtures("_matrix_30_min")
+async def test_eta_chain_from_dispatch() -> None:
+    etas = await eta_service.stop_etas(_fake_trip([[PENDING], [PENDING]]), SETTINGS)
+    # Điểm 1: xuất phát + 30'; điểm 2: thêm 10' phục vụ + 30' di chuyển. Sai số 20% thời gian.
+    first, second = etas["stop-0"], etas["stop-1"]
+    assert first.earliest == NOW + timedelta(minutes=20)
+    assert first.latest == NOW + timedelta(minutes=40)
+    assert second.earliest == NOW + timedelta(minutes=70 - 14)
+    assert second.latest == NOW + timedelta(minutes=70 + 14)
+
+
+@pytest.mark.usefixtures("_matrix_30_min")
+async def test_eta_anchors_on_last_delivery_and_is_never_in_the_past(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    done = (ItemStatus.SUCCESS, NOW + timedelta(minutes=5))
+    later = NOW + timedelta(minutes=5)
+    monkeypatch.setattr(eta_service, "utcnow", lambda: later)
+    trip = _fake_trip([[done], [PENDING]])
+    etas = await eta_service.stop_etas(trip, SETTINGS)
+    assert "stop-0" not in etas
+    assert etas["stop-1"].earliest == later + timedelta(minutes=20)
+
+    # Đã quá giờ dự kiến mà chưa xác nhận: giờ đến là hiện tại trở đi, các điểm sau lùi theo.
+    late = NOW + timedelta(hours=3)
+    monkeypatch.setattr(eta_service, "utcnow", lambda: late)
+    etas = await eta_service.stop_etas(_fake_trip([[PENDING], [PENDING]]), SETTINGS)
+    assert etas["stop-0"].earliest == late
+    assert etas["stop-0"].latest == late + timedelta(minutes=10)
+    assert etas["stop-1"].earliest >= late + timedelta(minutes=30)
 
 
 async def test_customer_cannot_read_other_company_orders(

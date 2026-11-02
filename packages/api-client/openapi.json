@@ -6922,6 +6922,16 @@
             ],
             "title": "Dispatched At"
           },
+          "eta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerEta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "delivered_at": {
             "anyOf": [
               {
@@ -6971,6 +6981,7 @@
           "temp_group",
           "status",
           "dispatched_at",
+          "eta",
           "delivered_at",
           "reason",
           "driver_name",
@@ -6978,6 +6989,27 @@
         ],
         "title": "CustomerDeliveryAttempt",
         "description": "Một lượt giao (1 phần đơn trên 1 chuyến đã duyệt)."
+      },
+      "CustomerEta": {
+        "properties": {
+          "earliest": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Earliest"
+          },
+          "latest": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Latest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "earliest",
+          "latest"
+        ],
+        "title": "CustomerEta",
+        "description": "Khoảng giờ hàng đến dự kiến."
       },
       "CustomerMe": {
         "properties": {
@@ -7081,6 +7113,16 @@
             ],
             "title": "Delivered At"
           },
+          "eta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerEta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "note": {
             "anyOf": [
               {
@@ -7122,6 +7164,7 @@
           "order_value",
           "line_count",
           "delivered_at",
+          "eta",
           "note",
           "lines",
           "deliveries"
@@ -7279,6 +7322,16 @@
               }
             ],
             "title": "Delivered At"
+          },
+          "eta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerEta"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7295,7 +7348,8 @@
           "can_see_value",
           "order_value",
           "line_count",
-          "delivered_at"
+          "delivered_at",
+          "eta"
         ],
         "title": "CustomerOrderSummary"
       },
