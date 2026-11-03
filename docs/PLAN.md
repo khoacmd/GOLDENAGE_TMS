@@ -93,6 +93,10 @@
 - [ ] (Tùy chọn) Lái xe nhập số công-tơ-mét lúc xuất phát / kết thúc trên app mobile
 - [ ] (Tùy chọn) Biểu đồ xu hướng theo ngày trên trang báo cáo
 
+## Bổ sung nghiệp vụ
+- [x] SKU là số gốc của đơn hàng và tồn kho, ĐVT suy ra theo quy đổi cho vận tải; phiếu soạn và phiếu giao hiện cả 2 đơn vị + dạng chẵn lẻ; đổi quy đổi tự tính lại đơn chưa vào lệnh (D36)
+- [ ] (Phase sau) Một mặt hàng nhiều SKU: đơn vị trên từng dòng đơn, bảng quy đổi nhiều dòng, tồn kho quy về một đơn vị chung (D37)
+
 ## M6 – Hoàn thiện & mở rộng
 - [x] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền): quét tự động mọi endpoint (`tests/test_security.py`)
 - [x] Vá sau kiểm thử: lái xe không xem được lịch sử/template import; lịch sử & xác nhận của lệnh công ty khác trả 404; chống dò mật khẩu (429); giới hạn kích thước file import

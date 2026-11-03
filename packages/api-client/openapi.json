@@ -8951,13 +8951,21 @@
             "type": "string",
             "title": "Product Name"
           },
-          "uom": {
+          "sku_uom": {
             "type": "string",
-            "title": "Uom"
+            "title": "Sku Uom"
           },
           "qty_on_hand": {
             "type": "string",
             "title": "Qty On Hand"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "uom_qty": {
+            "type": "string",
+            "title": "Uom Qty"
           },
           "synced_at": {
             "type": "string",
@@ -8972,8 +8980,10 @@
           "product_id",
           "product_code",
           "product_name",
-          "uom",
+          "sku_uom",
           "qty_on_hand",
+          "uom",
+          "uom_qty",
           "synced_at"
         ],
         "title": "InventoryOut"
@@ -9338,13 +9348,21 @@
             "type": "string",
             "title": "Product Name"
           },
+          "sku_uom": {
+            "type": "string",
+            "title": "Sku Uom"
+          },
+          "sku_qty": {
+            "type": "string",
+            "title": "Sku Qty"
+          },
           "uom": {
             "type": "string",
             "title": "Uom"
           },
-          "qty": {
+          "uom_qty": {
             "type": "string",
-            "title": "Qty"
+            "title": "Uom Qty"
           },
           "weight_kg": {
             "type": "string",
@@ -9371,8 +9389,10 @@
           "product_id",
           "product_code",
           "product_name",
+          "sku_uom",
+          "sku_qty",
           "uom",
-          "qty",
+          "uom_qty",
           "weight_kg",
           "amount",
           "temp_group"
@@ -9804,16 +9824,46 @@
             "type": "string",
             "title": "Product Name"
           },
+          "temp_group": {
+            "$ref": "#/components/schemas/TempGroup"
+          },
+          "sku_uom": {
+            "type": "string",
+            "title": "Sku Uom"
+          },
+          "sku_qty": {
+            "type": "string",
+            "title": "Sku Qty"
+          },
           "uom": {
             "type": "string",
             "title": "Uom"
           },
-          "temp_group": {
-            "$ref": "#/components/schemas/TempGroup"
-          },
-          "qty": {
+          "uom_qty": {
             "type": "string",
-            "title": "Qty"
+            "title": "Uom Qty"
+          },
+          "whole_uom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whole Uom"
+          },
+          "rest_sku": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rest Sku"
           },
           "weight_kg": {
             "type": "string",
@@ -9824,9 +9874,13 @@
         "required": [
           "product_code",
           "product_name",
-          "uom",
           "temp_group",
-          "qty",
+          "sku_uom",
+          "sku_qty",
+          "uom",
+          "uom_qty",
+          "whole_uom",
+          "rest_sku",
           "weight_kg"
         ],
         "title": "PickingLineOut"
@@ -9950,6 +10004,38 @@
             ],
             "title": "Weight Kg"
           },
+          "sku_uom": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Sku Uom"
+          },
+          "sku_ratio": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Sku Ratio",
+            "default": "1"
+          },
+          "uom_ratio": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Uom Ratio",
+            "default": "1"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active",
@@ -9962,7 +10048,8 @@
           "name",
           "temp_class",
           "uom",
-          "weight_kg"
+          "weight_kg",
+          "sku_uom"
         ],
         "title": "ProductCreate"
       },
@@ -9992,6 +10079,18 @@
             "type": "string",
             "title": "Weight Kg"
           },
+          "sku_uom": {
+            "type": "string",
+            "title": "Sku Uom"
+          },
+          "sku_ratio": {
+            "type": "string",
+            "title": "Sku Ratio"
+          },
+          "uom_ratio": {
+            "type": "string",
+            "title": "Uom Ratio"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -10005,6 +10104,9 @@
           "temp_class",
           "uom",
           "weight_kg",
+          "sku_uom",
+          "sku_ratio",
+          "uom_ratio",
           "is_active"
         ],
         "title": "ProductOut"
@@ -10061,6 +10163,49 @@
               }
             ],
             "title": "Weight Kg"
+          },
+          "sku_uom": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sku Uom"
+          },
+          "sku_ratio": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sku Ratio"
+          },
+          "uom_ratio": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uom Ratio"
           },
           "is_active": {
             "anyOf": [
@@ -11120,6 +11265,68 @@
         ],
         "title": "TripIn"
       },
+      "TripItemLineOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "sku_uom": {
+            "type": "string",
+            "title": "Sku Uom"
+          },
+          "sku_qty": {
+            "type": "string",
+            "title": "Sku Qty"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "uom_qty": {
+            "type": "string",
+            "title": "Uom Qty"
+          },
+          "whole_uom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whole Uom"
+          },
+          "rest_sku": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rest Sku"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "sku_uom",
+          "sku_qty",
+          "uom",
+          "uom_qty",
+          "whole_uom",
+          "rest_sku"
+        ],
+        "title": "TripItemLineOut"
+      },
       "TripItemOut": {
         "properties": {
           "id": {
@@ -11208,6 +11415,14 @@
               }
             ],
             "title": "External Ref"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/TripItemLineOut"
+            },
+            "type": "array",
+            "title": "Lines",
+            "default": []
           }
         },
         "type": "object",

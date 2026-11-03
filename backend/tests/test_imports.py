@@ -45,11 +45,20 @@ async def seed_master_data(client: AsyncClient, token: str) -> None:
     assert (await upload(client, token, "warehouses", warehouses, "kho.csv"))["created"] == 2
 
     products = xlsx(
-        ["Mã hàng *", "Tên hàng *", "Loại hàng *", "Đơn vị tính *", "Trọng lượng (kg) *"],
         [
-            ["SUA-TT", "Sữa tươi", "Lạnh", "Thùng", 9.2],
-            ["KEM-01", "Kem que", "Đông", "Thùng", 6],
-            ["NUOC-01", "Nước suối", "khô", "Thùng", "12,5"],
+            "Mã hàng *",
+            "Tên hàng *",
+            "Loại hàng *",
+            "Đơn vị tính *",
+            "Trọng lượng (kg) *",
+            "Đơn vị SKU",
+            "SL SKU quy đổi",
+            "SL ĐVT quy đổi",
+        ],
+        [
+            ["SUA-TT", "Sữa tươi", "Lạnh", "Thùng", 9.2, "Thùng", 1, 1],
+            ["KEM-01", "Kem que", "Đông", "Thùng", 6, "Thùng", 1, 1],
+            ["NUOC-01", "Nước suối", "khô", "Thùng", "12,5", "Thùng", 1, 1],
         ],
     )
     assert (await upload(client, token, "products", products, "hang.xlsx"))["created"] == 3
@@ -354,6 +363,7 @@ async def test_integration_api_with_api_key(client: AsyncClient, admin_token: st
             "loai_hang": "DRY",
             "don_vi_tinh": "Thùng",
             "trong_luong_kg": 3,
+            "don_vi_sku": "Thùng",
         }
     ]
     resp = await client.post(
@@ -388,6 +398,9 @@ def test_split_parts_value_allocation() -> None:
             self.temp_class = TempClass(temp)
             self.weight_kg = Decimal(weight)
             self.id = None
+
+        def to_uom(self, sku_qty: Decimal) -> Decimal:
+            return sku_qty
 
     lines = [
         LineDraft(P("DRY", "1"), Decimal(1), None),  # type: ignore[arg-type]

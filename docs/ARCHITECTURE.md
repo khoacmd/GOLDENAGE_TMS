@@ -144,12 +144,12 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
 - `delivery_points(customer_id, address, location geography(Point))`
 - `customer_contacts(customer_id, delivery_point_id?, name, phone, note, is_active)` – người dùng Zalo Mini App (M7): trống điểm giao = liên hệ chủ; SĐT chuẩn hóa `0xxxxxxxxx`, duy nhất theo (khách hàng, điểm giao, SĐT); API `/customers/{id}/contacts`, import `customer_contacts`
-- `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg)` – đồng bộ từ hệ thống bán hàng
-- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng = tồn snapshot − hàng của các lệnh `DRAFT/APPROVED/PREPARED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
+- `products(code, name, temp_class: DRY|CHILLED|FROZEN, uom, weight_kg, sku_uom, sku_ratio, uom_ratio)` – đồng bộ từ hệ thống bán hàng. `sku_uom` là đơn vị của đơn hàng và tồn kho (số gốc từ hệ thống ngoài), `uom` là đơn vị vận tải (`weight_kg` là kg/ĐVT); quy đổi bằng cặp số `sku_ratio` SKU = `uom_ratio` ĐVT (48 Hộp = 1 Thùng) để không mất chính xác như lưu 1 hệ số (D36). Tạo mới: file bắt buộc cả 3 trường SKU, API chỉ bắt buộc `sku_uom` (số quy đổi thiếu = 1); mặt hàng đã có bỏ trống = giữ nguyên. Đổi đơn vị SKU bị từ chối khi còn đơn `OPEN`
+- `inventory_balances(warehouse_id, product_id, qty_on_hand, synced_at)`, `qty_on_hand` theo **SKU**. Giữ chỗ tồn **không có bảng riêng**: tồn khả dụng (SKU) = tồn snapshot − `sku_qty` của các lệnh `DRAFT/APPROVED/PREPARED` (chưa xuất kho) tại kho đó (`dispatch.stock_available`) - lệnh nháp do bộ tối ưu sinh ra chính là phần giữ chỗ (D23).
 
 ### Đơn hàng
 - `sales_orders(external_ref, customer_id, delivery_point_id, requested_date, order_value, status)`
-- `sales_order_lines(product_id, qty, weight_kg)`
+- `sales_order_lines(product_id, sku_qty, sku_uom, uom_qty, uom, sku_ratio, uom_ratio, weight_kg)`: `sku_qty` + `sku_uom` là số gốc từ đơn, dùng so tồn kho; `uom_qty = sku_qty × uom_ratio / sku_ratio`, `weight_kg = uom_qty × kg/ĐVT`. Mặt hàng đổi ĐVT/quy đổi/trọng lượng → tự tính lại dòng và phần của đơn chưa vào lệnh (`orders.service.recalculate_open_orders`, cả khi import); đơn đã vào lệnh giữ nguyên. Phiếu in hiện SKU, ĐVT và dạng chẵn + lẻ (`2 Thùng + 4 Hộp`, chỉ khi SKU nhỏ hơn ĐVT)
 - **`order_parts`** – *đơn vị lập kế hoạch*: mỗi đơn tách tối đa 2 phần theo nhóm nhiệt độ
   - `temp_group: DRY | COLD` (COLD = lạnh + đông), `weight_kg`, `value`, `warehouse_id?`, `status: PENDING|PLANNED|DELIVERED|FAILED|CANCELLED`, `attempt_count`
   - **Không tách theo khối lượng**: một `order_part` luôn đi nguyên trên một chuyến.
@@ -359,3 +359,5 @@ Ghi nhận khi dựng M0 trên Spark:
 | D33 | Khách xem tuyến xe đã đi = tuyến OSRM qua các điểm đã giao (không hiện điểm dừng khác), chưa dùng GPS thực | Chốt |
 | D34 | Zalo Mini App là kênh phụ cho tài xế; app native vẫn là kênh chính | Chốt |
 | D35 | Khách có nhiều liên hệ: liên hệ chủ xem mọi đơn + giá trị; liên hệ điểm giao chỉ xem đơn của điểm đó, chỉ mặt hàng + số lượng; trùng thì theo quyền cao hơn | Chốt |
+| D36 | SKU là số gốc: đơn hàng, tồn kho, giữ chỗ, chọn kho theo SKU; ĐVT suy ra theo quy đổi của mặt hàng, chỉ dùng cho khối lượng và hiển thị. File đơn/tồn có thể kèm cột "Đơn vị" để phát hiện gửi sai đơn vị | Chốt |
+| D37 | Giai đoạn này mỗi mặt hàng có đúng 1 SKU; hỗ trợ nhiều SKU (đơn vị trên từng dòng, bảng quy đổi) để phase sau | Chốt tạm |

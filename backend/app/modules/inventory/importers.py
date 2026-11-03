@@ -19,7 +19,7 @@ from app.core.importing import (
     duplicate_errors,
     load_by_codes,
 )
-from app.core.parsing import Code, Num
+from app.core.parsing import Code, Num, OptionalText
 from app.modules.identity.models import CompanyRole
 from app.modules.inventory.models import InventoryBalance
 from app.modules.master_data.models import Product, Warehouse
@@ -29,6 +29,7 @@ class InventoryRow(RowModel):
     ma_kho: Code
     ma_hang: Code
     so_luong_ton: Annotated[Num, Field(ge=0)]
+    don_vi: Annotated[OptionalText, Field(max_length=32)] = None
 
 
 async def apply_inventory(
@@ -47,6 +48,18 @@ async def apply_inventory(
         if row.data.ma_hang.lower() not in products:
             result.errors.append(
                 RowError(row.row_no, "Mã hàng", f"Mặt hàng '{row.data.ma_hang}' không tồn tại")
+            )
+        elif (
+            row.data.don_vi
+            and row.data.don_vi.casefold() != products[row.data.ma_hang.lower()].sku_uom.casefold()
+        ):
+            sku_uom = products[row.data.ma_hang.lower()].sku_uom
+            result.errors.append(
+                RowError(
+                    row.row_no,
+                    "Đơn vị",
+                    f"'{row.data.don_vi}' khác đơn vị SKU '{sku_uom}' của mặt hàng",
+                )
             )
     if result.errors:
         return result
@@ -80,7 +93,8 @@ INVENTORY = ImportSpec(
     columns=[
         Column("ma_kho", "Mã kho", True, "KHO01"),
         Column("ma_hang", "Mã hàng", True, "SUA-TT-180"),
-        Column("so_luong_ton", "Số lượng tồn", True, 350, "Theo đơn vị tính của mặt hàng"),
+        Column("so_luong_ton", "Số lượng tồn", True, 350, "Theo đơn vị SKU của mặt hàng"),
+        Column("don_vi", "Đơn vị", False, "Hộp", "Nếu có phải khớp đơn vị SKU của mặt hàng"),
     ],
     row_model=InventoryRow,
     apply=apply_inventory,

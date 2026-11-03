@@ -1,6 +1,7 @@
 """Import đơn hàng: mỗi dòng 1 dòng hàng, gom theo số đơn (xem docs/IMPORT_TEMPLATES.md)."""
 
 from collections.abc import Sequence
+from decimal import Decimal
 from typing import Annotated
 
 from pydantic import Field
@@ -23,6 +24,8 @@ from app.modules.master_data.models import Customer, Product
 from app.modules.orders.models import OrderSource, SalesOrder
 from app.modules.orders.service import LineDraft, OrderDraft, is_locked, upsert_order
 
+MIN_UOM_QTY = Decimal("0.000001")  # đơn vị nhỏ nhất của cột số lượng theo ĐVT
+
 
 class OrderRow(RowModel):
     so_don: Code
@@ -34,6 +37,7 @@ class OrderRow(RowModel):
     ghi_chu: OptionalText = None
     ma_hang: Code
     so_luong: Annotated[Num, Field(gt=0)]
+    don_vi: Annotated[OptionalText, Field(max_length=32)] = None
     thanh_tien: Annotated[OptionalNum, Field(ge=0)] = None
 
 
@@ -133,6 +137,24 @@ async def apply_orders(
                     )
                 )
                 continue
+            if row.data.don_vi and row.data.don_vi.casefold() != product.sku_uom.casefold():
+                errors.append(
+                    RowError(
+                        row.row_no,
+                        "Đơn vị",
+                        f"'{row.data.don_vi}' khác đơn vị SKU '{product.sku_uom}' của mặt hàng",
+                    )
+                )
+                continue
+            if product.to_uom(row.data.so_luong) < MIN_UOM_QTY:
+                errors.append(
+                    RowError(
+                        row.row_no,
+                        "Số lượng",
+                        f"Quá nhỏ so với quy đổi của mặt hàng '{product.code}'",
+                    )
+                )
+                continue
             lines.append(LineDraft(product, row.data.so_luong, row.data.thanh_tien))
 
         order = existing.get(ref)
@@ -184,7 +206,8 @@ ORDERS = ImportSpec(
         Column("gia_tri_don", "Giá trị đơn (đ)", True, 15600000, "Tổng giá trị cả đơn"),
         Column("ghi_chu", "Ghi chú", False, ""),
         Column("ma_hang", "Mã hàng", True, "SUA-TT-180"),
-        Column("so_luong", "Số lượng", True, 20, "Theo đơn vị tính của mặt hàng"),
+        Column("so_luong", "Số lượng", True, 20, "Theo đơn vị SKU của mặt hàng"),
+        Column("don_vi", "Đơn vị", False, "Hộp", "Nếu có phải khớp đơn vị SKU của mặt hàng"),
         Column("thanh_tien", "Thành tiền (đ)", False, 7800000, "Giá trị dòng hàng (nếu có)"),
     ],
     row_model=OrderRow,

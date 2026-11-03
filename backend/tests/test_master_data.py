@@ -180,6 +180,7 @@ async def test_product_crud(client: AsyncClient, admin_token: str) -> None:
         "temp_class": "CHILLED",
         "uom": "Thùng",
         "weight_kg": "9.2",
+        "sku_uom": "Thùng",
     }
     resp = await client.post("/api/v1/products", headers=auth(admin_token), json=body)
     assert resp.status_code == 201, resp.text

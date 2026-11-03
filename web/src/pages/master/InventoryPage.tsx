@@ -54,8 +54,8 @@ export function InventoryPage() {
           { title: 'Kho', dataIndex: 'warehouse_code', width: 100 },
           { title: 'Mã hàng', dataIndex: 'product_code', width: 150 },
           { title: 'Tên hàng', dataIndex: 'product_name' },
-          { title: 'Tồn', dataIndex: 'qty_on_hand', width: 110, align: 'right', render: fmtNumber },
-          { title: 'ĐVT', dataIndex: 'uom', width: 90 },
+          { title: 'Tồn (SKU)', width: 130, align: 'right', render: (_, r) => `${fmtNumber(r.qty_on_hand)} ${r.sku_uom}` },
+          { title: 'Quy đổi (ĐVT)', width: 130, align: 'right', render: (_, r) => `${fmtNumber(r.uom_qty)} ${r.uom}` },
           { title: 'Đồng bộ lúc', dataIndex: 'synced_at', width: 170, render: fmtDateTime },
         ]}
       />

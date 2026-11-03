@@ -220,12 +220,22 @@ class Product(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("company_id", "code"),
         CheckConstraint("weight_kg >= 0", name="weight_non_negative"),
+        CheckConstraint("sku_ratio > 0 AND uom_ratio > 0", name="sku_conversion_positive"),
     )
 
     code: Mapped[str] = mapped_column(String(64))
     name: Mapped[str] = mapped_column(String(255))
     temp_class: Mapped[TempClass] = mapped_column(enum_type(TempClass))
+    # Đơn vị tính vận tải: tính khối lượng và tồn kho.
     uom: Mapped[str] = mapped_column(String(32))
     # Trọng lượng 1 đơn vị tính (kg).
     weight_kg: Mapped[Decimal] = mapped_column(Numeric(10, 3))
+    # Đơn vị bán trên đơn hàng. Quy đổi bằng cặp số để không mất chính xác: `sku_ratio` SKU =
+    # `uom_ratio` ĐVT (48 Hộp = 1 Thùng; 1 Thùng = 12 Lốc).
+    sku_uom: Mapped[str] = mapped_column(String(32))
+    sku_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3), server_default=text("1"))
+    uom_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3), server_default=text("1"))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+
+    def to_uom(self, sku_qty: Decimal) -> Decimal:
+        return sku_qty * self.uom_ratio / self.sku_ratio

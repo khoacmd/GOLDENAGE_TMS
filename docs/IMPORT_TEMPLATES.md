@@ -63,6 +63,9 @@ Mỗi dòng 1 mặt hàng. Mã đã tồn tại sẽ được cập nhật.
 | Loại hàng | `loai_hang` | Có | Khô / Lạnh / Đông | Lạnh |
 | Đơn vị tính | `don_vi_tinh` | Có |  | Thùng |
 | Trọng lượng (kg) | `trong_luong_kg` | Có | Trọng lượng 1 đơn vị tính, đã gồm bao bì | 9.2 |
+| Đơn vị SKU | `don_vi_sku` |  | Đơn vị trên đơn hàng và tồn kho. Mặt hàng mới: file bắt buộc cả 3 cột, API bắt buộc cột này (2 số quy đổi bỏ trống = 1). Mặt hàng đã có, bỏ trống cả 3: giữ nguyên | Hộp |
+| SL SKU quy đổi | `sl_sku` |  | Vd. 48 Hộp = 1 Thùng: nhập 48 | 48 |
+| SL ĐVT quy đổi | `sl_dvt` |  | Vd. 48 Hộp = 1 Thùng: nhập 1 | 1 |
 
 ## Khách hàng & điểm giao (`customers`)
 
@@ -95,7 +98,8 @@ Snapshot tồn kho: với mỗi kho xuất hiện trong file, toàn bộ số t�
 |---|---|---|---|---|
 | Mã kho | `ma_kho` | Có |  | KHO01 |
 | Mã hàng | `ma_hang` | Có |  | SUA-TT-180 |
-| Số lượng tồn | `so_luong_ton` | Có | Theo đơn vị tính của mặt hàng | 350 |
+| Số lượng tồn | `so_luong_ton` | Có | Theo đơn vị SKU của mặt hàng | 350 |
+| Đơn vị | `don_vi` |  | Nếu có phải khớp đơn vị SKU của mặt hàng | Hộp |
 
 ## Đơn hàng (`orders`)
 
@@ -111,7 +115,8 @@ Mỗi dòng 1 mặt hàng của đơn; các dòng cùng Số đơn được gom 
 | Giá trị đơn (đ) | `gia_tri_don` | Có | Tổng giá trị cả đơn | 15600000 |
 | Ghi chú | `ghi_chu` |  |  |  |
 | Mã hàng | `ma_hang` | Có |  | SUA-TT-180 |
-| Số lượng | `so_luong` | Có | Theo đơn vị tính của mặt hàng | 20 |
+| Số lượng | `so_luong` | Có | Theo đơn vị SKU của mặt hàng | 20 |
+| Đơn vị | `don_vi` |  | Nếu có phải khớp đơn vị SKU của mặt hàng | Hộp |
 | Thành tiền (đ) | `thanh_tien` |  | Giá trị dòng hàng (nếu có) | 7800000 |
 
 ## Liên hệ khách hàng (`customer_contacts`)

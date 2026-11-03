@@ -181,7 +181,8 @@ function OrderDrawer({ orderId, onClose }: { orderId?: string; onClose: () => vo
               { title: '#', dataIndex: 'line_no', width: 40 },
               { title: 'Mặt hàng', render: (_, l) => `${l.product_code} - ${l.product_name}` },
               { title: 'Nhóm', dataIndex: 'temp_group', width: 90, render: (v: Line['temp_group']) => TEMP_GROUP[v] },
-              { title: 'SL', width: 90, align: 'right', render: (_, l) => `${fmtNumber(l.qty)} ${l.uom}` },
+              { title: 'SL (SKU)', width: 100, align: 'right', render: (_, l) => `${fmtNumber(l.sku_qty)} ${l.sku_uom}` },
+              { title: 'SL (ĐVT)', width: 100, align: 'right', render: (_, l) => `${fmtNumber(l.uom_qty)} ${l.uom}` },
               { title: 'Kg', dataIndex: 'weight_kg', width: 80, align: 'right', render: fmtNumber },
               { title: 'Thành tiền', dataIndex: 'amount', width: 110, align: 'right', render: fmtNumber },
             ]}

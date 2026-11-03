@@ -137,7 +137,7 @@ def _needs(part: OrderPart) -> dict[uuid.UUID, Decimal]:
     needed: dict[uuid.UUID, Decimal] = defaultdict(Decimal)
     for line in part.order.lines:
         if line.temp_group == part.temp_group:
-            needed[line.product_id] += line.qty
+            needed[line.product_id] += line.sku_qty
     return needed
 
 

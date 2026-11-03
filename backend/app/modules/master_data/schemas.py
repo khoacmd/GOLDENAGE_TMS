@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from app.core.parsing import Phone
 from app.modules.master_data.models import (
@@ -191,13 +191,34 @@ class CustomerOut(_Out):
 # --- Mặt hàng ----------------------------------------------------------------------------
 
 
+SkuRatio = Annotated[Decimal, Field(gt=0, max_digits=10, decimal_places=3)]
+
+
+def sku_conversion_error(
+    uom: str, sku_uom: str, sku_ratio: Decimal, uom_ratio: Decimal
+) -> str | None:
+    if sku_uom.casefold() == uom.casefold() and sku_ratio != uom_ratio:
+        return f"SKU trùng đơn vị tính '{uom}' thì quy đổi phải là 1 = 1"
+    return None
+
+
 class ProductCreate(BaseModel):
     code: Annotated[str, Field(min_length=1, max_length=64)]
     name: str = Field(min_length=1, max_length=255)
     temp_class: TempClass
     uom: str = Field(min_length=1, max_length=32)
     weight_kg: Decimal = Field(ge=0, max_digits=10, decimal_places=3)
+    sku_uom: str = Field(min_length=1, max_length=32)
+    sku_ratio: SkuRatio = Decimal(1)
+    uom_ratio: SkuRatio = Decimal(1)
     is_active: bool = True
+
+    @model_validator(mode="after")
+    def _sku_conversion(self) -> "ProductCreate":
+        error = sku_conversion_error(self.uom, self.sku_uom, self.sku_ratio, self.uom_ratio)
+        if error:
+            raise ValueError(error)
+        return self
 
 
 class ProductUpdate(BaseModel):
@@ -205,7 +226,17 @@ class ProductUpdate(BaseModel):
     temp_class: TempClass | None = None
     uom: str | None = Field(default=None, min_length=1, max_length=32)
     weight_kg: Decimal | None = Field(default=None, ge=0, max_digits=10, decimal_places=3)
+    sku_uom: str | None = Field(default=None, min_length=1, max_length=32)
+    sku_ratio: SkuRatio | None = None
+    uom_ratio: SkuRatio | None = None
     is_active: bool | None = None
+
+    @model_validator(mode="after")
+    def _sku_not_null(self) -> "ProductUpdate":
+        for field in ("sku_uom", "sku_ratio", "uom_ratio"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError("Đơn vị SKU và quy đổi không được để trống")
+        return self
 
 
 class ProductOut(_Out):
@@ -215,4 +246,7 @@ class ProductOut(_Out):
     temp_class: TempClass
     uom: str
     weight_kg: Decimal
+    sku_uom: str
+    sku_ratio: Decimal
+    uom_ratio: Decimal
     is_active: bool

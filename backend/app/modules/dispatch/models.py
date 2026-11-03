@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.models import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin, enum_type
 from app.modules.identity.models import User
 from app.modules.master_data.models import DeliveryPoint, Vehicle, Warehouse
-from app.modules.orders.models import OrderPart
+from app.modules.orders.models import OrderPart, SalesOrderLine
 
 
 class TripOrderStatus(StrEnum):
@@ -189,3 +189,11 @@ class TripItem(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
 
     trip: Mapped[Trip] = relationship(lazy="raise")
     order_part: Mapped[OrderPart | None] = relationship(lazy="selectin")
+
+    @property
+    def lines(self) -> list[SalesOrderLine]:
+        """Dòng hàng của phần đơn (cùng nhóm nhiệt độ); mục tự do không có."""
+        part = self.order_part
+        if part is None:
+            return []
+        return [line for line in part.order.lines if line.temp_group == part.temp_group]

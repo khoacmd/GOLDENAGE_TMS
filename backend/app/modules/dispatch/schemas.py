@@ -90,6 +90,18 @@ class AvailablePartOut(_Out):
     longitude: Decimal = Field(validation_alias=AliasPath("order", "delivery_point", "longitude"))
 
 
+class TripItemLineOut(_Out):
+    product_code: str = Field(validation_alias=AliasPath("product", "code"))
+    product_name: str = Field(validation_alias=AliasPath("product", "name"))
+    sku_uom: str
+    sku_qty: Decimal
+    uom: str
+    uom_qty: Decimal
+    # Số ĐVT chẵn + SKU lẻ; None khi SKU không nhỏ hơn ĐVT.
+    whole_uom: int | None
+    rest_sku: Decimal | None
+
+
 class TripItemOut(_Out):
     id: uuid.UUID
     order_part_id: uuid.UUID | None
@@ -106,6 +118,7 @@ class TripItemOut(_Out):
     external_ref: str | None = Field(
         default=None, validation_alias=AliasPath("order_part", "order", "external_ref")
     )
+    lines: list[TripItemLineOut] = []
 
 
 class TripStopOut(_Out):
@@ -174,9 +187,13 @@ class TripOut(TripSummaryOut):
 class PickingLineOut(BaseModel):
     product_code: str
     product_name: str
-    uom: str
     temp_group: TempGroup
-    qty: Decimal
+    sku_uom: str
+    sku_qty: Decimal
+    uom: str
+    uom_qty: Decimal
+    whole_uom: int | None
+    rest_sku: Decimal | None
     weight_kg: Decimal
 
 

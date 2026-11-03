@@ -75,11 +75,22 @@ class SalesOrder(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     )
 
 
+def pack_breakdown(
+    sku_qty: Decimal, sku_ratio: Decimal, uom_ratio: Decimal
+) -> tuple[int, Decimal] | None:
+    """Số ĐVT chẵn + SKU lẻ: 100 Hộp với 48 Hộp = 1 Thùng → (2, 4). SKU không nhỏ hơn ĐVT → None."""
+    if sku_ratio <= uom_ratio:
+        return None
+    whole = int(sku_qty * uom_ratio / sku_ratio)
+    rest = sku_qty - whole * sku_ratio / uom_ratio
+    return whole, rest.quantize(Decimal("0.001"))
+
+
 class SalesOrderLine(UUIDPrimaryKeyMixin, TenantMixin, Base):
     __tablename__ = "sales_order_lines"
     __table_args__ = (
         UniqueConstraint("order_id", "line_no"),
-        CheckConstraint("qty > 0", name="qty_positive"),
+        CheckConstraint("uom_qty > 0", name="qty_positive"),
     )
 
     order_id: Mapped[uuid.UUID] = mapped_column(
@@ -87,13 +98,30 @@ class SalesOrderLine(UUIDPrimaryKeyMixin, TenantMixin, Base):
     )
     line_no: Mapped[int] = mapped_column(SmallInteger)
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"))
-    qty: Mapped[Decimal] = mapped_column(Numeric(14, 3))
-    # Snapshot tại thời điểm nhận đơn: qty * trọng lượng đơn vị.
+    # Số gốc từ đơn bán, cùng đơn vị với tồn kho.
+    sku_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3))
+    sku_uom: Mapped[str] = mapped_column(String(32))
+    # Suy ra cho vận tải, lưu cố định khi đơn đã vào lệnh (trước đó tính lại theo mặt hàng).
+    uom_qty: Mapped[Decimal] = mapped_column(Numeric(18, 6))
+    uom: Mapped[str] = mapped_column(String(32))
+    sku_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3))
+    uom_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3))
+    # Snapshot: uom_qty * trọng lượng đơn vị.
     weight_kg: Mapped[Decimal] = mapped_column(Numeric(12, 3))
     amount: Mapped[Decimal | None] = mapped_column(Numeric(16, 2))
     temp_group: Mapped[TempGroup] = mapped_column(enum_type(TempGroup))
 
     product: Mapped[Product] = relationship(lazy="selectin")
+
+    @property
+    def whole_uom(self) -> int | None:
+        pack = pack_breakdown(self.sku_qty, self.sku_ratio, self.uom_ratio)
+        return pack[0] if pack else None
+
+    @property
+    def rest_sku(self) -> Decimal | None:
+        pack = pack_breakdown(self.sku_qty, self.sku_ratio, self.uom_ratio)
+        return pack[1] if pack else None
 
 
 class OrderPart(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):

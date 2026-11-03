@@ -5,6 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +27,7 @@ from app.modules.inventory.models import InventoryBalance
 from app.modules.master_data.models import (
     CargoClass,
     DeliveryPoint,
+    Product,
     Vehicle,
     VehicleRequirement,
     VehicleType,
@@ -37,6 +39,7 @@ from app.modules.orders.models import (
     SalesOrder,
     SalesOrderLine,
     TempGroup,
+    pack_breakdown,
 )
 from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
@@ -113,6 +116,18 @@ def vehicle_profile(vehicle: Vehicle) -> Profile:
     return Profile.MOTORBIKE if vehicle.vehicle_type == VehicleType.MOTORBIKE else Profile.CAR
 
 
+def _fmt_qty(qty: Decimal) -> str:
+    return f"{qty:.3f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _fmt_sku(product: Product, sku_qty: Decimal) -> str:
+    """360 Hộp (30 Thùng); SKU trùng ĐVT thì chỉ 1 số."""
+    text = f"{_fmt_qty(sku_qty)} {product.sku_uom}"
+    if product.sku_uom.casefold() == product.uom.casefold():
+        return text
+    return f"{text} ({_fmt_qty(product.to_uom(sku_qty))} {product.uom})"
+
+
 def items_of(trip: Trip) -> list[TripItem]:
     return [item for stop in trip.stops for item in stop.items]
 
@@ -164,12 +179,12 @@ async def _stock_warnings(
 ) -> list[str]:
     """Cảnh báo khi tồn kho (trừ phần đã giữ bởi lệnh khác chưa xuất) không đủ."""
     needed: dict[uuid.UUID, Decimal] = defaultdict(Decimal)
-    names: dict[uuid.UUID, str] = {}
+    products: dict[uuid.UUID, Product] = {}
     for part in parts:
         for line in part.order.lines:
             if line.temp_group == part.temp_group:
-                needed[line.product_id] += line.qty
-                names[line.product_id] = f"{line.product.code} ({line.product.uom})"
+                needed[line.product_id] += line.sku_qty
+                products[line.product_id] = line.product
     if not needed:
         return []
     on_hand_rows = await session.execute(
@@ -180,7 +195,7 @@ async def _stock_warnings(
     )
     on_hand = {product_id: qty for product_id, qty in on_hand_rows}
     reserved_stmt = (
-        select(SalesOrderLine.product_id, func.sum(SalesOrderLine.qty))
+        select(SalesOrderLine.product_id, func.sum(SalesOrderLine.sku_qty))
         .join(
             OrderPart,
             (OrderPart.order_id == SalesOrderLine.order_id)
@@ -204,7 +219,9 @@ async def _stock_warnings(
         available = on_hand.get(product_id, Decimal(0)) - reserved.get(product_id, Decimal(0))
         if qty > available:
             warnings.append(
-                f"Tồn kho không đủ {names[product_id]}: cần {qty:g}, còn {max(available, 0):g}"
+                f"Tồn kho không đủ {products[product_id].code}: "
+                f"cần {_fmt_sku(products[product_id], qty)}, "
+                f"còn {_fmt_sku(products[product_id], max(available, Decimal(0)))}"
             )
     return warnings
 
@@ -219,7 +236,7 @@ async def stock_available(session: AsyncSession) -> dict[tuple[uuid.UUID, uuid.U
     ):
         available[(warehouse_id, product_id)] += qty
     reserved = (
-        select(Trip.warehouse_id, SalesOrderLine.product_id, func.sum(SalesOrderLine.qty))
+        select(Trip.warehouse_id, SalesOrderLine.product_id, func.sum(SalesOrderLine.sku_qty))
         .join(
             OrderPart,
             (OrderPart.order_id == SalesOrderLine.order_id)
@@ -653,8 +670,9 @@ async def close(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:
 # --- Phiếu soạn hàng ---------------------------------------------------------------------
 
 
-def picking_lines(trip: Trip) -> tuple[list[dict[str, object]], list[str]]:
-    lines: dict[uuid.UUID, dict[str, object]] = {}
+def picking_lines(trip: Trip) -> tuple[list[dict[str, Any]], list[str]]:
+    # Tách theo quy đổi: đơn đã vào lệnh giữ quy đổi tại thời điểm đó.
+    lines: dict[tuple[uuid.UUID, Decimal, Decimal], dict[str, Any]] = {}
     adhoc: list[str] = []
     for item in items_of(trip):
         if item.status == ItemStatus.CANCELLED:
@@ -662,21 +680,25 @@ def picking_lines(trip: Trip) -> tuple[list[dict[str, object]], list[str]]:
         if item.order_part is None:
             adhoc.append(f"{item.description} ({item.weight_kg:g} kg)")
             continue
-        for line in item.order_part.order.lines:
-            if line.temp_group != item.order_part.temp_group:
-                continue
+        for line in item.lines:
             row = lines.setdefault(
-                line.product_id,
+                (line.product_id, line.sku_ratio, line.uom_ratio),
                 {
                     "product_code": line.product.code,
                     "product_name": line.product.name,
-                    "uom": line.product.uom,
+                    "uom": line.uom,
                     "temp_group": line.temp_group,
-                    "qty": Decimal(0),
+                    "uom_qty": Decimal(0),
+                    "sku_uom": line.sku_uom,
+                    "sku_qty": Decimal(0),
                     "weight_kg": Decimal(0),
                 },
             )
-            row["qty"] = row["qty"] + line.qty  # type: ignore[operator]
-            row["weight_kg"] = row["weight_kg"] + line.weight_kg  # type: ignore[operator]
+            row["uom_qty"] += line.uom_qty
+            row["sku_qty"] += line.sku_qty
+            row["weight_kg"] += line.weight_kg
+    for (_, sku_ratio, uom_ratio), row in lines.items():
+        pack = pack_breakdown(row["sku_qty"], sku_ratio, uom_ratio)
+        row["whole_uom"], row["rest_sku"] = pack if pack else (None, None)
     ordered = sorted(lines.values(), key=lambda r: (str(r["temp_group"]), str(r["product_code"])))
     return ordered, adhoc

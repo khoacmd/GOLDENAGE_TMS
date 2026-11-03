@@ -11,6 +11,20 @@ const page = { maxWidth: 820, margin: '0 auto', padding: 24, background: '#fff',
 const table = { width: '100%', borderCollapse: 'collapse' as const, marginTop: 12 }
 const cell = { border: '1px solid #000', padding: '4px 6px' }
 
+/** 100 Hộp với 48 Hộp = 1 Thùng → "2 Thùng + 4 Hộp"; SKU không nhỏ hơn ĐVT → null. */
+function packText(l: {
+  whole_uom: number | null
+  rest_sku: number | string | null
+  uom: string
+  sku_uom: string
+}) {
+  if (l.whole_uom === null) return null
+  const parts = []
+  if (l.whole_uom > 0) parts.push(`${fmtNumber(l.whole_uom)} ${l.uom}`)
+  if (Number(l.rest_sku) > 0) parts.push(`${fmtNumber(l.rest_sku)} ${l.sku_uom}`)
+  return parts.join(' + ')
+}
+
 function PrintShell({ title, children }: { title: string; children: ReactNode }) {
   const [printedAt] = useState(() => new Date().toISOString())
   return (
@@ -56,7 +70,7 @@ export function PickingListPrint() {
       <table style={table}>
         <thead>
           <tr>
-            {['#', 'Mã hàng', 'Tên hàng', 'Nhóm', 'Số lượng', 'ĐVT', 'Kg', 'Thực xuất'].map((h) => (
+            {['#', 'Mã hàng', 'Tên hàng', 'Nhóm', 'SL SKU', 'SKU', 'SL ĐVT', 'ĐVT', 'Chẵn + lẻ', 'Kg', 'Thực xuất'].map((h) => (
               <th key={h} style={cell}>
                 {h}
               </th>
@@ -65,13 +79,16 @@ export function PickingListPrint() {
         </thead>
         <tbody>
           {data.lines.map((l, i) => (
-            <tr key={l.product_code}>
+            <tr key={`${l.product_code}-${i}`}>
               <td style={cell}>{i + 1}</td>
               <td style={cell}>{l.product_code}</td>
               <td style={cell}>{l.product_name}</td>
               <td style={cell}>{TEMP_GROUP[l.temp_group]}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.qty)}</td>
+              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.sku_qty)}</td>
+              <td style={cell}>{l.sku_uom}</td>
+              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.uom_qty)}</td>
               <td style={cell}>{l.uom}</td>
+              <td style={cell}>{packText(l) ?? '-'}</td>
               <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.weight_kg)}</td>
               <td style={{ ...cell, width: 80 }} />
             </tr>
@@ -103,7 +120,7 @@ export function DeliveryNotesPrint() {
       <table style={table}>
         <thead>
           <tr>
-            {['#', 'Khách hàng / địa chỉ', 'Đơn hàng', 'Kg', 'Giá trị (đ)', 'Ký nhận'].map((h) => (
+            {['#', 'Khách hàng / địa chỉ', 'Đơn hàng / mặt hàng (SKU · ĐVT)', 'Kg', 'Giá trị (đ)', 'Ký nhận'].map((h) => (
               <th key={h} style={cell}>
                 {h}
               </th>
@@ -122,7 +139,17 @@ export function DeliveryNotesPrint() {
                 {st.items
                   .filter((i) => i.status !== 'CANCELLED')
                   .map((i) => (
-                    <div key={i.id}>{i.external_ref ? `${i.external_ref} (${TEMP_GROUP[i.temp_group!]})` : i.description}</div>
+                    <div key={i.id} style={{ marginBottom: 4 }}>
+                      <b>{i.external_ref ? `${i.external_ref} (${TEMP_GROUP[i.temp_group!]})` : i.description}</b>
+                      {i.lines?.map((l) => (
+                        <div key={l.product_code}>
+                          {l.product_code} {l.product_name}:{' '}
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {fmtNumber(l.sku_qty)} {l.sku_uom} · {packText(l) ?? `${fmtNumber(l.uom_qty)} ${l.uom}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   ))}
               </td>
               <td style={{ ...cell, textAlign: 'right' }}>

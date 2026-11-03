@@ -2646,10 +2646,14 @@ export interface components {
             product_code: string;
             /** Product Name */
             product_name: string;
-            /** Uom */
-            uom: string;
+            /** Sku Uom */
+            sku_uom: string;
             /** Qty On Hand */
             qty_on_hand: string;
+            /** Uom */
+            uom: string;
+            /** Uom Qty */
+            uom_qty: string;
             /**
              * Synced At
              * Format: date-time
@@ -2807,10 +2811,14 @@ export interface components {
             product_code: string;
             /** Product Name */
             product_name: string;
+            /** Sku Uom */
+            sku_uom: string;
+            /** Sku Qty */
+            sku_qty: string;
             /** Uom */
             uom: string;
-            /** Qty */
-            qty: string;
+            /** Uom Qty */
+            uom_qty: string;
             /** Weight Kg */
             weight_kg: string;
             /** Amount */
@@ -2992,11 +3000,19 @@ export interface components {
             product_code: string;
             /** Product Name */
             product_name: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Sku Uom */
+            sku_uom: string;
+            /** Sku Qty */
+            sku_qty: string;
             /** Uom */
             uom: string;
-            temp_group: components["schemas"]["TempGroup"];
-            /** Qty */
-            qty: string;
+            /** Uom Qty */
+            uom_qty: string;
+            /** Whole Uom */
+            whole_uom: number | null;
+            /** Rest Sku */
+            rest_sku: string | null;
             /** Weight Kg */
             weight_kg: string;
         };
@@ -3038,6 +3054,18 @@ export interface components {
             uom: string;
             /** Weight Kg */
             weight_kg: number | string;
+            /** Sku Uom */
+            sku_uom: string;
+            /**
+             * Sku Ratio
+             * @default 1
+             */
+            sku_ratio: number | string;
+            /**
+             * Uom Ratio
+             * @default 1
+             */
+            uom_ratio: number | string;
             /**
              * Is Active
              * @default true
@@ -3060,6 +3088,12 @@ export interface components {
             uom: string;
             /** Weight Kg */
             weight_kg: string;
+            /** Sku Uom */
+            sku_uom: string;
+            /** Sku Ratio */
+            sku_ratio: string;
+            /** Uom Ratio */
+            uom_ratio: string;
             /** Is Active */
             is_active: boolean;
         };
@@ -3072,6 +3106,12 @@ export interface components {
             uom?: string | null;
             /** Weight Kg */
             weight_kg?: number | string | null;
+            /** Sku Uom */
+            sku_uom?: string | null;
+            /** Sku Ratio */
+            sku_ratio?: number | string | null;
+            /** Uom Ratio */
+            uom_ratio?: number | string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -3502,6 +3542,25 @@ export interface components {
             /** Stops */
             stops: components["schemas"]["StopIn"][];
         };
+        /** TripItemLineOut */
+        TripItemLineOut: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            /** Sku Uom */
+            sku_uom: string;
+            /** Sku Qty */
+            sku_qty: string;
+            /** Uom */
+            uom: string;
+            /** Uom Qty */
+            uom_qty: string;
+            /** Whole Uom */
+            whole_uom: number | null;
+            /** Rest Sku */
+            rest_sku: string | null;
+        };
         /** TripItemOut */
         TripItemOut: {
             /**
@@ -3527,6 +3586,11 @@ export interface components {
             temp_group?: components["schemas"]["TempGroup"] | null;
             /** External Ref */
             external_ref?: string | null;
+            /**
+             * Lines
+             * @default []
+             */
+            lines: components["schemas"]["TripItemLineOut"][];
         };
         /**
          * TripOrderStatus

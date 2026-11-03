@@ -27,6 +27,12 @@ from app.modules.master_data.schemas import (
     VehicleUpdate,
     WarehouseCreate,
     WarehouseUpdate,
+    sku_conversion_error,
+)
+from app.modules.orders.service import (
+    SKU_LOCKED_MESSAGE,
+    products_with_open_orders,
+    recalculate_open_orders,
 )
 
 type CodedModel = type[Warehouse] | type[Vehicle] | type[Customer] | type[Product]
@@ -378,6 +384,17 @@ async def update_product(
     session: AsyncSession, product_id: uuid.UUID, data: ProductUpdate
 ) -> Product:
     product = await get_product(session, product_id)
+    old_sku_uom = product.sku_uom
     _apply_changes(product, data)
+    error = sku_conversion_error(product.uom, product.sku_uom, product.sku_ratio, product.uom_ratio)
+    if product.sku_uom.casefold() != old_sku_uom.casefold():
+        if not {"sku_ratio", "uom_ratio"} <= data.model_fields_set:
+            error = "Đổi đơn vị SKU phải kèm quy đổi mới"
+        elif await products_with_open_orders(session, [product.id]):
+            error = SKU_LOCKED_MESSAGE
+    if error:
+        raise AppError(error, code="invalid_sku_conversion")
+    if {"uom", "weight_kg", "sku_ratio", "uom_ratio"} & data.model_fields_set:
+        await recalculate_open_orders(session, {product.id})
     await session.flush()
     return product

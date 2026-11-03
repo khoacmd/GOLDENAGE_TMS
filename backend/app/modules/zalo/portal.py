@@ -276,8 +276,9 @@ async def get_order(
             CustomerOrderLine(
                 product_code=line.product.code,
                 product_name=line.product.name,
-                uom=line.product.uom,
-                qty=line.qty,
+                # Khách xem theo đơn vị đã đặt (SKU), không phải đơn vị vận tải.
+                uom=line.sku_uom,
+                qty=line.sku_qty,
                 amount=line.amount if sees_value else None,
             )
             for line in order.lines

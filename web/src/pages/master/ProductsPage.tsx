@@ -1,6 +1,6 @@
 import type { components } from '@tms/api-client'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, Tag } from 'antd'
+import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Typography } from 'antd'
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
@@ -26,7 +26,7 @@ export function ProductsPage() {
   const modal = useEntityModal<Product, ProductForm>({
     queryKey: 'products',
     title: 'mặt hàng',
-    defaults: { is_active: true, temp_class: 'DRY' },
+    defaults: { is_active: true, temp_class: 'DRY', sku_ratio: '1', uom_ratio: '1' },
     save: async (values, editing) =>
       editing
         ? unwrap(
@@ -57,7 +57,7 @@ export function ProductsPage() {
         loading={query.isLoading}
         dataSource={query.data?.items}
         pagination={paging.pagination(query.data?.total)}
-        scroll={{ x: 700 }}
+        scroll={{ x: 960 }}
         columns={[
           { title: 'Mã', dataIndex: 'code', width: 150 },
           { title: 'Tên hàng', dataIndex: 'name' },
@@ -69,6 +69,13 @@ export function ProductsPage() {
           },
           { title: 'ĐVT', dataIndex: 'uom', width: 90 },
           { title: 'Trọng lượng (kg)', dataIndex: 'weight_kg', width: 140, align: 'right', render: fmtNumber },
+          { title: 'SKU', dataIndex: 'sku_uom', width: 90 },
+          {
+            title: 'Quy đổi',
+            width: 170,
+            render: (_, p) =>
+              p.sku_uom === p.uom ? '-' : `${fmtNumber(p.sku_ratio)} ${p.sku_uom} = ${fmtNumber(p.uom_ratio)} ${p.uom}`,
+          },
           {
             title: 'Trạng thái',
             dataIndex: 'is_active',
@@ -99,6 +106,20 @@ export function ProductsPage() {
               <InputNumber min={0} step={0.1} stringMode style={{ width: 160 }} />
             </Form.Item>
           </Space>
+          <Space size="large" wrap align="start">
+            <Form.Item name="sku_uom" label="Đơn vị SKU" rules={[{ required: true }]}>
+              <Input style={{ width: 140 }} />
+            </Form.Item>
+            <Form.Item name="sku_ratio" label="Số lượng SKU" rules={[{ required: true }]}>
+              <InputNumber min={0.001} stringMode style={{ width: 120 }} />
+            </Form.Item>
+            <Form.Item name="uom_ratio" label="Bằng số lượng ĐVT" rules={[{ required: true }]}>
+              <InputNumber min={0.001} stringMode style={{ width: 140 }} />
+            </Form.Item>
+          </Space>
+          <Typography.Paragraph type="secondary">
+            SKU là đơn vị trên đơn hàng và tồn kho. Ví dụ 48 Hộp = 1 Thùng: SKU là Hộp, nhập 48 và 1.
+          </Typography.Paragraph>
           <Form.Item name="is_active" label="Hoạt động" valuePropName="checked">
             <Switch />
           </Form.Item>

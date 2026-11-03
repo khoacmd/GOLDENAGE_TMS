@@ -84,8 +84,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   + Mã
   + Tên
   + Loại: hàng khô/ hàng lạnh/hàng đông
-  + Đơn vị
-  + Trọng lượng
+  + Đơn vị tính - ĐVT (vận tải): dùng tính khối lượng
+  + Trọng lượng (theo đơn vị tính)
+  + Đơn vị SKU và quy đổi SKU ↔ ĐVT (vd. 48 Hộp = 1 Thùng). Đơn hàng và tồn kho từ hệ thống ngoài tính theo SKU; phiếu soạn hàng và phiếu giao hàng thể hiện cả 2 đơn vị.
 - Thông tin chuyến giao:
   + Mã xe
   + Lái xe
@@ -151,6 +152,7 @@ Dùng checkbox - [ ] / - [x], nhóm theo milestone
 - Dữ liệu kế thừa từ các hệ thống khác đầy đủ các trường được yêu cầu.
 - Đơn hàng được tách theo nhóm nhiệt độ (khô / lạnh+đông); không tách đơn theo khối lượng.
 - Chưa xét thể tích hàng/xe (có thể bổ sung ở phase sau).
+- Mỗi mặt hàng tạm có đúng 1 SKU (thực tế có thể nhiều, để phase sau).
 - Đại lý nhận hàng trong suốt khung giờ làm việc.
 - Khi không đủ năng lực xe: vẫn sinh kế hoạch, kèm danh sách đơn không xếp được và cảnh báo.
 - Bộ tối ưu tự chọn kho xuất hàng dựa trên tồn kho.

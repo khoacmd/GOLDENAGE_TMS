@@ -1,6 +1,7 @@
 """Import dữ liệu gốc theo template chuẩn (xem docs/IMPORT_TEMPLATES.md)."""
 
 from collections.abc import Sequence
+from decimal import Decimal
 from typing import Annotated, Any
 
 from pydantic import BeforeValidator, Field
@@ -24,6 +25,7 @@ from app.core.parsing import (
     CodeList,
     Num,
     OptionalBool,
+    OptionalNum,
     OptionalText,
     Phone,
     Text,
@@ -43,8 +45,13 @@ from app.modules.master_data.models import (
     VehicleType,
     Warehouse,
 )
-from app.modules.master_data.schemas import DeliveryPointIn
+from app.modules.master_data.schemas import DeliveryPointIn, sku_conversion_error
 from app.modules.master_data.service import apply_delivery_points, set_vehicle_warehouses
+from app.modules.orders.service import (
+    SKU_LOCKED_MESSAGE,
+    products_with_open_orders,
+    recalculate_open_orders,
+)
 
 ADMIN = frozenset({CompanyRole.COMPANY_ADMIN})
 ADMIN_OR_MANAGER = frozenset({CompanyRole.COMPANY_ADMIN, CompanyRole.MANAGER})
@@ -97,6 +104,28 @@ class ProductRow(RowModel):
     loai_hang: Annotated[TempClass, BeforeValidator(TEMP_CLASS)]
     don_vi_tinh: Annotated[Text, Field(max_length=32)]
     trong_luong_kg: Annotated[Num, Field(ge=0)]
+    don_vi_sku: Annotated[OptionalText, Field(max_length=32)] = None
+    sl_sku: Annotated[OptionalNum, Field(ge=Decimal("0.001"), le=9999999)] = None
+    sl_dvt: Annotated[OptionalNum, Field(ge=Decimal("0.001"), le=9999999)] = None
+
+
+def _sku_values(d: ProductRow, product: Product | None, source: str) -> dict[str, Any] | str:
+    """Đơn vị SKU + quy đổi của dòng, hoặc lý do lỗi. Mặt hàng đã có, bỏ trống cả 3 = giữ nguyên."""
+    ratios = (d.sl_sku, d.sl_dvt)
+    given = d.don_vi_sku is not None or ratios != (None, None)
+    complete = d.don_vi_sku is not None and None not in ratios
+    if source == "FILE" and (product is None or given) and not complete:
+        return "Nhập đủ Đơn vị SKU và 2 số quy đổi (vd. Hộp, 48, 1 nếu 48 Hộp = 1 Thùng)"
+    if product is None and d.don_vi_sku is None:
+        return "Thiếu đơn vị SKU"
+    sku_uom = d.don_vi_sku or (product.sku_uom if product else "")
+    if product is not None and sku_uom.casefold() != product.sku_uom.casefold() and None in ratios:
+        return "Đổi đơn vị SKU phải kèm quy đổi mới"
+    default = (product.sku_ratio, product.uom_ratio) if product else (Decimal(1), Decimal(1))
+    sku_ratio = d.sl_sku if d.sl_sku is not None else default[0]
+    uom_ratio = d.sl_dvt if d.sl_dvt is not None else default[1]
+    error = sku_conversion_error(d.don_vi_tinh, sku_uom, sku_ratio, uom_ratio)
+    return error or {"sku_uom": sku_uom, "sku_ratio": sku_ratio, "uom_ratio": uom_ratio}
 
 
 async def apply_products(
@@ -106,21 +135,37 @@ async def apply_products(
     if result.errors:
         return result
     existing = await load_by_codes(session, Product, (r.data.ma_hang for r in rows))
+    open_orders = await products_with_open_orders(session, [p.id for p in existing.values()])
     for row in rows:
         d = row.data
+        product = existing.get(d.ma_hang.lower())
+        sku = _sku_values(d, product, ctx.source)
+        if isinstance(sku, str):
+            result.errors.append(RowError(row.row_no, "Đơn vị SKU", sku))
+            continue
+        if (
+            product is not None
+            and product.id in open_orders
+            and sku["sku_uom"].casefold() != product.sku_uom.casefold()
+        ):
+            result.errors.append(RowError(row.row_no, "Đơn vị SKU", SKU_LOCKED_MESSAGE))
+            continue
         values = {
             "name": d.ten_hang,
             "temp_class": d.loai_hang,
             "uom": d.don_vi_tinh,
             "weight_kg": d.trong_luong_kg,
             "is_active": True,
+            **sku,
         }
-        if (product := existing.get(d.ma_hang.lower())) is not None:
+        if product is not None:
             _assign(product, values)
             result.updated += 1
         else:
             session.add(Product(company_id=ctx.company_id, code=d.ma_hang, **values))
             result.created += 1
+    if not result.errors:
+        await recalculate_open_orders(session, open_orders)
     return result
 
 
@@ -140,6 +185,16 @@ PRODUCTS = ImportSpec(
             9.2,
             "Trọng lượng 1 đơn vị tính, đã gồm bao bì",
         ),
+        Column(
+            "don_vi_sku",
+            "Đơn vị SKU",
+            False,
+            "Hộp",
+            "Đơn vị trên đơn hàng và tồn kho. Mặt hàng mới: file bắt buộc cả 3 cột, API bắt buộc "
+            "cột này (2 số quy đổi bỏ trống = 1). Mặt hàng đã có, bỏ trống cả 3: giữ nguyên",
+        ),
+        Column("sl_sku", "SL SKU quy đổi", False, 48, "Vd. 48 Hộp = 1 Thùng: nhập 48"),
+        Column("sl_dvt", "SL ĐVT quy đổi", False, 1, "Vd. 48 Hộp = 1 Thùng: nhập 1"),
     ],
     row_model=ProductRow,
     apply=apply_products,

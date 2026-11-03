@@ -16,8 +16,10 @@ class OrderLineOut(_Out):
     product_id: uuid.UUID
     product_code: str = Field(validation_alias=AliasPath("product", "code"))
     product_name: str = Field(validation_alias=AliasPath("product", "name"))
-    uom: str = Field(validation_alias=AliasPath("product", "uom"))
-    qty: Decimal
+    sku_uom: str
+    sku_qty: Decimal
+    uom: str
+    uom_qty: Decimal
     weight_kg: Decimal
     amount: Decimal | None
     temp_group: TempGroup

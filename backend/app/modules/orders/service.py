@@ -1,7 +1,9 @@
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,13 +22,29 @@ from app.modules.orders.models import (
 )
 
 _CENT = Decimal("0.01")
+SKU_LOCKED_MESSAGE = "Mặt hàng còn đơn chưa hoàn tất, chưa đổi được đơn vị SKU"
 
 
 @dataclass(frozen=True)
 class LineDraft:
     product: Product
-    qty: Decimal
+    qty: Decimal  # theo SKU, như trên đơn bán
     amount: Decimal | None
+
+    @property
+    def uom_qty(self) -> Decimal:
+        return self.product.to_uom(self.qty)
+
+    def line_values(self) -> dict[str, Any]:
+        """Các trường của dòng đơn suy ra từ mặt hàng."""
+        return {
+            "sku_uom": self.product.sku_uom,
+            "uom": self.product.uom,
+            "uom_qty": self.uom_qty,
+            "sku_ratio": self.product.sku_ratio,
+            "uom_ratio": self.product.uom_ratio,
+            "weight_kg": self.uom_qty * self.product.weight_kg,
+        }
 
 
 @dataclass(frozen=True)
@@ -54,7 +72,7 @@ def split_parts(
     counts: dict[TempGroup, int] = {}
     for line in lines:
         group = TempGroup.of(line.product.temp_class)
-        weights[group] = weights.get(group, Decimal(0)) + line.qty * line.product.weight_kg
+        weights[group] = weights.get(group, Decimal(0)) + line.uom_qty * line.product.weight_kg
         amounts[group] = amounts.get(group, Decimal(0)) + (line.amount or Decimal(0))
         counts[group] = counts.get(group, 0) + 1
 
@@ -84,6 +102,48 @@ def is_locked(order: SalesOrder) -> bool:
     )
 
 
+async def products_with_open_orders(
+    session: AsyncSession, product_ids: Iterable[uuid.UUID]
+) -> set[uuid.UUID]:
+    """Mặt hàng còn đơn chưa hoàn tất: đổi đơn vị SKU lúc này sẽ lệch đơn vị với giữ chỗ và tồn."""
+    rows = await session.scalars(
+        select(SalesOrderLine.product_id)
+        .join(SalesOrder, SalesOrder.id == SalesOrderLine.order_id)
+        .where(SalesOrderLine.product_id.in_(product_ids), SalesOrder.status == OrderStatus.OPEN)
+        .distinct()
+    )
+    return set(rows)
+
+
+async def recalculate_open_orders(session: AsyncSession, product_ids: set[uuid.UUID]) -> None:
+    """Mặt hàng đổi quy đổi/trọng lượng: tính lại đơn chưa vào lệnh, đơn đã vào lệnh giữ nguyên."""
+    if not product_ids:
+        return
+    await session.flush()
+    orders = await session.scalars(
+        select(SalesOrder).where(
+            SalesOrder.status == OrderStatus.OPEN,
+            SalesOrder.id.in_(
+                select(SalesOrderLine.order_id).where(SalesOrderLine.product_id.in_(product_ids))
+            ),
+        )
+    )
+    for order in orders:
+        if is_locked(order):
+            continue
+        drafts = [LineDraft(line.product, line.sku_qty, line.amount) for line in order.lines]
+        split = split_parts(drafts, order.order_value)
+        parts = {part.temp_group: part for part in order.parts}
+        if split.keys() != parts.keys():  # mặt hàng đổi nhóm nhiệt độ: chờ đồng bộ lại đơn
+            continue
+        for line, draft in zip(order.lines, drafts, strict=True):
+            for field, value in draft.line_values().items():
+                setattr(line, field, value)
+        for group, (weight, value) in split.items():
+            parts[group].weight_kg = weight
+            parts[group].value = value
+
+
 async def upsert_order(
     session: AsyncSession,
     company_id: uuid.UUID,
@@ -111,8 +171,8 @@ async def upsert_order(
             company_id=company_id,
             line_no=i,
             product_id=line.product.id,
-            qty=line.qty,
-            weight_kg=line.qty * line.product.weight_kg,
+            sku_qty=line.qty,
+            **line.line_values(),
             amount=line.amount,
             temp_group=TempGroup.of(line.product.temp_class),
         )

@@ -22,8 +22,10 @@ class InventoryOut(BaseModel):
     product_id: uuid.UUID
     product_code: str
     product_name: str
+    sku_uom: str
+    qty_on_hand: Decimal  # theo SKU
     uom: str
-    qty_on_hand: Decimal
+    uom_qty: Decimal
     synced_at: datetime
 
 
@@ -54,8 +56,10 @@ async def list_inventory(
             product_id=p.id,
             product_code=p.code,
             product_name=p.name,
-            uom=p.uom,
+            sku_uom=p.sku_uom,
             qty_on_hand=b.qty_on_hand,
+            uom=p.uom,
+            uom_qty=p.to_uom(b.qty_on_hand),
             synced_at=b.synced_at,
         )
         for b, w, p in rows
