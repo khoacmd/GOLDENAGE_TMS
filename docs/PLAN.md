@@ -97,6 +97,22 @@
 - [x] SKU là số gốc của đơn hàng và tồn kho, ĐVT suy ra theo quy đổi cho vận tải; phiếu soạn và phiếu giao hiện cả 2 đơn vị + dạng chẵn lẻ; đổi quy đổi tự tính lại đơn chưa vào lệnh (D36)
 - [ ] (Phase sau) Một mặt hàng nhiều SKU: đơn vị trên từng dòng đơn, bảng quy đổi nhiều dòng, tồn kho quy về một đơn vị chung (D37)
 
+## Quy định lưu hành theo vùng (D38–D40, `docs/GOV_REGULATION.md`)
+- [x] Tổng hợp quy định Hà Nội (QĐ 01/2026, QĐ 52/2026), phương án được duyệt
+- [x] Thử nghiệm khung giờ theo xe trên OR-Tools (bộ 100 điểm); đổi chiến lược khởi tạo, vá lỗi đôi khi bỏ toàn bộ điểm
+- [x] Dữ liệu: vùng, quy tắc, văn bản chấp thuận, phân loại và tổng trọng lượng xe, điểm miễn; import, web
+- [x] Đổi cách tính theo xác nhận của công ty: xe tải theo trọng tải hàng, xe Van theo tổng trọng lượng (D41)
+- [x] Bộ tối ưu: ràng buộc theo xe và kho, lý do không xếp được, giờ đến từng điểm, xuất phát muộn
+- [x] Lệnh tay và kéo thả: giờ xuất phát dự kiến, cảnh báo; duyệt lệnh vi phạm phải nhập lý do
+- [x] Hiển thị: vùng trên bản đồ, phiếu giao, app, Zalo tài xế, ETA khách
+- [x] Tuyến tránh vùng: profile OSRM `car_zone.lua`, ma trận riêng cho ô tô bị giới hạn
+- [ ] Đối chiếu bản gốc QĐ 01/2026 (căn cứ tính trọng tải, xe tải trên 10 tấn, xe Van từ 3,5 tấn) và duyệt ranh giới trên bản đồ
+- [ ] Nạp dữ liệu thật (phân loại, trọng tải, tổng trọng lượng xe Van, kho, điểm giao), xin văn bản chấp thuận nếu cần
+- [ ] Lên production: nạp vùng, dựng lại OSRM ô tô, công ty bật quy định
+- [ ] (Phase sau) Ca đêm 21:00–06:00: khung giờ nhận hàng của khách, chuyến qua 0h, ca lái xe và thủ kho
+- [ ] (Phase sau) Vùng phát thải thấp trong Vành đai 1 (2027: cấm xe trên 3,5 tấn ở Hoàn Kiếm, Cửa Nam; 2028: xe máy xăng dưới mức 3): ranh giới phường, mức khí thải của xe
+- [ ] (Phase sau) Tuyến đường ghi trong văn bản chấp thuận; tuyến tránh vùng trên bản đồ và dẫn đường
+
 ## M6 – Hoàn thiện & mở rộng
 - [x] Kiểm thử bảo mật (cô lập dữ liệu giữa công ty, phân quyền): quét tự động mọi endpoint (`tests/test_security.py`)
 - [x] Vá sau kiểm thử: lái xe không xem được lịch sử/template import; lịch sử & xác nhận của lệnh công ty khác trả 404; chống dò mật khẩu (429); giới hạn kích thước file import

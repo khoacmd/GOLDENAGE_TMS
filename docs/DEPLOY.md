@@ -116,6 +116,15 @@ Mỗi công ty là một tenant trong cùng database; dữ liệu cô lập bằ
 
 Đóng công ty: admin hệ thống tắt trạng thái hoạt động → mọi token của công ty đó bị từ chối ở request kế tiếp; dữ liệu vẫn giữ.
 
+## 7b. Quy định lưu hành theo vùng
+
+Xem `docs/GOV_REGULATION.md`, ARCHITECTURE mục 9c. Mặc định tắt theo từng công ty.
+
+1. Nạp vùng và quy tắc (chạy lại được; chạy lại sau khi sửa ranh giới hoặc giờ):
+   `docker compose run --rm api python -m app.cli load-traffic-zones`
+2. Công ty bật ở Cấu hình → Lập kế hoạch tự động → "Áp dụng quy định lưu hành theo vùng", sau khi đã khai đúng **trọng tải hàng** của xe tải và **phân loại + tổng trọng lượng** của xe Van (Van chưa khai được tính như xe tải).
+3. Tuyến tránh vùng (tùy chọn): dựng lại dữ liệu OSRM bằng `DATA_ROOT=$DATA_DIR infra/osrm/prepare-vietnam.sh` (cần ~4 GB RAM, ~9 GB đĩa/profile), khởi động lại `osrm-car`, `osrm-motorbike`, đặt `TMS_OSRM_CAR_ZONE_EXCLUDE=true`. Đổi ranh giới thì phải dựng lại. Chưa bật thì kế hoạch có cảnh báo tuyến của ô tô có thể đi xuyên vùng.
+
 ## 8. Thử stack production trên máy dev
 
 ```bash

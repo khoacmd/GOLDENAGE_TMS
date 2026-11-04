@@ -12,6 +12,7 @@ from app.modules.costing import service as costing
 from app.modules.dispatch import service
 from app.modules.dispatch.models import Trip, TripOrderStatus
 from app.modules.dispatch.schemas import (
+    ApproveIn,
     AuditOut,
     AvailablePartOut,
     CancelIn,
@@ -26,6 +27,7 @@ from app.modules.dispatch.schemas import (
 )
 from app.modules.identity.models import CompanyRole
 from app.modules.routing import service as routing
+from app.modules.traffic.schemas import TripTrafficCheck
 
 router = APIRouter(prefix="/trips", tags=["dispatch"])
 
@@ -109,8 +111,15 @@ async def update_trip(
 
 
 @router.post("/{trip_id}/approve")
-async def approve_trip(trip_id: uuid.UUID, user: ManagerDep, session: DbSession) -> TripOut:
-    trip = await service.approve(session, await service.get_trip(session, trip_id), user.id)
+async def approve_trip(
+    trip_id: uuid.UUID, user: ManagerDep, session: DbSession, body: ApproveIn | None = None
+) -> TripOut:
+    trip = await service.approve(
+        session,
+        await service.get_trip(session, trip_id),
+        user.id,
+        body.traffic_override_reason if body else None,
+    )
     await session.commit()
     return trip_out(trip)
 
@@ -185,6 +194,14 @@ async def close_trip(trip_id: uuid.UUID, user: ManagerDep, session: DbSession) -
     await costing.ensure(session, trip, user.id)
     await session.commit()
     return trip_out(trip)
+
+
+@router.get("/{trip_id}/traffic")
+async def trip_traffic(
+    trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
+) -> TripTrafficCheck:
+    """Giờ đến dự kiến từng điểm và đối chiếu quy định lưu hành của xe."""
+    return await service.traffic_check(session, await service.get_trip(session, trip_id))
 
 
 @router.get("/{trip_id}/route")

@@ -4,14 +4,19 @@ vào danh sách cho phép bên dưới."""
 
 import re
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.config import get_settings
+from app.core.db import SessionFactory
 from app.main import app
+from app.modules.traffic import service as traffic
 from tests.conftest import (
     PLAN_DATE,
     Env,
@@ -77,15 +82,38 @@ def required_query(op: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _permit_body(zone_id: str) -> dict[str, Any]:
+    return {
+        "zone_id": zone_id,
+        "document_no": "CV-A",
+        "valid_from": "2026-01-01",
+        "valid_to": "2026-12-31",
+        "windows": [["07:00", "19:00"]],
+    }
+
+
 @dataclass
 class TenantA:
     env: Env
     ids: dict[str, str]  # tên tham số path → id thuộc công ty A
     trip: dict[str, Any]
+    zone_id: str  # vùng hạn chế dùng chung mọi công ty, không thuộc `ids`
 
 
 @pytest.fixture
-async def tenant_a(client: AsyncClient, env: Env, sysadmin_token: str) -> TenantA:
+async def traffic_zones(owner_engine: AsyncEngine) -> AsyncIterator[None]:
+    async with SessionFactory() as session:
+        await traffic.load_zones(session)
+        await session.commit()
+    yield
+    async with owner_engine.begin() as conn:
+        await conn.execute(text("TRUNCATE traffic_zones CASCADE"))
+
+
+@pytest.fixture
+async def tenant_a(
+    client: AsyncClient, env: Env, sysadmin_token: str, traffic_zones: None
+) -> TenantA:
     """Công ty A (dữ liệu mẫu) có đủ loại dữ liệu: lệnh đã xuất phát, đơn, thiết bị, API key…"""
     m = auth(env.manager)
     body = trip_body(env, "XE02", "KHO01", [stop(env, ("DH2610-007", "DRY"))])
@@ -113,6 +141,13 @@ async def tenant_a(client: AsyncClient, env: Env, sysadmin_token: str) -> Tenant
     )
     companies = (await client.get("/api/v1/admin/companies", headers=auth(sysadmin_token))).json()
     customer_id = await first("/api/v1/customers")
+    zone_id = (await client.get("/api/v1/traffic/zones", headers=m)).json()[0]["id"]
+    permit = await client.post(
+        f"/api/v1/vehicles/{env.vehicles['XE01']}/permits",
+        headers=auth(env.admin),
+        json=_permit_body(zone_id),
+    )
+    assert permit.status_code == 201, permit.text
     ids = {
         "trip_id": trip["id"],
         "item_id": trip["stops"][0]["items"][0]["id"],
@@ -127,9 +162,10 @@ async def tenant_a(client: AsyncClient, env: Env, sysadmin_token: str) -> Tenant
         "run_id": run.json()["id"],
         "user_id": env.driver_id,
         "company_id": next(c["id"] for c in companies if c["code"] == "NPP01"),
+        "permit_id": permit.json()["id"],
         "kind": "products",
     }
-    return TenantA(env=env, ids=ids, trip=trip)
+    return TenantA(env=env, ids=ids, trip=trip, zone_id=zone_id)
 
 
 @pytest.fixture
@@ -158,6 +194,8 @@ def write_body(path: str, a: TenantA) -> Any:
             "name": "B",
             "phone": "0912999999",
         },
+        "/api/v1/vehicles/{vehicle_id}/permits": _permit_body(a.zone_id),
+        "/api/v1/vehicles/{vehicle_id}/permits/{permit_id}": _permit_body(a.zone_id),
         "/api/v1/users/{user_id}/roles": {"roles": ["manager"]},
         "/api/v1/users/{user_id}/pin": {"pin": "246810"},
         "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {

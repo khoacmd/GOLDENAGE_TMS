@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,9 +29,11 @@ from app.modules.master_data.models import (
     CargoClass,
     DeliveryPoint,
     Product,
+    RegulatoryClass,
     Vehicle,
     VehicleRequirement,
     VehicleType,
+    Warehouse,
 )
 from app.modules.orders.models import (
     OrderPart,
@@ -41,8 +44,12 @@ from app.modules.orders.models import (
     TempGroup,
     pack_breakdown,
 )
+from app.modules.routing import service as routing
 from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
+from app.modules.traffic import rules as traffic_rules
+from app.modules.traffic import service as traffic
+from app.modules.traffic.schemas import StopTrafficCheck, TripTrafficCheck
 
 # Phần đơn có thể xếp lệnh: chưa lập kế hoạch hoặc lần giao trước thất bại.
 ELIGIBLE_PART_STATUSES = (OrderPartStatus.PENDING, OrderPartStatus.FAILED)
@@ -261,6 +268,7 @@ def trip_input(trip: Trip) -> TripIn:
         driver_id=trip.driver_id,
         assistant_id=trip.assistant_id,
         note=trip.note,
+        planned_start=trip.planned_start,
         stops=[
             StopIn(
                 delivery_point_id=s.delivery_point_id,
@@ -446,6 +454,8 @@ async def save_trip(
     trip.driver_id = data.driver_id
     trip.assistant_id = data.assistant_id
     trip.note = data.note
+    if data.planned_start is not None:
+        trip.planned_start = data.planned_start
 
     total_weight, total_value = Decimal(0), Decimal(0)
     for seq, stop_in in enumerate(data.stops, start=1):
@@ -499,7 +509,159 @@ async def save_trip(
         stops=len(data.stops),
         weight_kg=total_weight,
     )
+    # Lệnh do bộ tối ưu sinh đã thỏa ràng buộc; chỉ kiểm tra lệnh lập/sửa bởi người.
+    if source == TripSource.MANUAL:
+        check.warnings += (await traffic_check(session, trip)).violations
     return trip, check.warnings
+
+
+# --- Giờ lưu hành -----------------------------------------------------------------------
+
+
+async def traffic_check(session: AsyncSession, trip: Trip) -> TripTrafficCheck:
+    """Mô phỏng lịch chuyến rồi đối chiếu quy định lưu hành. Tính khi đọc (như ETA) nên luôn khớp
+    sau khi sửa lệnh; độc lập với bộ tối ưu nên cũng dùng để kiểm tra lại kết quả của bộ tối ưu."""
+    settings = await session.get_one(CompanySettings, trip.company_id)
+    context = await traffic.enabled_context(session, settings, trip.plan_date)
+    if context is None:
+        return TripTrafficCheck(enabled=False)
+    # Không dùng quan hệ của `trip`: lệnh vừa lưu chưa nạp quan hệ (async không lazy-load được).
+    vehicle = await session.get_one(Vehicle, trip.vehicle_id)
+    warehouse = await session.get_one(Warehouse, trip.warehouse_id)
+    depot: Point = (float(warehouse.latitude), float(warehouse.longitude))
+    targets: list[tuple[Point, bool, str | None]] = []
+    for stop in sorted(trip.stops, key=lambda s: s.seq):
+        point = (
+            await session.get(DeliveryPoint, stop.delivery_point_id)
+            if stop.delivery_point_id
+            else None
+        )
+        if point is not None:
+            targets.append(
+                (
+                    (float(point.latitude), float(point.longitude)),
+                    point.traffic_zone_exempt,
+                    point.name or point.address,
+                )
+            )
+        else:
+            spot = (float(stop.latitude or 0), float(stop.longitude or 0))
+            targets.append((spot, False, stop.name or stop.address))
+
+    points = [depot, *(t[0] for t in targets)]
+    zones = await traffic.zones_at(session, context, points)
+    zones[0] = set() if warehouse.traffic_zone_exempt else zones[0]
+    for i, (_, exempt, _) in enumerate(targets, start=1):
+        if exempt:
+            zones[i] = set()
+    matrix, _ = await routing.matrix(points, vehicle_profile(vehicle), settings.travel_time_factor)
+
+    tz = ZoneInfo(settings.timezone)
+    start = (
+        trip.planned_start.astimezone(tz).time()
+        if trip.planned_start is not None
+        else settings.shift_start
+    )
+    clock = start.hour * 3600 + start.minute * 60
+    service_s = settings.service_minutes * 60
+    shift_end_s = settings.shift_end.hour * 3600 + settings.shift_end.minute * 60
+    plate = vehicle.code
+    violations: list[str] = []
+    allowed_text = traffic_rules.fmt_windows
+
+    def outside(at: int, stay: int, windows: tuple[tuple[int, int], ...]) -> bool:
+        return not any(a <= at and at + stay <= b for a, b in windows)
+
+    depot_windows = context.windows(vehicle, zones[0])
+    if depot_windows is not None and outside(clock, 0, depot_windows):
+        violations.append(
+            f"Xe {plate} rời kho {warehouse.code} lúc {traffic_rules.fmt_time(clock)}, "
+            f"ngoài giờ được hoạt động ({allowed_text(depot_windows) or 'không có'})"
+        )
+    departure = clock
+    checks: list[StopTrafficCheck] = []
+    previous = 0
+    for i, (_, _, label) in enumerate(targets, start=1):
+        arrival = clock + matrix.duration_s[previous][i]
+        windows = context.windows(vehicle, zones[i])
+        ok = True
+        if windows is not None:
+            # Đến sớm thì chờ ngoài vùng tới đầu khung giờ kế tiếp, nhưng không chờ qua hết ca.
+            usable = next(
+                (
+                    a
+                    for a, b in windows
+                    if arrival <= b - service_s
+                    and b - a >= service_s
+                    and a <= max(arrival, shift_end_s)
+                ),
+                None,
+            )
+            ok = usable is not None
+            if usable is not None:
+                arrival = max(arrival, usable)
+            else:
+                violations.append(
+                    f"Điểm {i} ({label}): xe {plate} đến lúc {traffic_rules.fmt_time(arrival)}, "
+                    f"ngoài giờ được hoạt động ({allowed_text(windows) or 'không có'})"
+                )
+        checks.append(
+            StopTrafficCheck(
+                seq=i,
+                name=label,
+                arrival=traffic_rules.fmt_time(arrival % traffic_rules.DAY_S),
+                zones=sorted(context.zones[z].name for z in zones[i]),
+                allowed=None if windows is None else allowed_text(windows),
+                ok=ok,
+            )
+        )
+        clock = arrival + service_s
+        previous = i
+    back = clock + matrix.duration_s[previous][0]
+    if depot_windows is not None and targets and outside(back, 0, depot_windows):
+        violations.append(
+            f"Xe {plate} về kho {warehouse.code} "
+            f"lúc {traffic_rules.fmt_time(back % traffic_rules.DAY_S)}, "
+            f"ngoài giờ được hoạt động ({allowed_text(depot_windows) or 'không có'})"
+        )
+
+    notices: list[str] = []
+    for zone_id in sorted(set().union(*zones), key=lambda z: context.zones[z].name):
+        windows = context.zone_windows(vehicle, zone_id)
+        if windows is not None:
+            notices.append(
+                f"{context.zones[zone_id].name}: xe {plate} được hoạt động "
+                f"{allowed_text(windows) or 'khi có văn bản chấp thuận'}. "
+                "Luôn tuân theo biển báo thực tế."
+            )
+    if vehicle.regulatory_class == RegulatoryClass.VAN and vehicle.gross_weight_kg is None:
+        notices.append(f"Xe Van {plate} chưa khai tổng trọng lượng: đang tính như xe tải")
+    return TripTrafficCheck(
+        enabled=True,
+        departure=traffic_rules.fmt_time(departure),
+        stops=checks,
+        violations=violations,
+        notices=notices,
+    )
+
+
+async def stop_windows(
+    session: AsyncSession, trip: Trip, settings: CompanySettings
+) -> dict[uuid.UUID, tuple[tuple[int, int], ...]]:
+    """Giờ xe của chuyến được đến từng điểm dừng (điểm bị giới hạn), dùng cho giờ đến dự kiến."""
+    context = await traffic.enabled_context(session, settings, trip.plan_date)
+    if context is None:
+        return {}
+    stops = [
+        s for s in trip.stops if not (s.delivery_point and s.delivery_point.traffic_zone_exempt)
+    ]
+    zones = await traffic.zones_at(session, context, [stop_point(s) for s in stops])
+    out = {}
+    for stop, zone_ids in zip(stops, zones, strict=True):
+        windows = context.windows(trip.vehicle, zone_ids)
+        if windows is not None:
+            out[stop.id] = windows
+    return out
 
 
 # --- Chuyển trạng thái ------------------------------------------------------------------
@@ -510,15 +672,39 @@ def _require(trip: Trip, *allowed: TripOrderStatus, action: str) -> None:
         raise AppError(f"Không thể {action} lệnh ở trạng thái hiện tại", code="invalid_status")
 
 
-async def approve(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:
+async def approve(
+    session: AsyncSession,
+    trip: Trip,
+    actor_id: uuid.UUID,
+    traffic_override_reason: str | None = None,
+) -> Trip:
     _require(trip, TripOrderStatus.DRAFT, action="duyệt")
     if trip.driver_id is None:
         raise AppError("Cần phân công lái xe trước khi duyệt", code="driver_required")
     if trip.vehicle.requires_assistant and trip.assistant_id is None:
         raise AppError(f"Xe {trip.vehicle.code} yêu cầu phụ xe", code="assistant_required")
+    violations = (await traffic_check(session, trip)).violations
+    if violations and not traffic_override_reason:
+        raise AppError(
+            "Lệnh vi phạm giờ lưu hành: cần nhập lý do để duyệt",
+            code="traffic_violation",
+            details=violations,
+        )
     trip.order_status = TripOrderStatus.APPROVED
     trip.approved_at, trip.approved_by = now(), actor_id
-    audit.record(session, trip.company_id, ENTITY, trip.id, "approved", actor_id)
+    audit.record(
+        session,
+        trip.company_id,
+        ENTITY,
+        trip.id,
+        "approved",
+        actor_id,
+        **(
+            {"traffic_violations": violations, "traffic_override_reason": traffic_override_reason}
+            if violations
+            else {}
+        ),
+    )
     await session.flush()
     return trip
 

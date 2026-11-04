@@ -37,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Mobile (Expo SDK 58): upload file bằng `FormData.append('file', new File(uri))` (`expo-file-system`), không dùng `{uri, name, type}` kiểu cũ. Gọi `fetch` trực tiếp phải tự lo token (nạp từ SecureStore, làm mới khi 401) và timeout.
 - Production: `infra/prod` (Caddy + nginx + image `tms-api`/`tms-web` từ workflow Images); hướng dẫn `docs/DEPLOY.md`. Sửa Dockerfile/compose thì chạy thử theo mục 8 của DEPLOY.md.
 - Kiểm thử bảo mật `backend/tests/test_security.py` quét mọi endpoint: endpoint mới mở cho khách/lái xe phải thêm vào danh sách cho phép trong file này.
+- Quy định lưu hành theo vùng (module `traffic`, `docs/GOV_REGULATION.md`): vùng + quy tắc là dữ liệu trong `backend/app/modules/traffic/data/hanoi.json`, nạp bằng `uv run python -m app.cli load-traffic-zones`; sửa ranh giới thì dựng lại OSRM ô tô (`infra/osrm/car_zone.lua`, tên class OSRM chỉ nhận chữ và số). Tắt theo mặc định, công ty tự bật.
 - Máy dev/test là DGX Spark **ARM64 (aarch64)**: mọi Docker image phải hỗ trợ `linux/arm64`. Production hiện chạy trên chính máy này (stack `tms-prod`, Caddy :58880 chỉ nghe 127.0.0.1) song song với stack dev `tms` - đừng `down`/xóa nhầm; sau này có thể chuyển sang cloud VPS.
 - Quy ước code backend:
   - Bảng theo công ty dùng `TenantMixin`; migration tạo bảng đó PHẢI gọi `enable_tenant_rls()` (`app/core/rls.py`). Test `test_every_tenant_table_has_forced_rls` sẽ fail nếu quên.
@@ -100,6 +101,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Ca giao hàng:
   + Việc giao hàng được thực hiện trong các ngày từ thứ 2 đến thứ 7 hàng tuần
   + Giờ làm việc từ 7h đến 19h
+  + Xe còn bị giới hạn giờ vào vùng theo quy định nhà nước (Hà Nội, trong Vành đai 3,5: xe tải theo trọng tải hàng, ≤ 2.000 kg ngoài giờ cao điểm, > 2.000 và ≤ 10.000 kg 21h-6h; xe Van tổng trọng lượng < 3.500 kg mọi giờ; xem `docs/GOV_REGULATION.md`). Chưa có ca đêm.
   + Quy định này có thể cấu hình linh hoạt theo thực tế.
 - Kế hoạch giao hàng: được xây dựng dựa trên nguyên tắc thực hiện
   + Kế hoạch giao hàng của mỗi ngày là tập hợp của các lệnh giao hàng được lập trong ngày
@@ -156,4 +158,5 @@ Dùng checkbox - [ ] / - [x], nhóm theo milestone
 - Đại lý nhận hàng trong suốt khung giờ làm việc.
 - Khi không đủ năng lực xe: vẫn sinh kế hoạch, kèm danh sách đơn không xếp được và cảnh báo.
 - Bộ tối ưu tự chọn kho xuất hàng dựa trên tồn kho.
+- Sữa và đồ uống được coi là hàng thiết yếu khi xin văn bản chấp thuận ngoài giờ; hệ thống vẫn chỉ cho vào ngoài khung giờ khi đã nhập văn bản (D39).
 - Các giả định chưa xác nhận: xem bảng D9–D13 trong `docs/ARCHITECTURE.md`.

@@ -36,7 +36,7 @@ async def test_estimate_without_osrm() -> None:
 async def test_osrm_durations_scaled_for_traffic(
     osrm: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def table(_: str, points: list[Any]) -> Matrix:
+    async def table(_: str, points: list[Any], avoid_zones: bool = False) -> Matrix:
         return Matrix(distance_m=[[0, 11400], [11400, 0]], duration_s=[[0, 930], [940, 0]])
 
     monkeypatch.setattr(routing, "_osrm_table", table)

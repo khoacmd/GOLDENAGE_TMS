@@ -3,6 +3,7 @@
 - `uv run python -m app.cli create-system-admin --username admin`
 - `uv run python -m app.cli export-openapi ../packages/api-client/openapi.json`
 - `uv run python -m app.cli export-import-docs ../docs/IMPORT_TEMPLATES.md`
+- `uv run python -m app.cli load-traffic-zones` (nạp vùng hạn chế, cần role sở hữu schema)
 """
 
 import argparse
@@ -28,6 +29,15 @@ async def _create_system_admin(username: str, password: str, full_name: str) -> 
         print(f"Đã tạo admin hệ thống '{user.username}' ({user.id})")
 
 
+async def _load_traffic_zones(path: Path | None) -> None:
+    from app.modules.traffic import service as traffic
+
+    async with SessionFactory() as session:
+        loaded = await traffic.load_zones(session, path or traffic.DEFAULT_DATA)
+        await session.commit()
+        print(f"Đã nạp vùng: {', '.join(loaded)}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -39,6 +49,8 @@ def main() -> None:
     export.add_argument("output", type=Path)
     docs = sub.add_parser("export-import-docs", help="Sinh tài liệu template import (Markdown)")
     docs.add_argument("output", type=Path)
+    zones = sub.add_parser("load-traffic-zones", help="Nạp vùng hạn chế lưu hành từ file JSON")
+    zones.add_argument("file", type=Path, nargs="?", help="Mặc định: dữ liệu Hà Nội kèm theo code")
     args = parser.parse_args()
 
     if args.command == "create-system-admin":
@@ -52,6 +64,8 @@ def main() -> None:
     elif args.command == "export-import-docs":
         args.output.write_text(_import_docs())
         print(f"Đã ghi tài liệu template vào {args.output}")
+    elif args.command == "load-traffic-zones":
+        asyncio.run(_load_traffic_zones(args.file))
 
 
 def _import_docs() -> str:

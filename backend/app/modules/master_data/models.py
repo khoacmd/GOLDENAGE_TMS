@@ -38,6 +38,14 @@ class VehicleRequirement(StrEnum):
     ANY = "ANY"
 
 
+class RegulatoryClass(StrEnum):
+    """Nhóm ô tô theo quy định lưu hành (xe máy suy ra từ loại xe)."""
+
+    TRUCK = "TRUCK"
+    VAN = "VAN"
+    PICKUP = "PICKUP"
+
+
 class CargoClass(StrEnum):
     """Loại hàng ưu tiên của xe."""
 
@@ -72,6 +80,8 @@ class Warehouse(UUIDPrimaryKeyMixin, TenantMixin, GeoPointMixin, TimestampMixin,
     name: Mapped[str] = mapped_column(String(255))
     address: Mapped[str] = mapped_column(String(500))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    # Kho nằm trên đường bao/tuyến được đi: không tính là trong vùng hạn chế (D38).
+    traffic_zone_exempt: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
 
 
 class Vehicle(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
@@ -95,6 +105,9 @@ class Vehicle(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
         enum_type(CostAllocationMethod)
     )
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    # Quy định lưu hành: xe tải xét theo `capacity_kg`, xe Van theo tổng trọng lượng này.
+    gross_weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    regulatory_class: Mapped[RegulatoryClass | None] = mapped_column(enum_type(RegulatoryClass))
 
     warehouse_links: Mapped[list["VehicleWarehouse"]] = relationship(
         cascade="all, delete-orphan", lazy="selectin"
@@ -173,6 +186,8 @@ class DeliveryPoint(UUIDPrimaryKeyMixin, TenantMixin, GeoPointMixin, TimestampMi
     address: Mapped[str] = mapped_column(String(500))
     is_default: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    # Điểm nằm trên đường bao/tuyến được đi: không tính là trong vùng hạn chế (D38).
+    traffic_zone_exempt: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
 
     customer: Mapped[Customer] = relationship(back_populates="delivery_points", lazy="joined")
 

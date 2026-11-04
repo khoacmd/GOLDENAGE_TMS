@@ -251,6 +251,13 @@ export function CustomersPage() {
                         <Input />
                       </Form.Item>
                       <CoordinateFields prefix={[field.name]} listPath={['delivery_points']} />
+                      <Form.Item
+                        name={[field.name, 'traffic_zone_exempt']}
+                        valuePropName="checked"
+                        extra="Điểm nằm trên đường bao hoặc tuyến được đi của vùng hạn chế lưu hành."
+                      >
+                        <Checkbox>Miễn vùng hạn chế</Checkbox>
+                      </Form.Item>
                       <Form.Item name={[field.name, 'is_default']} valuePropName="checked" noStyle>
                         <Checkbox
                           onChange={(e) => {

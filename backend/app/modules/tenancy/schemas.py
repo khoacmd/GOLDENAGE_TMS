@@ -57,6 +57,8 @@ class PlanningSettings(BaseModel):
     """Tham số lập kế hoạch tự động."""
 
     auto_plan_enabled: bool
+    traffic_rules_enabled: bool = False
+    traffic_zone_buffer_minutes: int = Field(default=15, ge=0, le=120)
     service_minutes: int = Field(ge=0, le=240)
     turnaround_minutes: int = Field(ge=0, le=240)
     max_trips_per_vehicle: int = Field(ge=1, le=10)
@@ -97,6 +99,8 @@ class CompanySettingsUpdate(BaseModel):
     activation_code_ttl_days: int | None = Field(default=None, ge=1, le=30)
     zalo_confirm_enabled: bool | None = None
     auto_plan_enabled: bool | None = None
+    traffic_rules_enabled: bool | None = None
+    traffic_zone_buffer_minutes: int | None = Field(default=None, ge=0, le=120)
     service_minutes: int | None = Field(default=None, ge=0, le=240)
     turnaround_minutes: int | None = Field(default=None, ge=0, le=240)
     max_trips_per_vehicle: int | None = Field(default=None, ge=1, le=10)

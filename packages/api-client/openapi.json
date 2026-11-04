@@ -2903,6 +2903,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ApproveIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3229,6 +3246,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/traffic": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Trip Traffic",
+        "description": "Giờ đến dự kiến từng điểm và đối chiếu quy định lưu hành của xe.",
+        "operationId": "trip_traffic_api_v1_trips__trip_id__traffic_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripTrafficCheck"
                 }
               }
             }
@@ -4114,6 +4180,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TripOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/driver/trips/{trip_id}/traffic": {
+      "get": {
+        "tags": [
+          "driver"
+        ],
+        "summary": "My Trip Traffic",
+        "description": "Khung giờ xe được vào vùng hạn chế của chuyến, để nhắc lái xe.",
+        "operationId": "my_trip_traffic_api_v1_driver_trips__trip_id__traffic_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TripTrafficCheck"
                 }
               }
             }
@@ -5153,6 +5268,291 @@
           }
         }
       }
+    },
+    "/api/v1/traffic/zones": {
+      "get": {
+        "tags": [
+          "traffic"
+        ],
+        "summary": "List Zones",
+        "description": "Vùng hạn chế đang hiệu lực (mặc định: hôm nay), để hiện trên bản đồ.",
+        "operationId": "list_zones_api_v1_traffic_zones_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ZoneOut"
+                  },
+                  "title": "Response List Zones Api V1 Traffic Zones Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vehicles/{vehicle_id}/permits": {
+      "get": {
+        "tags": [
+          "traffic"
+        ],
+        "summary": "List Permits",
+        "operationId": "list_permits_api_v1_vehicles__vehicle_id__permits_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermitOut"
+                  },
+                  "title": "Response List Permits Api V1 Vehicles  Vehicle Id  Permits Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "traffic"
+        ],
+        "summary": "Create Permit",
+        "operationId": "create_permit_api_v1_vehicles__vehicle_id__permits_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermitIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermitOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vehicles/{vehicle_id}/permits/{permit_id}": {
+      "put": {
+        "tags": [
+          "traffic"
+        ],
+        "summary": "Update Permit",
+        "operationId": "update_permit_api_v1_vehicles__vehicle_id__permits__permit_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          },
+          {
+            "name": "permit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Permit Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermitIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermitOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "traffic"
+        ],
+        "summary": "Delete Permit",
+        "operationId": "delete_permit_api_v1_vehicles__vehicle_id__permits__permit_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          },
+          {
+            "name": "permit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Permit Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5395,6 +5795,25 @@
           "created_at"
         ],
         "title": "ApiKeyOut"
+      },
+      "ApproveIn": {
+        "properties": {
+          "traffic_override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Override Reason"
+          }
+        },
+        "type": "object",
+        "title": "ApproveIn"
       },
       "AuditOut": {
         "properties": {
@@ -5770,6 +6189,18 @@
             "type": "boolean",
             "title": "Auto Plan Enabled"
           },
+          "traffic_rules_enabled": {
+            "type": "boolean",
+            "title": "Traffic Rules Enabled",
+            "default": false
+          },
+          "traffic_zone_buffer_minutes": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 0.0,
+            "title": "Traffic Zone Buffer Minutes",
+            "default": 15
+          },
           "service_minutes": {
             "type": "integer",
             "maximum": 240.0,
@@ -6101,6 +6532,30 @@
               }
             ],
             "title": "Auto Plan Enabled"
+          },
+          "traffic_rules_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Rules Enabled"
+          },
+          "traffic_zone_buffer_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 120.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Zone Buffer Minutes"
           },
           "service_minutes": {
             "anyOf": [
@@ -8075,6 +8530,17 @@
             "type": "boolean",
             "title": "Is Active",
             "default": true
+          },
+          "traffic_zone_exempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Zone Exempt"
           }
         },
         "type": "object",
@@ -8127,6 +8593,10 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "traffic_zone_exempt": {
+            "type": "boolean",
+            "title": "Traffic Zone Exempt"
           }
         },
         "type": "object",
@@ -8138,7 +8608,8 @@
           "latitude",
           "longitude",
           "is_default",
-          "is_active"
+          "is_active",
+          "traffic_zone_exempt"
         ],
         "title": "DeliveryPointOut"
       },
@@ -9765,6 +10236,160 @@
         ],
         "title": "PasswordChange"
       },
+      "PermitIn": {
+        "properties": {
+          "zone_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Zone Id"
+          },
+          "document_no": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Document No"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid To"
+          },
+          "windows": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Windows"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone_id",
+          "document_no",
+          "valid_from",
+          "valid_to",
+          "windows"
+        ],
+        "title": "PermitIn"
+      },
+      "PermitOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehicle Id"
+          },
+          "zone_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Zone Id"
+          },
+          "document_no": {
+            "type": "string",
+            "title": "Document No"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid To"
+          },
+          "windows": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Windows"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "vehicle_id",
+          "zone_id",
+          "document_no",
+          "issuer",
+          "valid_from",
+          "valid_to",
+          "windows",
+          "note"
+        ],
+        "title": "PermitOut"
+      },
       "PersonOut": {
         "properties": {
           "id": {
@@ -10275,6 +10900,16 @@
           "status"
         ],
         "title": "RegisteredDevice"
+      },
+      "RegulatoryClass": {
+        "type": "string",
+        "enum": [
+          "TRUCK",
+          "VAN",
+          "PICKUP"
+        ],
+        "title": "RegulatoryClass",
+        "description": "Nhóm ô tô theo quy định lưu hành (xe máy suy ra từ loại xe)."
       },
       "ReportOut": {
         "properties": {
@@ -10850,6 +11485,61 @@
         "title": "StopIn",
         "description": "Điểm dừng: điểm giao của khách (kèm phần đơn) hoặc điểm tự do (nhập địa chỉ/tọa độ)."
       },
+      "StopTrafficCheck": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "arrival": {
+            "type": "string",
+            "title": "Arrival"
+          },
+          "zones": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "allowed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed"
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "name",
+          "arrival",
+          "zones",
+          "allowed",
+          "ok"
+        ],
+        "title": "StopTrafficCheck"
+      },
       "TempClass": {
         "type": "string",
         "enum": [
@@ -11246,6 +11936,18 @@
               }
             ],
             "title": "Note"
+          },
+          "planned_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start"
           },
           "stops": {
             "items": {
@@ -12130,6 +12832,54 @@
         ],
         "title": "TripSummaryOut"
       },
+      "TripTrafficCheck": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "departure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/StopTrafficCheck"
+            },
+            "type": "array",
+            "title": "Stops",
+            "default": []
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Violations",
+            "default": []
+          },
+          "notices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notices",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "TripTrafficCheck"
+      },
       "UnassignedPart": {
         "properties": {
           "order_part_id": {
@@ -12312,6 +13062,31 @@
             "type": "boolean",
             "title": "Is Active",
             "default": true
+          },
+          "gross_weight_kg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Weight Kg"
+          },
+          "regulatory_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulatoryClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12377,6 +13152,27 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "gross_weight_kg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Weight Kg"
+          },
+          "regulatory_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulatoryClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12392,7 +13188,9 @@
           "cargo_class",
           "cost_allocation_method",
           "warehouse_ids",
-          "is_active"
+          "is_active",
+          "gross_weight_kg",
+          "regulatory_class"
         ],
         "title": "VehicleOut"
       },
@@ -12662,6 +13460,31 @@
               }
             ],
             "title": "Is Active"
+          },
+          "gross_weight_kg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Weight Kg"
+          },
+          "regulatory_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulatoryClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12718,6 +13541,11 @@
             "type": "boolean",
             "title": "Is Active",
             "default": true
+          },
+          "traffic_zone_exempt": {
+            "type": "boolean",
+            "title": "Traffic Zone Exempt",
+            "default": false
           }
         },
         "type": "object",
@@ -12760,6 +13588,10 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "traffic_zone_exempt": {
+            "type": "boolean",
+            "title": "Traffic Zone Exempt"
           }
         },
         "type": "object",
@@ -12770,7 +13602,8 @@
           "address",
           "latitude",
           "longitude",
-          "is_active"
+          "is_active",
+          "traffic_zone_exempt"
         ],
         "title": "WarehouseOut"
       },
@@ -12844,6 +13677,17 @@
               }
             ],
             "title": "Is Active"
+          },
+          "traffic_zone_exempt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Zone Exempt"
           }
         },
         "type": "object",
@@ -13062,6 +13906,36 @@
           "ACTIVE"
         ],
         "title": "ZaloStatus"
+      },
+      "ZoneOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "boundary": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Boundary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "boundary"
+        ],
+        "title": "ZoneOut"
       }
     },
     "securitySchemes": {

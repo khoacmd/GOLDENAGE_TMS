@@ -10,6 +10,12 @@ export const VEHICLE_REQUIREMENT: Record<S['VehicleRequirement'], string> = {
   ANY: 'Bất kỳ',
 }
 
+export const REGULATORY_CLASS: Record<S['RegulatoryClass'], string> = {
+  TRUCK: 'Xe tải',
+  VAN: 'Xe Van',
+  PICKUP: 'Xe bán tải (pickup)',
+}
+
 export const CARGO_CLASS: Record<S['CargoClass'], string> = {
   DRY_ONLY: 'Chỉ hàng khô',
   COLD_ONLY: 'Chỉ hàng đông lạnh',

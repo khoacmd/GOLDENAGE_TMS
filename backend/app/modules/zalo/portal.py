@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError
 from app.core.storage import get_storage
 from app.modules.delivery.models import DeliveryConfirmation
+from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import (
     ItemStatus,
     Trip,
@@ -118,7 +119,8 @@ async def _etas(
     settings = await session.get_one(CompanySettings, company_id)
     etas: dict[uuid.UUID, CustomerEta] = {}
     for trip in trips.values():
-        etas |= await eta_service.stop_etas(trip, settings)
+        windows = await dispatch.stop_windows(session, trip, settings)
+        etas |= await eta_service.stop_etas(trip, settings, windows)
     return etas
 
 

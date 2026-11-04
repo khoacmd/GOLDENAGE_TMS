@@ -49,7 +49,14 @@ class TripIn(BaseModel):
     driver_id: uuid.UUID | None = None
     assistant_id: uuid.UUID | None = None
     note: str | None = Field(default=None, max_length=1000)
+    # Giờ xuất phát dự kiến, dùng kiểm tra giờ lưu hành; trống = giữ nguyên (mới tạo: đầu ca).
+    planned_start: datetime | None = None
     stops: list[StopIn] = Field(min_length=1)
+
+
+class ApproveIn(BaseModel):
+    # Bắt buộc khi lệnh còn vi phạm giờ lưu hành; ghi vào lịch sử lệnh.
+    traffic_override_reason: str | None = Field(default=None, min_length=1, max_length=500)
 
 
 class CancelIn(BaseModel):

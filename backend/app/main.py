@@ -19,6 +19,7 @@ from app.modules.orders.router import router as orders_router
 from app.modules.planning.router import router as planning_router
 from app.modules.reporting.router import router as reporting_router
 from app.modules.tenancy.router import admin_router, company_router
+from app.modules.traffic.router import router as traffic_router
 from app.modules.zalo.router import router as zalo_router
 
 
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
         api_keys_router,
         integration_router,
         zalo_router,
+        traffic_router,
     ):
         app.include_router(router, prefix="/api/v1")
     return app

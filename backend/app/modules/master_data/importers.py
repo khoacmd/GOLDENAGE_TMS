@@ -39,6 +39,7 @@ from app.modules.master_data.models import (
     Customer,
     CustomerContact,
     Product,
+    RegulatoryClass,
     TempClass,
     Vehicle,
     VehicleRequirement,
@@ -74,6 +75,14 @@ CARGO_CLASS = enum_parser(
         "Hàng khô": CargoClass.DRY_ONLY,
         "Đông lạnh": CargoClass.COLD_ONLY,
         "Không phân biệt": CargoClass.ANY,
+    },
+)
+REGULATORY_CLASS = enum_parser(
+    RegulatoryClass,
+    {
+        "Xe tải": RegulatoryClass.TRUCK,
+        "Xe Van": RegulatoryClass.VAN,
+        "Pickup": RegulatoryClass.PICKUP,
     },
 )
 COST_METHOD = enum_parser(
@@ -211,6 +220,7 @@ class WarehouseRow(RowModel):
     dia_chi: Text
     vi_do: Lat
     kinh_do: Lng
+    mien_han_che: OptionalBool = None
 
 
 async def apply_warehouses(
@@ -229,6 +239,8 @@ async def apply_warehouses(
             "longitude": d.kinh_do,
             "is_active": True,
         }
+        if d.mien_han_che is not None:
+            values["traffic_zone_exempt"] = d.mien_han_che
         if (warehouse := existing.get(d.ma_kho.lower())) is not None:
             _assign(warehouse, values)
             result.updated += 1
@@ -248,6 +260,13 @@ WAREHOUSES = ImportSpec(
         Column("dia_chi", "Địa chỉ", True, "Số 1 Quang Trung, Hà Đông, Hà Nội"),
         Column("vi_do", "Vĩ độ", True, 20.971, "Latitude, dạng số thập phân"),
         Column("kinh_do", "Kinh độ", True, 105.776, "Longitude, dạng số thập phân"),
+        Column(
+            "mien_han_che",
+            "Miễn vùng hạn chế",
+            False,
+            "K",
+            "C nếu nằm trên đường bao/tuyến được đi của vùng hạn chế; trống = giữ nguyên",
+        ),
     ],
     row_model=WarehouseRow,
     apply=apply_warehouses,
@@ -271,6 +290,8 @@ class VehicleRow(RowModel):
     pp_chi_phi: Annotated[CostAllocationMethod, BeforeValidator(COST_METHOD)] = (
         CostAllocationMethod.WEIGHT
     )
+    khoi_luong_toan_bo_kg: Annotated[Num | None, Field(gt=0)] = None
+    phan_loai_luu_hanh: Annotated[RegulatoryClass | None, BeforeValidator(REGULATORY_CLASS)] = None
 
 
 async def apply_vehicles(
@@ -313,6 +334,11 @@ async def apply_vehicles(
             "cost_allocation_method": d.pp_chi_phi,
             "is_active": True,
         }
+        # Bỏ trống = giữ nguyên, để file không có 2 cột này không xóa dữ liệu đã nhập.
+        if d.khoi_luong_toan_bo_kg is not None:
+            values["gross_weight_kg"] = d.khoi_luong_toan_bo_kg
+        if d.phan_loai_luu_hanh is not None:
+            values["regulatory_class"] = d.phan_loai_luu_hanh
         vehicle = existing.get(d.ma_xe.lower())
         if vehicle is not None:
             _assign(vehicle, values)
@@ -361,6 +387,20 @@ VEHICLES = ImportSpec(
             "Khối lượng",
             "Giá trị đơn / Khoảng cách / Khối lượng (mặc định) / Chuyến",
         ),
+        Column(
+            "khoi_luong_toan_bo_kg",
+            "Khối lượng toàn bộ (kg)",
+            False,
+            2400,
+            "Tổng trọng lượng xe + hàng theo đăng kiểm, bắt buộc với xe Van. Trống = giữ nguyên",
+        ),
+        Column(
+            "phan_loai_luu_hanh",
+            "Phân loại lưu hành",
+            False,
+            "Xe Van",
+            "Xe tải (mặc định khi chưa khai) / Xe Van / Pickup. Trống = giữ nguyên",
+        ),
     ],
     row_model=VehicleRow,
     apply=apply_vehicles,
@@ -388,6 +428,7 @@ class CustomerRow(RowModel):
     vi_do: Lat
     kinh_do: Lng
     diem_mac_dinh: OptionalBool = None
+    mien_han_che: OptionalBool = None
 
 
 async def apply_customers(
@@ -437,6 +478,7 @@ async def apply_customers(
                 latitude=r.data.vi_do,
                 longitude=r.data.kinh_do,
                 is_default=bool(r.data.diem_mac_dinh),
+                traffic_zone_exempt=r.data.mien_han_che,
             )
             for r in group
         ]
@@ -476,6 +518,13 @@ CUSTOMERS = ImportSpec(
             False,
             "C",
             "C/K; đơn hàng không ghi điểm giao sẽ giao tới điểm mặc định",
+        ),
+        Column(
+            "mien_han_che",
+            "Miễn vùng hạn chế",
+            False,
+            "K",
+            "C nếu nằm trên đường bao/tuyến được đi của vùng hạn chế; trống = giữ nguyên",
         ),
     ],
     row_model=CustomerRow,

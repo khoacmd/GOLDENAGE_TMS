@@ -65,3 +65,7 @@ class CompanySettings(TimestampMixin, Base):
     activation_code_ttl_days: Mapped[int] = mapped_column(default=7, server_default=text("7"))
     # Cho lái xe xác nhận giao qua Zalo Mini App (không phát hiện được vị trí giả lập, D34).
     zalo_confirm_enabled: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Áp dụng quy định lưu hành theo vùng khi lập kế hoạch và kiểm tra lệnh (D38).
+    traffic_rules_enabled: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Thời gian chừa để vào/ra vùng hạn chế ở 2 đầu khung giờ được phép.
+    traffic_zone_buffer_minutes: Mapped[int] = mapped_column(default=15, server_default=text("15"))

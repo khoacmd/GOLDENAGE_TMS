@@ -25,6 +25,7 @@ import { useAuth } from '../../auth-context'
 import { unwrap } from '../../lib/api-helpers'
 import { TEMP_GROUP, TRIP_STATUS, fmtDate, fmtDateTime, fmtNumber } from '../../lib/labels'
 import { MapView, type MapMarker, type MapRoute } from '../../lib/MapView'
+import { useTrafficZones } from '../../lib/useTrafficZones'
 import { useTripRoads } from '../../lib/roads'
 import { loadPercent, type Trip } from '../../lib/trips'
 
@@ -196,7 +197,8 @@ function RunMap({ trips, color }: { trips: Trip[]; color: (id: string) => string
     routes.push({ id: t.id, color: color(t.id), coords })
   }
   const roads = useTripRoads(routes)
-  return <MapView markers={[...warehouses.values(), ...markers]} routes={roads} height={480} />
+  const zones = useTrafficZones()
+  return <MapView markers={[...warehouses.values(), ...markers]} routes={roads} zones={zones} height={480} />
 }
 
 function TripBoard({

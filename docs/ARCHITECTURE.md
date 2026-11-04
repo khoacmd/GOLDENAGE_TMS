@@ -139,7 +139,7 @@ Kiểm thử bảo mật tự động (`backend/tests/test_security.py`, quét *
 - `companies`, `company_settings`
 - `users`, `user_roles(company_id, user_id, role, warehouse_id?)`, `devices(device_type: PC|MOBILE|PRINTER, name, identifier, status: ACTIVE|PENDING|BLOCKED, warehouse_id?, user_id?, model/os/app_version, connection/address/paper_size (máy in), last_seen_at)`
 - `warehouses(code, name, address, location geography(Point))`
-- `vehicles(code, name, plate_no, vehicle_type: CAR|MOTORBIKE, capacity_kg, cost_per_km, requires_assistant, cargo_class: DRY_ONLY|COLD_ONLY|ANY, cost_allocation_method: ORDER_VALUE|DISTANCE|WEIGHT|PER_TRIP, active)`
+- `vehicles(code, name, plate_no, vehicle_type: CAR|MOTORBIKE, capacity_kg, gross_weight_kg?, regulatory_class?: TRUCK|VAN|PICKUP, cost_per_km, requires_assistant, cargo_class: DRY_ONLY|COLD_ONLY|ANY, cost_allocation_method: ORDER_VALUE|DISTANCE|WEIGHT|PER_TRIP, active)`
 - `vehicle_warehouses(vehicle_id, warehouse_id)` – kho xe được phép lấy hàng
 - `customers(code, name, address, contact, required_vehicle_type: CAR|MOTORBIKE|ANY, sales_rep, delivery_weekdays[], deliveries_per_week)`
 - `delivery_points(customer_id, address, location geography(Point))`
@@ -225,6 +225,21 @@ Chi tiết triển khai:
 - Bản đồ: `GET /trips/{id}/route` trả tuyến theo đường (OSRM `/route`, cache Redis) → web vẽ nét liền; chưa có OSRM thì nối thẳng nét đứt (`web/src/lib/roads.ts`).
 - Bộ giải (`optimization/vrp.py`): mỗi xe nhân thành `max_trips × số kho` xe ảo, chuỗi thời gian `start(k+1) ≥ end(k) + quay đầu × active(k)`; phần đơn cùng điểm + nhóm nhiệt độ + kho gộp 1 node (vượt tải xe lớn nhất thì chia nhiều node, không tách phần đơn); OR-Tools `PATH_CHEAPEST_ARC` + `GUIDED_LOCAL_SEARCH`. (OR-Tools 9.15: `SetAllowedVehiclesForIndex` lỗi binding Python → dùng `VehicleVar(i).SetValues([-1, ...])`.)
 - Điều chỉnh: kéo thả điểm dừng giữa các chuyến / đổi thứ tự (`POST /planning/move-stop`, 1 transaction, kiểm tra ràng buộc như lập tay); trang kết quả so chi phí hiện tại với phương án tối ưu.
+
+## 9c. Quy định lưu hành theo vùng (module `traffic`, D38)
+
+Nội dung quy định và nguồn: `docs/GOV_REGULATION.md`. Chỉ áp dụng khi công ty bật `company_settings.traffic_rules_enabled`.
+
+- **Dữ liệu:** `traffic_zones(code, boundary geography(Polygon), legal_ref, effective_from/to)` và `traffic_rules(zone_id, vehicle_class: TRUCK|VAN|PICKUP|MOTORBIKE, weight_basis: PAYLOAD|GROSS, min_kg, max_kg, max_inclusive, windows)` dùng chung mọi công ty, không RLS, nạp từ `traffic/data/hanoi.json` bằng `load-traffic-zones`. `vehicle_permits(vehicle_id, zone_id, document_no, issuer, valid_from/to, windows)` theo công ty, có RLS. `warehouses/delivery_points.traffic_zone_exempt`: điểm trên đường bao/tuyến được đi.
+- **Điểm thuộc vùng:** PostGIS `ST_Covers`, tính mỗi lần (`traffic.zones_at`), không lưu. Ranh giới nháp dựng từ đường OSM theo danh sách trong quy định, thu vào 40 m để cửa hàng mặt đường bao không bị tính trong vùng.
+- **Xếp xe vào quy tắc (D41):** xe tải theo trọng tải hàng `capacity_kg`: ≤ 2.000 kg ngoài giờ cao điểm, > 2.000 và ≤ 10.000 kg 21:00–06:00, trên 10.000 kg chỉ khi có văn bản (giả định). Xe Van theo tổng trọng lượng `gross_weight_kg`: < 3.500 kg không giới hạn; từ 3.500 kg hoặc chưa khai thì tính như xe tải theo trọng tải. Pickup, xe máy không có quy tắc nên không giới hạn. `windows` null = không giới hạn, rỗng = chỉ khi có văn bản.
+- **Giờ của xe tại điểm:** (giờ theo quy tắc ∪ văn bản còn hạn), giao giữa các vùng chứa điểm.
+- **Bộ giải:** `Job.vehicle_windows`, `Vehicle.depot_windows`. Mỗi điểm tách thành các node thay thế trong 1 disjunction, mỗi node 1 khung giờ + nhóm xe, vì OR-Tools xử lý khung giờ trên node tốt hơn ràng buộc có điều kiện theo xe. Giờ được đến = khung giờ, chừa `traffic_zone_buffer_minutes` đầu/cuối và thời gian giao ở cuối. Kho không rời được trong ca thì không sinh xe ảo cho cặp xe-kho đó. Sau khi giải, `_simulate` tính giờ đến từng điểm và lùi giờ xuất phát để xe không chờ ở điểm đầu tiên.
+- **Khởi tạo:** đổi từ `PATH_CHEAPEST_ARC` sang `ALL_UNPERFORMED`, vì chiến lược cũ thỉnh thoảng trả nghiệm bỏ toàn bộ điểm (đo trên bộ 100 điểm: 2/6 lần, kể cả khi không có vùng). Trên 5 bộ thử có vùng (15 giây): bỏ 1–9 điểm, tăng thời gian giải giảm thêm ít.
+- **Tuyến tránh vùng:** dữ liệu OSRM ô tô dựng bằng `car_zone.lua` + `--location-dependent-data`, class `trafficzone` gắn cho đường trong vùng trừ tuyến được đi. Ô tô bị giới hạn dùng ma trận `car_restricted`: đoạn có cả 2 đầu ngoài vùng lấy `exclude=trafficzone`, còn lại lấy tuyến thường. Chưa bật (`TMS_OSRM_CAR_ZONE_EXCLUDE`) thì kế hoạch có cảnh báo. Tuyến vẽ trên bản đồ và dẫn đường Google Maps chưa áp dụng.
+- **Kiểm tra lệnh:** `dispatch.traffic_check` mô phỏng lịch từ `planned_start` (trống = đầu ca), tính khi đọc, độc lập với bộ giải (`GET /trips/{id}/traffic`, `GET /driver/trips/{id}/traffic`). Lập/sửa lệnh tay và kéo thả: cảnh báo. Duyệt lệnh còn vi phạm phải có `traffic_override_reason`, ghi audit kèm danh sách vi phạm (D40).
+- **Hiển thị:** vùng trên bản đồ, giờ đến dự kiến, thông báo khung giờ trên phiếu giao, app và Zalo tài xế. ETA khách không sớm hơn đầu khung giờ. **Không** từ chối xác nhận giao vì giờ vào vùng.
+- **Chưa làm:** ca đêm (giao 21:00–06:00, khung giờ nhận hàng của khách, chuyến qua 0h); vùng phát thải thấp (cần ranh giới phường và mức khí thải của xe).
 
 ## 9b. Chi phí & báo cáo (module `costing`, `reporting`)
 
@@ -361,3 +376,7 @@ Ghi nhận khi dựng M0 trên Spark:
 | D35 | Khách có nhiều liên hệ: liên hệ chủ xem mọi đơn + giá trị; liên hệ điểm giao chỉ xem đơn của điểm đó, chỉ mặt hàng + số lượng; trùng thì theo quyền cao hơn | Chốt |
 | D36 | SKU là số gốc: đơn hàng, tồn kho, giữ chỗ, chọn kho theo SKU; ĐVT suy ra theo quy đổi của mặt hàng, chỉ dùng cho khối lượng và hiển thị. File đơn/tồn có thể kèm cột "Đơn vị" để phát hiện gửi sai đơn vị | Chốt |
 | D37 | Giai đoạn này mỗi mặt hàng có đúng 1 SKU; hỗ trợ nhiều SKU (đơn vị trên từng dòng, bảng quy đổi) để phase sau | Chốt tạm |
+| D38 | Quy định lưu hành là dữ liệu có ngày hiệu lực và là ràng buộc cứng của bộ tối ưu; đơn không có xe hợp lệ báo không xếp được, vẫn giữ D3 (không tách theo khối lượng). Ca đêm để phase sau | Chốt |
+| D39 | Sữa, đồ uống được coi là hàng thiết yếu khi xin chấp thuận; hệ thống không tự miễn, chỉ tính khung giờ từ văn bản đã nhập | Chốt |
+| D40 | Lệnh tay vi phạm giờ lưu hành: cảnh báo, không chặn; duyệt phải nhập lý do và ghi audit | Chốt |
+| D41 | Xe tải xét theo trọng tải hàng (≤ 2.000 kg ngoài giờ cao điểm; > 2.000 và ≤ 10.000 kg 21:00–06:00), xe Van xét theo tổng trọng lượng (< 3.500 kg không giới hạn), theo xác nhận của công ty. Xe tải trên 10.000 kg và xe Van từ 3.500 kg/chưa khai: xử lý an toàn, chờ xác nhận | Chốt, chờ đối chiếu văn bản gốc |

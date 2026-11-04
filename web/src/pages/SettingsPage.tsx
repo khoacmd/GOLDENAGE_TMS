@@ -114,6 +114,8 @@ function ShiftSettings() {
 type Planning = Pick<
   components['schemas']['CompanySettingsOut'],
   | 'auto_plan_enabled'
+  | 'traffic_rules_enabled'
+  | 'traffic_zone_buffer_minutes'
   | 'service_minutes'
   | 'turnaround_minutes'
   | 'max_trips_per_vehicle'
@@ -152,6 +154,24 @@ function PlanningSettingsCard() {
         >
           <Switch />
         </Form.Item>
+        <Space size="large" wrap align="start">
+          <Form.Item
+            name="traffic_rules_enabled"
+            label="Áp dụng quy định lưu hành theo vùng"
+            valuePropName="checked"
+            extra="Bộ tối ưu chỉ xếp xe vào vùng hạn chế trong giờ được phép; lệnh tay vi phạm phải nhập lý do khi duyệt."
+            style={{ maxWidth: 420 }}
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            name="traffic_zone_buffer_minutes"
+            label="Thời gian chừa vào/ra vùng (phút)"
+            extra="Chừa ở 2 đầu khung giờ được phép."
+          >
+            <InputNumber min={0} max={120} />
+          </Form.Item>
+        </Space>
         <Space size="large" wrap align="start">
           <Form.Item name="service_minutes" label="Thời gian giao tại mỗi điểm (phút)">
             <InputNumber min={0} max={240} />

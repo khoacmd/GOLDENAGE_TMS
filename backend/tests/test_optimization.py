@@ -39,12 +39,12 @@ def job(
 
 
 def test_single_route_visits_all_in_good_order() -> None:
-    # Kho ở gốc, 3 điểm trên một đường thẳng: tuyến tối ưu đi ra rồi quay về (20 km).
+    # Kho ở gốc, 3 điểm trên một đường thẳng: tuyến tối ưu (nhiều thứ tự) đi ra rồi quay về 20 km.
     pts = [(0, 0), (3, 0), (10, 0), (6, 0)]
     sol = solve(problem(pts, vehicles=[car()], jobs=[job("A", 1), job("B", 2), job("C", 3)]))
     assert sol.unassigned == []
     (route,) = sol.routes
-    assert route.job_ids in (["A", "C", "B"], ["B", "C", "A"])
+    assert sorted(route.job_ids) == ["A", "B", "C"]
     assert route.distance_m == 20_000
     assert route.cost == 100_000  # 20 km x 5.000 đ
     assert route.load == 300 and route.trip_seq == 1

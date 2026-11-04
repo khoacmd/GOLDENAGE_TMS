@@ -34,6 +34,9 @@ class Profile(StrEnum):
     MOTORBIKE = "motorbike"
 
 
+ZONE_CLASS = "trafficzone"  # class đường trong vùng hạn chế (infra/osrm/car_zone.lua)
+
+
 def haversine_m(a: Point, b: Point) -> float:
     p1, p2 = math.radians(a[0]), math.radians(b[0])
     dp, dl = p2 - p1, math.radians(b[1] - a[1])
@@ -52,11 +55,15 @@ def _osrm_url(profile: Profile) -> str | None:
     return settings.osrm_car_url if profile == Profile.CAR else settings.osrm_motorbike_url
 
 
-def _key(profile: Profile, a: Point, b: Point) -> str:
+def can_avoid_zones() -> bool:
+    return bool(get_settings().osrm_car_url and get_settings().osrm_car_zone_exclude)
+
+
+def _key(profile: str, a: Point, b: Point) -> str:
     return f"tms:dist:{profile}:{a[0]:.5f},{a[1]:.5f}:{b[0]:.5f},{b[1]:.5f}"
 
 
-async def _cached(profile: Profile, points: list[Point]) -> Matrix | None:
+async def _cached(profile: str, points: list[Point]) -> Matrix | None:
     keys = [_key(profile, a, b) for a in points for b in points]
     try:
         async with aioredis.from_url(get_settings().redis_url) as r:
@@ -75,7 +82,7 @@ async def _cached(profile: Profile, points: list[Point]) -> Matrix | None:
     )
 
 
-async def _store(profile: Profile, points: list[Point], m: Matrix) -> None:
+async def _store(profile: str, points: list[Point], m: Matrix) -> None:
     try:
         async with aioredis.from_url(get_settings().redis_url) as r:
             pipe = r.pipeline(transaction=False)
@@ -88,12 +95,15 @@ async def _store(profile: Profile, points: list[Point], m: Matrix) -> None:
         log.warning("Không ghi được cache khoảng cách")
 
 
-async def _osrm_table(url: str, points: list[Point]) -> Matrix:
+async def _osrm_table(url: str, points: list[Point], avoid_zones: bool = False) -> Matrix:
     coords = ";".join(f"{lng:.6f},{lat:.6f}" for lat, lng in points)
     async with httpx.AsyncClient(timeout=OSRM_TIMEOUT_S) as client:
         resp = await client.get(
             f"{url.rstrip('/')}/table/v1/driving/{coords}",
-            params={"annotations": "distance,duration"},
+            params={
+                "annotations": "distance,duration",
+                **({"exclude": ZONE_CLASS} if avoid_zones else {}),
+            },
         )
     resp.raise_for_status()
     body = resp.json()
@@ -115,21 +125,27 @@ def _with_traffic(m: Matrix, factor: float) -> Matrix:
 
 
 async def matrix(
-    points: list[Point], profile: Profile, duration_factor: float = 1.0
+    points: list[Point],
+    profile: Profile,
+    duration_factor: float = 1.0,
+    *,
+    avoid_zones: bool = False,
 ) -> tuple[Matrix, str]:
     """Trả (ma trận, nguồn: "osrm" | "cache" | "estimate"). Thời gian OSRM nhân `duration_factor`
-    (ước lượng đã dùng tốc độ nội đô nên không nhân); cache lưu số liệu gốc của OSRM."""
+    (ước lượng đã dùng tốc độ nội đô nên không nhân); cache lưu số liệu gốc của OSRM.
+    `avoid_zones`: tuyến không đi vào đường trong vùng hạn chế (cần `can_avoid_zones()`)."""
     url = _osrm_url(profile)
     if not url or len(points) < 2:
         return estimate(points, profile), "estimate"
-    if (hit := await _cached(profile, points)) is not None:
+    cache_key = f"{profile}-avoid" if avoid_zones else str(profile)
+    if (hit := await _cached(cache_key, points)) is not None:
         return _with_traffic(hit, duration_factor), "cache"
     try:
-        result = await _osrm_table(url, points)
+        result = await _osrm_table(url, points, avoid_zones)
     except (httpx.HTTPError, RuntimeError, KeyError, ValueError) as e:
         log.warning("OSRM %s lỗi, dùng ước lượng: %s", profile, e)
         return estimate(points, profile), "estimate"
-    await _store(profile, points, result)
+    await _store(cache_key, points, result)
     return _with_traffic(result, duration_factor), "osrm"
 
 

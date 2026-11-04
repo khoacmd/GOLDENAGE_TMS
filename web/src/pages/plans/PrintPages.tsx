@@ -109,6 +109,11 @@ export function DeliveryNotesPrint() {
     queryKey: ['trip', tripId],
     queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}', { params: { path: { trip_id: tripId! } } })),
   })
+  const traffic = useQuery({
+    queryKey: ['trip', tripId, 'traffic'],
+    queryFn: async () =>
+      unwrap(await api.GET('/api/v1/trips/{trip_id}/traffic', { params: { path: { trip_id: tripId! } } })),
+  })
   const t = query.data
   if (!t) return <Spin />
   return (
@@ -117,6 +122,11 @@ export function DeliveryNotesPrint() {
         Lệnh {t.code} · Ngày {fmtDate(t.plan_date)} · Xe {t.vehicle_code} · Lái xe {t.driver?.full_name ?? '-'}
         {t.assistant && ` · Phụ xe ${t.assistant.full_name}`}
       </p>
+      {traffic.data?.notices.map((n) => (
+        <p key={n} style={{ fontStyle: 'italic', margin: '4px 0' }}>
+          {n}
+        </p>
+      ))}
       <table style={table}>
         <thead>
           <tr>

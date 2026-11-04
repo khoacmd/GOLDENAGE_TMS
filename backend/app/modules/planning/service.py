@@ -37,7 +37,9 @@ from app.modules.planning.models import PlanningRun, RunStatus, RunTrigger
 from app.modules.routing import service as routing
 from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
-from optimization import Depot, Job, Problem, Solution, solve
+from app.modules.traffic import rules as traffic_rules
+from app.modules.traffic import service as traffic
+from optimization import Depot, Job, Matrix, Problem, Solution, Window, solve
 from optimization import Vehicle as SolverVehicle
 
 log = logging.getLogger(__name__)
@@ -45,6 +47,7 @@ log = logging.getLogger(__name__)
 ALL = PageParams(limit=500)
 GRAMS = 1000
 TEMP_LABEL = {TempGroup.DRY: "hàng khô", TempGroup.COLD: "hàng lạnh/đông"}
+RESTRICTED_CAR = "car_restricted"  # ma trận cho ô tô bị giới hạn giờ vào vùng (`Vehicle.profile`)
 REASON_CAPACITY = "Không đủ năng lực xe trong ca làm việc (tải trọng / thời gian / số lượt)"
 
 
@@ -122,7 +125,27 @@ def _infeasible_reason(part: OrderPart, vehicles: list[Vehicle]) -> str | None:
     return None
 
 
-def _compatible(part: OrderPart, vehicles: list[Vehicle]) -> list[Vehicle]:
+@dataclass
+class _TrafficLimits:
+    """Giờ từng xe được đến các điểm và rời các kho nằm trong vùng hạn chế (đã cắt theo ca)."""
+
+    arrivals: dict[tuple[uuid.UUID, uuid.UUID], tuple[Window, ...]] = field(default_factory=dict)
+    depots: dict[tuple[uuid.UUID, uuid.UUID], tuple[Window, ...]] = field(default_factory=dict)
+    zones_of_point: dict[uuid.UUID, list[str]] = field(default_factory=dict)
+    restricted_vehicles: set[uuid.UUID] = field(default_factory=set)
+    # Điểm/kho trong vùng: tuyến tránh vùng không áp dụng cho các đoạn có đầu ở đây.
+    inside: set[uuid.UUID] = field(default_factory=set)
+
+    def can_serve(self, vehicle_id: uuid.UUID, point_id: uuid.UUID) -> bool:
+        return self.arrivals.get((vehicle_id, point_id)) != ()
+
+    def can_load_at(self, vehicle_id: uuid.UUID, warehouse_id: uuid.UUID) -> bool:
+        return self.depots.get((vehicle_id, warehouse_id)) != ()
+
+
+def _compatible(
+    part: OrderPart, vehicles: list[Vehicle], limits: _TrafficLimits | None = None
+) -> list[Vehicle]:
     requirement = part.order.customer.required_vehicle_type
     return [
         v
@@ -130,7 +153,75 @@ def _compatible(part: OrderPart, vehicles: list[Vehicle]) -> list[Vehicle]:
         if dispatch.cargo_compatible(v.cargo_class, part.temp_group)
         and dispatch.vehicle_matches(requirement, v.vehicle_type)
         and part.weight_kg <= v.capacity_kg
+        and (limits is None or limits.can_serve(v.id, part.order.delivery_point_id))
     ]
+
+
+async def _traffic_limits(
+    session: AsyncSession,
+    settings: CompanySettings,
+    plan_date: date,
+    parts: list[OrderPart],
+    warehouses: list[Warehouse],
+    vehicles: list[Vehicle],
+    shift: Window,
+    service_s: int,
+) -> _TrafficLimits | None:
+    context = await traffic.enabled_context(session, settings, plan_date)
+    if context is None:
+        return None
+    limits = _TrafficLimits(restricted_vehicles={v.id for v in vehicles if context.restricted(v)})
+    points = {p.order.delivery_point_id: p.order.delivery_point for p in parts}
+    point_list = list(points.values())
+    found = await traffic.zones_at(
+        session, context, [_point(o) for o in (*point_list, *warehouses)]
+    )
+    buffer_s = settings.traffic_zone_buffer_minutes * 60
+    for point, zone_ids in zip(point_list, found, strict=False):
+        if point.traffic_zone_exempt or not zone_ids:
+            continue
+        limits.inside.add(point.id)
+        limits.zones_of_point[point.id] = sorted(context.zones[z].name for z in zone_ids)
+        for vehicle in vehicles:
+            windows = context.windows(vehicle, zone_ids)
+            if windows is not None:
+                allowed = traffic_rules.arrival_windows(windows, buffer_s, service_s)
+                limits.arrivals[(vehicle.id, point.id)] = traffic_rules.intersect(allowed, (shift,))
+    for warehouse, zone_ids in zip(warehouses, found[len(point_list) :], strict=True):
+        if warehouse.traffic_zone_exempt or not zone_ids:
+            continue
+        limits.inside.add(warehouse.id)
+        for vehicle in vehicles:
+            windows = context.windows(vehicle, zone_ids)
+            if windows is not None:
+                limits.depots[(vehicle.id, warehouse.id)] = traffic_rules.intersect(
+                    windows, (shift,)
+                )
+    return limits
+
+
+async def _restricted_matrix(
+    locations: list[Point],
+    inside_locations: set[int],
+    factor: float,
+    plain: Matrix,
+) -> Matrix | None:
+    """Ma trận cho ô tô bị giới hạn giờ: đoạn có cả 2 đầu ngoài vùng đi tuyến tránh vùng (hợp lệ ở
+    mọi giờ), đoạn có đầu trong vùng đi tuyến thường. None nếu không tính được tuyến tránh vùng."""
+    avoid, source = await routing.matrix(locations, Profile.CAR, factor, avoid_zones=True)
+    if source == "estimate":
+        return None
+    n = range(len(locations))
+
+    def pick(a: list[list[int]], b: list[list[int]]) -> list[list[int]]:
+        return [
+            [b[i][j] if i in inside_locations or j in inside_locations else a[i][j] for j in n]
+            for i in n
+        ]
+
+    return Matrix(
+        pick(avoid.distance_m, plain.distance_m), pick(avoid.duration_s, plain.duration_s)
+    )
 
 
 def _needs(part: OrderPart) -> dict[uuid.UUID, Decimal]:
@@ -152,6 +243,7 @@ def allocate_warehouses(
     compatible: dict[uuid.UUID, list[Vehicle]],
     warehouses: list[Warehouse],
     stock: dict[tuple[uuid.UUID, uuid.UUID], Decimal] | None,
+    limits: _TrafficLimits | None = None,
 ) -> _Allocation:
     """Chọn kho xuất cho từng phần đơn (tham lam). `stock=None`: không xét tồn kho."""
     result = _Allocation()
@@ -161,7 +253,14 @@ def allocate_warehouses(
         by_point[part.order.delivery_point_id].append(part)
 
     def candidates(part: OrderPart) -> list[Warehouse]:
-        return [w for w in warehouses if any(w.id in v.warehouse_ids for v in compatible[part.id])]
+        return [
+            w
+            for w in warehouses
+            if any(
+                w.id in v.warehouse_ids and (limits is None or limits.can_load_at(v.id, w.id))
+                for v in compatible[part.id]
+            )
+        ]
 
     def enough(w: Warehouse, group: list[OrderPart]) -> bool:
         if stock is None:
@@ -218,6 +317,7 @@ def build_jobs(
     compatible: dict[uuid.UUID, list[Vehicle]],
     location_of: dict[uuid.UUID, int],
     service_s: int,
+    limits: _TrafficLimits | None = None,
 ) -> tuple[list[Job], dict[str, _JobInfo], dict[uuid.UUID, str]]:
     """Gộp phần đơn cùng điểm giao + nhóm nhiệt độ + kho thành 1 điểm cần ghé (job)."""
     groups: dict[tuple[uuid.UUID, TempGroup, uuid.UUID], list[OrderPart]] = defaultdict(list)
@@ -230,7 +330,13 @@ def build_jobs(
     unassigned: dict[uuid.UUID, str] = {}
     for (point_id, _, warehouse_id), group in groups.items():
         vehicle_sets = [
-            {v.id for v in compatible[p.id] if warehouse_id in v.warehouse_ids} for p in group
+            {
+                v.id
+                for v in compatible[p.id]
+                if warehouse_id in v.warehouse_ids
+                and (limits is None or limits.can_load_at(v.id, warehouse_id))
+            }
+            for p in group
         ]
         allowed = set.intersection(*vehicle_sets)
         if not allowed:
@@ -259,6 +365,11 @@ def build_jobs(
                     demand=int(weight * GRAMS),
                     vehicle_ids=tuple(str(v) for v in sorted(allowed)),
                     service_s=service_s,
+                    vehicle_windows={
+                        str(v): limits.arrivals[(v, point_id)]
+                        for v in allowed
+                        if limits is not None and (v, point_id) in limits.arrivals
+                    },
                 )
             )
             info[job_id] = _JobInfo([p.id for p in chunk], point_id, warehouse_id)
@@ -308,6 +419,24 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
         warnings.append("Một số xe đã có lệnh trong ngày: chỉ dùng số lượt còn lại")
     usable = [v for v in vehicles if remaining_trips[v.id] > 0]
 
+    shift_start = settings.shift_start.hour * 3600 + settings.shift_start.minute * 60
+    shift_end = settings.shift_end.hour * 3600 + settings.shift_end.minute * 60
+    local_now = now().astimezone(tz)
+    if plan_date == local_now.date():
+        # Lập trong ngày: chuyến chỉ xuất phát từ bây giờ (+15 phút chuẩn bị).
+        shift_start = max(shift_start, _seconds(local_now + timedelta(minutes=15)))
+    shift_end = max(shift_end, shift_start)
+    limits = await _traffic_limits(
+        session,
+        settings,
+        plan_date,
+        parts,
+        warehouses,
+        usable,
+        (shift_start, shift_end),
+        settings.service_minutes * 60,
+    )
+
     unassigned: dict[uuid.UUID, str] = {}
     compatible: dict[uuid.UUID, list[Vehicle]] = {}
     feasible: list[OrderPart] = []
@@ -315,16 +444,23 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
         reason = _infeasible_reason(part, vehicles)
         if reason is None and not _compatible(part, usable):
             reason = "Các xe phù hợp đã dùng hết số lượt trong ngày"
+        if reason is None and not _compatible(part, usable, limits):
+            assert limits is not None
+            zones = ", ".join(limits.zones_of_point.get(part.order.delivery_point_id, []))
+            reason = (
+                f"Điểm giao thuộc vùng hạn chế ({zones}): các xe phù hợp không được vào "
+                "trong giờ làm việc"
+            )
         if reason is not None:
             unassigned[part.id] = reason
             continue
-        compatible[part.id] = _compatible(part, usable)
+        compatible[part.id] = _compatible(part, usable, limits)
         feasible.append(part)
 
     stock = await dispatch.stock_available(session)
     if not stock:
         warnings.append("Chưa có dữ liệu tồn kho: chọn kho gần nhất, không kiểm tra tồn")
-    allocation = allocate_warehouses(feasible, compatible, warehouses, stock or None)
+    allocation = allocate_warehouses(feasible, compatible, warehouses, stock or None, limits)
     unassigned.update(allocation.unassigned)
 
     # Địa điểm: kho trước, sau đó các điểm giao.
@@ -336,7 +472,7 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             location_of[point.id] = len(locations)
             locations.append(_point(point))
     jobs, job_info, merge_unassigned = build_jobs(
-        feasible, allocation, compatible, location_of, settings.service_minutes * 60
+        feasible, allocation, compatible, location_of, settings.service_minutes * 60, limits
     )
     unassigned.update(merge_unassigned)
 
@@ -351,30 +487,62 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
     if run.distance_source == "estimate":
         warnings.append("Khoảng cách ước lượng theo đường chim bay (chưa dùng OSRM)")
 
-    shift_start = settings.shift_start.hour * 3600 + settings.shift_start.minute * 60
-    shift_end = settings.shift_end.hour * 3600 + settings.shift_end.minute * 60
-    local_now = now().astimezone(tz)
-    if plan_date == local_now.date():
-        # Lập trong ngày: chuyến chỉ xuất phát từ bây giờ (+15 phút chuẩn bị).
-        shift_start = max(shift_start, _seconds(local_now + timedelta(minutes=15)))
+    # Ô tô bị giới hạn giờ dùng ma trận riêng để các đoạn ngoài vùng không xuyên qua vùng.
+    restricted_cars = limits is not None and any(
+        v.id in limits.restricted_vehicles and dispatch.vehicle_profile(v) == Profile.CAR
+        for v in usable
+    )
+    avoid_ok = False
+    if restricted_cars and limits is not None:
+        inside_locations = {location_of[i] for i in limits.inside if i in location_of}
+        avoid = (
+            await _restricted_matrix(
+                locations,
+                inside_locations,
+                settings.travel_time_factor,
+                matrices[str(Profile.CAR)],
+            )
+            if routing.can_avoid_zones()
+            else None
+        )
+        if avoid is not None:
+            matrices[RESTRICTED_CAR] = avoid
+            avoid_ok = True
+        else:
+            warnings.append(
+                "Chưa tính được tuyến tránh vùng hạn chế: tuyến của ô tô có thể đi xuyên vùng"
+            )
+
+    def solver_profile(vehicle: Vehicle) -> str:
+        profile = dispatch.vehicle_profile(vehicle)
+        restricted = limits is not None and vehicle.id in limits.restricted_vehicles
+        if avoid_ok and restricted and profile == Profile.CAR:
+            return RESTRICTED_CAR
+        return str(profile)
+
     problem = Problem(
         depots=[Depot(str(w.id), location_of[w.id]) for w in warehouses],
         vehicles=[
             SolverVehicle(
                 id=str(v.id),
-                profile=str(dispatch.vehicle_profile(v)),
+                profile=solver_profile(v),
                 capacity=int(v.capacity_kg * GRAMS),
                 cost_per_km=float(v.cost_per_km),
                 depot_ids=tuple(str(w) for w in v.warehouse_ids if w in active_wh),
                 max_trips=remaining_trips[v.id],
                 fixed_cost=settings.trip_fixed_cost,
+                depot_windows={
+                    str(w): limits.depots[(v.id, w)]
+                    for w in v.warehouse_ids
+                    if limits is not None and (v.id, w) in limits.depots
+                },
             )
             for v in usable
         ],
         jobs=jobs,
         matrices=matrices,
         shift_start_s=shift_start,
-        shift_end_s=max(shift_end, shift_start),
+        shift_end_s=shift_end,
         turnaround_s=settings.turnaround_minutes * 60,
         time_limit_s=min(
             settings.planning_time_limit_s,
@@ -479,6 +647,8 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             "max_trips_per_vehicle": settings.max_trips_per_vehicle,
             "trip_fixed_cost": settings.trip_fixed_cost,
             "travel_time_factor": settings.travel_time_factor,
+            "traffic_rules_enabled": settings.traffic_rules_enabled,
+            "traffic_zone_buffer_minutes": settings.traffic_zone_buffer_minutes,
         },
     }
     if unassigned:

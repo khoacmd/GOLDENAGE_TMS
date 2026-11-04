@@ -31,6 +31,16 @@ export function TripScreen({
       return data
     },
   })
+  // Nhắc khung giờ vào vùng hạn chế; lỗi mạng thì bỏ qua, không ảnh hưởng thao tác giao hàng.
+  const traffic = useQuery({
+    queryKey: ['driver-trip', tripId, 'traffic'],
+    queryFn: async () => {
+      const { data } = await api.GET('/api/v1/driver/trips/{trip_id}/traffic', {
+        params: { path: { trip_id: tripId } },
+      })
+      return data?.notices ?? []
+    },
+  })
   const start = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.POST('/api/v1/trips/{trip_id}/dispatch', { params: { path: { trip_id: tripId } } })
@@ -64,6 +74,12 @@ export function TripScreen({
         }
         contentContainerStyle={{ paddingBottom: 32 }}
       >
+        {traffic.data?.map((notice) => (
+          <Card key={notice}>
+            <Text style={styles.bold}>Giờ lưu hành</Text>
+            <Text>{notice}</Text>
+          </Card>
+        ))}
         <Card>
           <View style={styles.row}>
             <Text style={styles.bold}>{fmtDate(trip.plan_date)}</Text>

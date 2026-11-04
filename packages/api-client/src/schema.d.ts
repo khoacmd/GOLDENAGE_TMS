@@ -737,6 +737,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{trip_id}/traffic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trip Traffic
+         * @description Giờ đến dự kiến từng điểm và đối chiếu quy định lưu hành của xe.
+         */
+        get: operations["trip_traffic_api_v1_trips__trip_id__traffic_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{trip_id}/route": {
         parameters: {
             query?: never;
@@ -990,6 +1010,26 @@ export interface paths {
         };
         /** My Trip */
         get: operations["my_trip_api_v1_driver_trips__trip_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/trips/{trip_id}/traffic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Trip Traffic
+         * @description Khung giờ xe được vào vùng hạn chế của chuyến, để nhắc lái xe.
+         */
+        get: operations["my_trip_traffic_api_v1_driver_trips__trip_id__traffic_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1354,6 +1394,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/traffic/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Zones
+         * @description Vùng hạn chế đang hiệu lực (mặc định: hôm nay), để hiện trên bản đồ.
+         */
+        get: operations["list_zones_api_v1_traffic_zones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vehicles/{vehicle_id}/permits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Permits */
+        get: operations["list_permits_api_v1_vehicles__vehicle_id__permits_get"];
+        put?: never;
+        /** Create Permit */
+        post: operations["create_permit_api_v1_vehicles__vehicle_id__permits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vehicles/{vehicle_id}/permits/{permit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Permit */
+        put: operations["update_permit_api_v1_vehicles__vehicle_id__permits__permit_id__put"];
+        post?: never;
+        /** Delete Permit */
+        delete: operations["delete_permit_api_v1_vehicles__vehicle_id__permits__permit_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1463,6 +1559,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** ApproveIn */
+        ApproveIn: {
+            /** Traffic Override Reason */
+            traffic_override_reason?: string | null;
         };
         /** AuditOut */
         AuditOut: {
@@ -1633,6 +1734,16 @@ export interface components {
         CompanySettingsOut: {
             /** Auto Plan Enabled */
             auto_plan_enabled: boolean;
+            /**
+             * Traffic Rules Enabled
+             * @default false
+             */
+            traffic_rules_enabled: boolean;
+            /**
+             * Traffic Zone Buffer Minutes
+             * @default 15
+             */
+            traffic_zone_buffer_minutes: number;
             /** Service Minutes */
             service_minutes: number;
             /** Turnaround Minutes */
@@ -1725,6 +1836,10 @@ export interface components {
             zalo_confirm_enabled?: boolean | null;
             /** Auto Plan Enabled */
             auto_plan_enabled?: boolean | null;
+            /** Traffic Rules Enabled */
+            traffic_rules_enabled?: boolean | null;
+            /** Traffic Zone Buffer Minutes */
+            traffic_zone_buffer_minutes?: number | null;
             /** Service Minutes */
             service_minutes?: number | null;
             /** Turnaround Minutes */
@@ -2367,6 +2482,8 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /** Traffic Zone Exempt */
+            traffic_zone_exempt?: boolean | null;
         };
         /** DeliveryPointOut */
         DeliveryPointOut: {
@@ -2389,6 +2506,8 @@ export interface components {
             is_default: boolean;
             /** Is Active */
             is_active: boolean;
+            /** Traffic Zone Exempt */
+            traffic_zone_exempt: boolean;
         };
         /**
          * DeliveryRules
@@ -2975,6 +3094,71 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** PermitIn */
+        PermitIn: {
+            /**
+             * Zone Id
+             * Format: uuid
+             */
+            zone_id: string;
+            /** Document No */
+            document_no: string;
+            /** Issuer */
+            issuer?: string | null;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /**
+             * Valid To
+             * Format: date
+             */
+            valid_to: string;
+            /** Windows */
+            windows: [
+                string,
+                string
+            ][];
+            /** Note */
+            note?: string | null;
+        };
+        /** PermitOut */
+        PermitOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Vehicle Id
+             * Format: uuid
+             */
+            vehicle_id: string;
+            /**
+             * Zone Id
+             * Format: uuid
+             */
+            zone_id: string;
+            /** Document No */
+            document_no: string;
+            /** Issuer */
+            issuer: string | null;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /**
+             * Valid To
+             * Format: date
+             */
+            valid_to: string;
+            /** Windows */
+            windows: string[][];
+            /** Note */
+            note: string | null;
+        };
         /** PersonOut */
         PersonOut: {
             /**
@@ -3138,6 +3322,12 @@ export interface components {
             name: string;
             status: components["schemas"]["DeviceStatus"];
         };
+        /**
+         * RegulatoryClass
+         * @description Nhóm ô tô theo quy định lưu hành (xe máy suy ra từ loại xe).
+         * @enum {string}
+         */
+        RegulatoryClass: "TRUCK" | "VAN" | "PICKUP";
         /** ReportOut */
         ReportOut: {
             /**
@@ -3363,6 +3553,21 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** StopTrafficCheck */
+        StopTrafficCheck: {
+            /** Seq */
+            seq: number;
+            /** Name */
+            name: string | null;
+            /** Arrival */
+            arrival: string;
+            /** Zones */
+            zones: string[];
+            /** Allowed */
+            allowed: string | null;
+            /** Ok */
+            ok: boolean;
+        };
         /**
          * TempClass
          * @enum {string}
@@ -3539,6 +3744,8 @@ export interface components {
             assistant_id?: string | null;
             /** Note */
             note?: string | null;
+            /** Planned Start */
+            planned_start?: string | null;
             /** Stops */
             stops: components["schemas"]["StopIn"][];
         };
@@ -3807,6 +4014,28 @@ export interface components {
             /** Planned End */
             planned_end: string | null;
         };
+        /** TripTrafficCheck */
+        TripTrafficCheck: {
+            /** Enabled */
+            enabled: boolean;
+            /** Departure */
+            departure?: string | null;
+            /**
+             * Stops
+             * @default []
+             */
+            stops: components["schemas"]["StopTrafficCheck"][];
+            /**
+             * Violations
+             * @default []
+             */
+            violations: string[];
+            /**
+             * Notices
+             * @default []
+             */
+            notices: string[];
+        };
         /** UnassignedPart */
         UnassignedPart: {
             /**
@@ -3883,6 +4112,9 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /** Gross Weight Kg */
+            gross_weight_kg?: number | string | null;
+            regulatory_class?: components["schemas"]["RegulatoryClass"] | null;
         };
         /** VehicleOut */
         VehicleOut: {
@@ -3910,6 +4142,9 @@ export interface components {
             warehouse_ids: string[];
             /** Is Active */
             is_active: boolean;
+            /** Gross Weight Kg */
+            gross_weight_kg: string | null;
+            regulatory_class: components["schemas"]["RegulatoryClass"] | null;
         };
         /**
          * VehicleRequirement
@@ -4016,6 +4251,9 @@ export interface components {
             warehouse_ids?: string[] | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Gross Weight Kg */
+            gross_weight_kg?: number | string | null;
+            regulatory_class?: components["schemas"]["RegulatoryClass"] | null;
         };
         /** WarehouseCreate */
         WarehouseCreate: {
@@ -4034,6 +4272,11 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /**
+             * Traffic Zone Exempt
+             * @default false
+             */
+            traffic_zone_exempt: boolean;
         };
         /** WarehouseOut */
         WarehouseOut: {
@@ -4054,6 +4297,8 @@ export interface components {
             longitude: string;
             /** Is Active */
             is_active: boolean;
+            /** Traffic Zone Exempt */
+            traffic_zone_exempt: boolean;
         };
         /** WarehouseUpdate */
         WarehouseUpdate: {
@@ -4067,6 +4312,8 @@ export interface components {
             longitude?: number | string | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Traffic Zone Exempt */
+            traffic_zone_exempt?: boolean | null;
         };
         /**
          * ZaloAccount
@@ -4138,6 +4385,22 @@ export interface components {
          * @enum {string}
          */
         ZaloStatus: "NOT_INVITED" | "PENDING" | "ACTIVE";
+        /** ZoneOut */
+        ZoneOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Boundary */
+            boundary: {
+                [key: string]: unknown;
+            };
+        };
     };
     responses: never;
     parameters: never;
@@ -5823,7 +6086,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -6027,6 +6294,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trip_traffic_api_v1_trips__trip_id__traffic_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripTrafficCheck"];
                 };
             };
             /** @description Validation Error */
@@ -6533,6 +6831,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_trip_traffic_api_v1_driver_trips__trip_id__traffic_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripTrafficCheck"];
                 };
             };
             /** @description Validation Error */
@@ -7181,6 +7510,169 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CustomerRoute"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_zones_api_v1_traffic_zones_get: {
+        parameters: {
+            query?: {
+                day?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZoneOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_permits_api_v1_vehicles__vehicle_id__permits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermitOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_permit_api_v1_vehicles__vehicle_id__permits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermitIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermitOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_permit_api_v1_vehicles__vehicle_id__permits__permit_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+                permit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermitIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermitOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_permit_api_v1_vehicles__vehicle_id__permits__permit_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vehicle_id: string;
+                permit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

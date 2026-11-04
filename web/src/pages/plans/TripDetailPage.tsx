@@ -37,6 +37,7 @@ import {
 } from '../../lib/labels'
 import { MapView, type MapMarker } from '../../lib/MapView'
 import { useTripRoads } from '../../lib/roads'
+import { useTrafficZones } from '../../lib/useTrafficZones'
 import { TripCostCard } from './TripCostCard'
 
 type Item = components['schemas']['TripItemOut']
@@ -49,7 +50,7 @@ export function TripDetailPage() {
   const { hasRole } = useAuth()
   const { message } = App.useApp()
   const queryClient = useQueryClient()
-  const [reasonFor, setReasonFor] = useState<{ item: Item; status: ItemStatus } | 'cancel' | null>(null)
+  const [reasonFor, setReasonFor] = useState<{ item: Item; status: ItemStatus } | 'cancel' | 'approve' | null>(null)
   const warnings = (location.state as { warnings?: string[] } | null)?.warnings ?? []
   const path = { params: { path: { trip_id: tripId! } } }
 
@@ -64,6 +65,10 @@ export function TripDetailPage() {
   const confirmations = useQuery({
     queryKey: ['trip', tripId, 'confirmations'],
     queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}/confirmations', path)),
+  })
+  const traffic = useQuery({
+    queryKey: ['trip', tripId, 'traffic'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}/traffic', path)),
   })
   const refresh = () => queryClient.invalidateQueries()
   const action = useMutation({
@@ -133,7 +138,15 @@ export function TripDetailPage() {
               </Button>
             )}
             {isManager && s === 'DRAFT' && (
-              <Button type="primary" loading={action.isPending} onClick={() => run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/approve', path)))}>
+              <Button
+                type="primary"
+                loading={action.isPending}
+                onClick={() =>
+                  traffic.data?.violations.length
+                    ? setReasonFor('approve')
+                    : run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/approve', path)))
+                }
+              >
                 Duyệt lệnh
               </Button>
             )}
@@ -167,6 +180,24 @@ export function TripDetailPage() {
             style={{ marginBottom: 16 }}
             title="Lưu ý"
             description={<ul style={{ margin: 0, paddingLeft: 18 }}>{warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
+          />
+        )}
+        {traffic.data?.enabled && traffic.data.violations.length > 0 && (
+          <Alert
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
+            title="Vi phạm giờ lưu hành"
+            description={<ul style={{ margin: 0, paddingLeft: 18 }}>{traffic.data.violations.map((v) => <li key={v}>{v}</li>)}</ul>}
+          />
+        )}
+        {traffic.data?.enabled && traffic.data.notices.length > 0 && (
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+            title="Quy định lưu hành"
+            description={<ul style={{ margin: 0, paddingLeft: 18 }}>{traffic.data.notices.map((v) => <li key={v}>{v}</li>)}</ul>}
           />
         )}
         {trip.cancel_reason && <Alert type="error" showIcon style={{ marginBottom: 16 }} title={`Đã hủy: ${trip.cancel_reason}`} />}
@@ -206,6 +237,18 @@ export function TripDetailPage() {
               expandable={{ defaultExpandAllRows: true, showExpandColumn: false, expandedRowKeys: trip.stops.map((st) => st.id) }}
               columns={[
                 { title: '#', dataIndex: 'seq', width: 40 },
+                ...(traffic.data?.enabled
+                  ? [
+                      {
+                        title: 'Giờ đến DK',
+                        width: 95,
+                        render: (_: unknown, st: { seq: number }) => {
+                          const c = traffic.data?.stops.find((x) => x.seq === st.seq)
+                          return c ? <Tag color={c.ok ? (c.allowed ? 'orange' : undefined) : 'red'}>{c.arrival}</Tag> : null
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   title: 'Điểm giao',
                   render: (_, st) => (
@@ -309,7 +352,7 @@ export function TripDetailPage() {
 
       <Modal
         open={reasonFor !== null}
-        title={reasonFor === 'cancel' ? 'Hủy lệnh giao' : reasonFor?.status === 'FAILED' ? 'Giao không thành công' : 'Hủy mục hàng'}
+        title={reasonFor === 'approve' ? 'Duyệt lệnh vi phạm giờ lưu hành' : reasonFor === 'cancel' ? 'Hủy lệnh giao' : reasonFor?.status === 'FAILED' ? 'Giao không thành công' : 'Hủy mục hàng'}
         okText="Xác nhận"
         cancelText="Đóng"
         confirmLoading={action.isPending}
@@ -321,7 +364,16 @@ export function TripDetailPage() {
           id="reason-form"
           layout="vertical"
           onFinish={({ reason }) => {
-            if (reasonFor === 'cancel')
+            if (reasonFor === 'approve')
+              run(async () =>
+                unwrap(
+                  await api.POST('/api/v1/trips/{trip_id}/approve', {
+                    ...path,
+                    body: { traffic_override_reason: reason },
+                  }),
+                ),
+              )
+            else if (reasonFor === 'cancel')
               run(async () => unwrap(await api.POST('/api/v1/trips/{trip_id}/cancel', { ...path, body: { reason } })))
             else if (reasonFor) updateItem(reasonFor.item, reasonFor.status, reason)
           }}
@@ -337,5 +389,6 @@ export function TripDetailPage() {
 
 function TripMap({ tripId, markers, route }: { tripId: string; markers: MapMarker[]; route: [number, number][] }) {
   const routes = useTripRoads([{ id: tripId, color: '#1677ff', coords: route }])
-  return <MapView markers={markers} routes={routes} height={360} />
+  const zones = useTrafficZones()
+  return <MapView markers={markers} routes={routes} zones={zones} height={360} />
 }

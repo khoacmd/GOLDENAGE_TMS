@@ -8,6 +8,7 @@ from app.core.parsing import Phone
 from app.modules.master_data.models import (
     CargoClass,
     CostAllocationMethod,
+    RegulatoryClass,
     TempClass,
     VehicleRequirement,
     VehicleType,
@@ -34,6 +35,7 @@ class WarehouseCreate(BaseModel):
     latitude: Latitude
     longitude: Longitude
     is_active: bool = True
+    traffic_zone_exempt: bool = False
 
 
 class WarehouseUpdate(BaseModel):
@@ -42,6 +44,7 @@ class WarehouseUpdate(BaseModel):
     latitude: Latitude | None = None
     longitude: Longitude | None = None
     is_active: bool | None = None
+    traffic_zone_exempt: bool | None = None
 
 
 class WarehouseOut(_Out):
@@ -52,6 +55,7 @@ class WarehouseOut(_Out):
     latitude: Decimal
     longitude: Decimal
     is_active: bool
+    traffic_zone_exempt: bool
 
 
 # --- Xe ------------------------------------------------------------------------------
@@ -69,6 +73,8 @@ class VehicleCreate(BaseModel):
     cost_allocation_method: CostAllocationMethod = CostAllocationMethod.WEIGHT
     warehouse_ids: list[uuid.UUID] = Field(min_length=1)
     is_active: bool = True
+    gross_weight_kg: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
+    regulatory_class: RegulatoryClass | None = None
 
 
 class VehicleUpdate(BaseModel):
@@ -82,6 +88,8 @@ class VehicleUpdate(BaseModel):
     cost_allocation_method: CostAllocationMethod | None = None
     warehouse_ids: list[uuid.UUID] | None = Field(default=None, min_length=1)
     is_active: bool | None = None
+    gross_weight_kg: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
+    regulatory_class: RegulatoryClass | None = None
 
 
 class VehicleOut(_Out):
@@ -97,6 +105,8 @@ class VehicleOut(_Out):
     cost_allocation_method: CostAllocationMethod
     warehouse_ids: list[uuid.UUID]
     is_active: bool
+    gross_weight_kg: Decimal | None
+    regulatory_class: RegulatoryClass | None
 
 
 # --- Khách hàng & điểm giao --------------------------------------------------------------
@@ -110,6 +120,8 @@ class DeliveryPointIn(BaseModel):
     longitude: Longitude
     is_default: bool = False
     is_active: bool = True
+    # None = giữ nguyên (mới tạo: không miễn), để lần import sau không xóa dấu quản lý đã đặt.
+    traffic_zone_exempt: bool | None = None
 
 
 class DeliveryPointOut(_Out):
@@ -121,6 +133,7 @@ class DeliveryPointOut(_Out):
     longitude: Decimal
     is_default: bool
     is_active: bool
+    traffic_zone_exempt: bool
 
 
 class _CustomerFields(BaseModel):

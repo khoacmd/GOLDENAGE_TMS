@@ -34,6 +34,7 @@ Mỗi dòng 1 kho. Mã đã tồn tại sẽ được cập nhật.
 | Địa chỉ | `dia_chi` | Có |  | Số 1 Quang Trung, Hà Đông, Hà Nội |
 | Vĩ độ | `vi_do` | Có | Latitude, dạng số thập phân | 20.971 |
 | Kinh độ | `kinh_do` | Có | Longitude, dạng số thập phân | 105.776 |
+| Miễn vùng hạn chế | `mien_han_che` |  | C nếu nằm trên đường bao/tuyến được đi của vùng hạn chế; trống = giữ nguyên | K |
 
 ## Đội xe (`vehicles`)
 
@@ -51,6 +52,8 @@ Mỗi dòng 1 xe. Mã đã tồn tại sẽ được cập nhật (kể cả dan
 | Loại hàng ưu tiên | `loai_hang_uu_tien` |  | Hàng khô / Đông lạnh / Không phân biệt (mặc định) | Không phân biệt |
 | Kho lấy hàng | `kho_lay_hang` | Có | Mã các kho xe được lấy hàng, cách nhau dấu phẩy | KHO01,KHO02 |
 | PP ghi nhận chi phí | `pp_chi_phi` |  | Giá trị đơn / Khoảng cách / Khối lượng (mặc định) / Chuyến | Khối lượng |
+| Khối lượng toàn bộ (kg) | `khoi_luong_toan_bo_kg` |  | Tổng trọng lượng xe + hàng theo đăng kiểm, bắt buộc với xe Van. Trống = giữ nguyên | 2400 |
+| Phân loại lưu hành | `phan_loai_luu_hanh` |  | Xe tải (mặc định khi chưa khai) / Xe Van / Pickup. Trống = giữ nguyên | Xe Van |
 
 ## Mặt hàng (`products`)
 
@@ -89,6 +92,7 @@ Mỗi dòng 1 điểm giao; khách hàng nhiều điểm giao thì lặp lại t
 | Vĩ độ | `vi_do` | Có |  | 20.9705 |
 | Kinh độ | `kinh_do` | Có |  | 105.7782 |
 | Điểm mặc định | `diem_mac_dinh` |  | C/K; đơn hàng không ghi điểm giao sẽ giao tới điểm mặc định | C |
+| Miễn vùng hạn chế | `mien_han_che` |  | C nếu nằm trên đường bao/tuyến được đi của vùng hạn chế; trống = giữ nguyên | K |
 
 ## Tồn kho (`inventory`)
 

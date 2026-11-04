@@ -18,6 +18,7 @@ from app.modules.dispatch.schemas import TripOut, TripSummaryOut
 from app.modules.identity.models import CompanyRole
 from app.modules.tenancy.models import CompanySettings
 from app.modules.tenancy.schemas import DeliveryRules
+from app.modules.traffic.schemas import TripTrafficCheck
 
 driver_router = APIRouter(prefix="/driver", tags=["driver"])
 confirmations_router = APIRouter(prefix="/trips", tags=["dispatch"])
@@ -78,6 +79,16 @@ async def my_trip(trip_id: uuid.UUID, user: DriverDep, session: DbSession) -> Tr
     trip = await dispatch.get_trip(session, trip_id)
     service.ensure_member(trip, user.id)
     return trip_out(trip)
+
+
+@driver_router.get("/trips/{trip_id}/traffic")
+async def my_trip_traffic(
+    trip_id: uuid.UUID, user: DriverDep, session: DbSession
+) -> TripTrafficCheck:
+    """Khung giờ xe được vào vùng hạn chế của chuyến, để nhắc lái xe."""
+    trip = await dispatch.get_trip(session, trip_id)
+    service.ensure_member(trip, user.id)
+    return await dispatch.traffic_check(session, trip)
 
 
 @driver_router.post("/photos")

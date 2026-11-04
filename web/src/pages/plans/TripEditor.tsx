@@ -19,6 +19,7 @@ import {
   Space,
   Table,
   Tag,
+  TimePicker,
   Typography,
 } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -64,6 +65,7 @@ interface HeaderForm {
   driver_id?: string
   assistant_id?: string
   note?: string
+  planned_time?: Dayjs
 }
 
 class TripSaveError extends Error {
@@ -227,6 +229,9 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
         driver_id: h.driver_id ?? null,
         assistant_id: h.assistant_id ?? null,
         note: h.note ?? null,
+        planned_start: h.planned_time
+          ? h.plan_date.hour(h.planned_time.hour()).minute(h.planned_time.minute()).second(0).toISOString()
+          : null,
         stops: stops.map((s) =>
           s.delivery_point_id
             ? { delivery_point_id: s.delivery_point_id, order_part_ids: s.partIds, adhoc_items: s.adhoc_items }
@@ -322,6 +327,7 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
                   driver_id: trip.driver?.id,
                   assistant_id: trip.assistant?.id,
                   note: trip.note ?? undefined,
+                  planned_time: trip.planned_start ? dayjs(trip.planned_start) : undefined,
                 }
               : { plan_date: dayjs(search.get('date') ?? undefined) }
           }
@@ -368,6 +374,13 @@ function TripEditorForm({ trip }: { trip?: Trip }) {
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item
+            name="planned_time"
+            label="Giờ xuất phát dự kiến"
+            extra="Dùng để kiểm tra giờ lưu hành; trống = đầu ca."
+          >
+            <TimePicker format="HH:mm" minuteStep={5} />
+          </Form.Item>
           <Form.Item name="note" label="Ghi chú">
             <Input />
           </Form.Item>

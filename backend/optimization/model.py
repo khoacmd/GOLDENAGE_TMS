@@ -1,6 +1,8 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
+type Window = tuple[int, int]  # [từ, đến] giây tính từ 0h ngày giao
+
 
 @dataclass(frozen=True)
 class Matrix:
@@ -27,6 +29,8 @@ class Vehicle:
     depot_ids: tuple[str, ...]
     max_trips: int = 1
     fixed_cost: int = 0  # chi phí cố định mỗi lượt (giảm số chuyến)
+    # Giờ được rời/về từng kho (kho trong vùng hạn chế); không khai báo = cả ca, rỗng = không dùng.
+    depot_windows: Mapping[str, tuple[Window, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -39,6 +43,8 @@ class Job:
     demand: int
     vehicle_ids: tuple[str, ...]  # xe tương thích (loại hàng, loại xe khách yêu cầu, tải)
     service_s: int = 0
+    # Giờ từng xe được đến điểm này (điểm trong vùng hạn chế); không khai báo = cả ca.
+    vehicle_windows: Mapping[str, tuple[Window, ...]] = field(default_factory=dict)
 
 
 @dataclass
@@ -61,6 +67,7 @@ class Route:
     depot_id: str
     trip_seq: int
     job_ids: list[str]
+    arrivals_s: list[int]  # giờ đến từng điểm trong `job_ids`
     distance_m: int
     start_s: int
     end_s: int

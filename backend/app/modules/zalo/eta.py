@@ -8,6 +8,7 @@ quá khứ, nên giờ đến không sớm hơn hiện tại (trễ thì đẩy 
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from app.modules.dispatch import service as dispatch
 from app.modules.dispatch.models import ItemStatus, Trip, TripOrderStatus, TripStop
@@ -44,7 +45,23 @@ def _anchor(trip: Trip, now: datetime) -> tuple[datetime, TripStop | None]:
     return max(latest, start), stop
 
 
-async def stop_etas(trip: Trip, settings: CompanySettings) -> dict[uuid.UUID, CustomerEta]:
+def _not_before_window(
+    clock: datetime, windows: tuple[tuple[int, int], ...], tz: ZoneInfo
+) -> datetime:
+    """Xe bị giới hạn giờ vào vùng: chưa đến khung giờ thì phải chờ, ETA không được sớm hơn."""
+    local = clock.astimezone(tz)
+    second = local.hour * 3600 + local.minute * 60 + local.second
+    start = next((a for a, b in windows if second <= b), None)
+    if start is None or start <= second:
+        return clock
+    return clock + timedelta(seconds=start - second)
+
+
+async def stop_etas(
+    trip: Trip,
+    settings: CompanySettings,
+    windows: dict[uuid.UUID, tuple[tuple[int, int], ...]] | None = None,
+) -> dict[uuid.UUID, CustomerEta]:
     """Điểm dừng còn mục chưa giao → khoảng giờ đến; rỗng nếu chuyến không đang giao."""
     if trip.order_status != TripOrderStatus.DISPATCHED:
         return {}
@@ -63,6 +80,8 @@ async def stop_etas(trip: Trip, settings: CompanySettings) -> dict[uuid.UUID, Cu
     etas: dict[uuid.UUID, CustomerEta] = {}
     for index, stop in enumerate(remaining, start=1):
         clock = max(clock + timedelta(seconds=matrix.duration_s[index - 1][index]), now)
+        if windows and stop.id in windows:
+            clock = _not_before_window(clock, windows[stop.id], ZoneInfo(settings.timezone))
         etas[stop.id] = _window(clock, now)
         if stop is not anchor:  # đang ở điểm này (mới giao một phần) thì đã tính giờ phục vụ
             clock += service

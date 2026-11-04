@@ -215,6 +215,8 @@ async def apply_delivery_points(
     for point in points:
         existing = by_code.get(point.code.lower())
         fields = point.model_dump(exclude={"is_default"})
+        if fields["traffic_zone_exempt"] is None:
+            del fields["traffic_zone_exempt"]  # giữ nguyên dấu miễn đã đặt
         if existing is None:
             existing = DeliveryPoint(company_id=customer.company_id, **fields)
             customer.delivery_points.append(existing)

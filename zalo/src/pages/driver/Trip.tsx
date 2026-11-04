@@ -1,5 +1,5 @@
 import { errorMessage } from '@tms/api-client'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Box, Button, Header, Page, Spinner, Text, useNavigate, useParams } from 'zmp-ui'
 
@@ -29,6 +29,15 @@ export function DriverTripPage() {
     },
     onError: (e: Error) => setError(e.message),
   })
+  const traffic = useQuery({
+    queryKey: ['driver-trip', tripId, 'traffic'],
+    queryFn: async () => {
+      const { data } = await api.GET('/api/v1/driver/trips/{trip_id}/traffic', {
+        params: { path: { trip_id: tripId } },
+      })
+      return data?.notices ?? []
+    },
+  })
   const trip = query.data
   const canConfirm = rules.data?.zalo_confirm_enabled === true
 
@@ -47,6 +56,12 @@ export function DriverTripPage() {
       )}
       {trip && (
         <>
+          {traffic.data?.map((notice) => (
+            <div className="card" key={notice}>
+              <Text bold>Giờ lưu hành</Text>
+              <Text size="small">{notice}</Text>
+            </div>
+          ))}
           <div className="card">
             <div className="row-between">
               <Text bold>

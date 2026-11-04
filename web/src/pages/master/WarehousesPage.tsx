@@ -95,6 +95,14 @@ export function WarehousesPage() {
           <Form.Item name="is_active" label="Hoạt động" valuePropName="checked">
             <Switch />
           </Form.Item>
+          <Form.Item
+            name="traffic_zone_exempt"
+            label="Miễn vùng hạn chế"
+            valuePropName="checked"
+            extra="Bật khi kho nằm trên đường bao hoặc tuyến được đi của vùng hạn chế lưu hành."
+          >
+            <Switch />
+          </Form.Item>
         </>
       ))}
     </Card>

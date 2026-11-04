@@ -16,6 +16,12 @@ export interface MapRoute {
   dashed?: boolean // nét đứt = nối thẳng giữa các điểm (chưa có tuyến theo đường)
 }
 
+export interface MapZone {
+  code: string
+  name: string
+  boundary: Record<string, unknown> // GeoJSON Polygon
+}
+
 export interface MapMarker {
   id: string
   lat: number
@@ -81,6 +87,7 @@ export function MapView({
   markers,
   route,
   routes,
+  zones,
   height = 420,
   onPick,
 }: {
@@ -88,6 +95,8 @@ export function MapView({
   route?: [number, number][]
   /** Nhiều tuyến, mỗi tuyến 1 màu (vd. các chuyến của kế hoạch ngày). */
   routes?: MapRoute[]
+  /** Vùng hạn chế lưu hành, vẽ dưới các tuyến. */
+  zones?: MapZone[]
   height?: number
   onPick?: (lat: number, lng: number) => void
 }) {
@@ -148,6 +157,26 @@ export function MapView({
     })
 
     const drawRoute = () => {
+      const zoneData = {
+        type: 'FeatureCollection',
+        features: (zones ?? []).map((z) => ({
+          type: 'Feature',
+          properties: { name: z.name },
+          geometry: z.boundary,
+        })),
+      } as maplibregl.GeoJSONSourceSpecification['data']
+      const zoneSource = m.getSource('zones') as maplibregl.GeoJSONSource | undefined
+      if (zoneSource) zoneSource.setData(zoneData)
+      else {
+        m.addSource('zones', { type: 'geojson', data: zoneData })
+        m.addLayer({ id: 'zones-fill', type: 'fill', source: 'zones', paint: { 'fill-color': '#fa8c16', 'fill-opacity': 0.06 } })
+        m.addLayer({
+          id: 'zones-line',
+          type: 'line',
+          source: 'zones',
+          paint: { 'line-color': '#fa8c16', 'line-width': 2, 'line-dasharray': [3, 2] },
+        })
+      }
       const lines = routes ?? (route ? [{ id: 'route', color: '#1677ff', coords: route }] : [])
       const data: maplibregl.GeoJSONSourceSpecification['data'] = {
         type: 'FeatureCollection',
@@ -191,7 +220,7 @@ export function MapView({
       markers.forEach((mk) => bounds.extend([mk.lng, mk.lat]))
       m.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 0 })
     }
-  }, [markers, route, routes, style])
+  }, [markers, route, routes, zones, style])
 
   return <div ref={container} style={{ height, width: '100%', borderRadius: 8, overflow: 'hidden' }} />
 }

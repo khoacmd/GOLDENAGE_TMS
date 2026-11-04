@@ -23,10 +23,24 @@ for profile in car motorbike; do
   dir=$OUT/$profile
   rm -f "$dir"/vietnam.osrm*
   ln -f "$PBF" "$dir/vietnam.osm.pbf"
-  lua=/opt/car.lua
-  [[ $profile == motorbike ]] && lua=/profiles/motorbike.lua
+  # Ô tô: có class `trafficzone` để gọi `exclude=trafficzone` (TMS_OSRM_CAR_ZONE_EXCLUDE=true).
+  lua=/profiles/car_zone.lua
+  extra=(--location-dependent-data /data/zones.geojson)
+  python3 - "$PWD/../backend/app/modules/traffic/data/hanoi.json" "$dir/zones.geojson" <<'PY'
+import json, sys
+zones = json.load(open(sys.argv[1], encoding="utf-8"))["zones"]
+features = [
+    {"type": "Feature", "properties": {"traffic_zone": z["code"]}, "geometry": z["boundary"]}
+    for z in zones
+]
+json.dump({"type": "FeatureCollection", "features": features}, open(sys.argv[2], "w"))
+PY
+  if [[ $profile == motorbike ]]; then
+    lua=/profiles/motorbike.lua
+    extra=()
+  fi
   run() { docker run --rm -v "$dir:/data" -v "$PWD/osrm:/profiles:ro" "$IMAGE" "$@"; }
-  run osrm-extract -p "$lua" /data/vietnam.osm.pbf
+  run osrm-extract -p "$lua" "${extra[@]}" /data/vietnam.osm.pbf
   run osrm-partition /data/vietnam.osrm
   run osrm-customize /data/vietnam.osrm
   rm -f "$dir/vietnam.osm.pbf"

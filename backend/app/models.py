@@ -13,6 +13,7 @@ from app.modules.master_data import models as master_data_models
 from app.modules.orders import models as orders_models
 from app.modules.planning import models as planning_models
 from app.modules.tenancy import models as tenancy_models
+from app.modules.traffic import models as traffic_models
 from app.modules.zalo import models as zalo_models
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "orders_models",
     "planning_models",
     "tenancy_models",
+    "traffic_models",
     "zalo_models",
 ]
