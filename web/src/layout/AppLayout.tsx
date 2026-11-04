@@ -9,6 +9,8 @@ import {
   InboxOutlined,
   KeyOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   MobileOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -62,11 +64,36 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/companies', label: 'Công ty', icon: <ApartmentOutlined />, access: ['system'] },
 ]
 
+const COLLAPSED_KEY = 'tms-sider-collapsed'
+
+function savedCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export function AppLayout() {
   const { me, loading, logout, hasRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [changingPassword, setChangingPassword] = useState(false)
+  // Màn hình rộng: thu gọn còn icon, nhớ lựa chọn. Màn hình hẹp: ẩn hẳn, chỉ mở khi bấm.
+  const [collapsedWide, setCollapsedWide] = useState(savedCollapsed)
+  const [narrow, setNarrow] = useState(false)
+  const [openNarrow, setOpenNarrow] = useState(false)
+  const collapsed = narrow ? !openNarrow : collapsedWide
+
+  const toggleSider = () => {
+    if (narrow) return setOpenNarrow(!openNarrow)
+    setCollapsedWide(!collapsed)
+    try {
+      localStorage.setItem(COLLAPSED_KEY, collapsed ? '0' : '1')
+    } catch {
+      // Không lưu được thì chỉ mất ghi nhớ lựa chọn.
+    }
+  }
 
   if (loading) return <Spin fullscreen />
   if (!me) return <Navigate to="/login" replace />
@@ -84,8 +111,21 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider breakpoint="lg" collapsedWidth={0}>
-        <Typography.Title level={4} style={{ color: '#fff', padding: '16px 24px', margin: 0 }}>
+      <Layout.Sider
+        breakpoint="lg"
+        trigger={null}
+        collapsible
+        collapsed={collapsed}
+        collapsedWidth={narrow ? 0 : 80}
+        onBreakpoint={(broken) => {
+          setNarrow(broken)
+          setOpenNarrow(false)
+        }}
+      >
+        <Typography.Title
+          level={4}
+          style={{ color: '#fff', padding: '16px 0', margin: 0, textAlign: 'center' }}
+        >
           TMS
         </Typography.Title>
         <Menu
@@ -94,13 +134,30 @@ export function AppLayout() {
           selectedKeys={[location.pathname]}
           defaultOpenKeys={openGroup ? [openGroup] : []}
           items={items}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => {
+            navigate(key)
+            setOpenNarrow(false)
+          }}
         />
       </Layout.Sider>
       <Layout>
         <Layout.Header
-          style={{ background: '#fff', display: 'flex', justifyContent: 'flex-end', paddingInline: 16 }}
+          style={{
+            background: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingInline: 16,
+          }}
         >
+          <Button
+            type="text"
+            aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+            title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+            aria-expanded={!collapsed}
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={toggleSider}
+          />
           <Space>
             <Typography.Text>
               {me.full_name}
