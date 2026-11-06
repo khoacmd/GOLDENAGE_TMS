@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Tạo admin hệ thống: `uv run python -m app.cli create-system-admin --username sysadmin`
 - Frontend (chạy ở thư mục gốc): `pnpm install`; `pnpm web:dev` (http://localhost:5173, proxy `/api` → :8000); `pnpm typecheck`; `pnpm lint`.
 - Dữ liệu demo: import lần lượt các file trong `docs/samples/` ở màn hình Import dữ liệu (đăng nhập `demo_admin`).
-- Chuyển đổi file hệ thống ngoài → template import (vd. đơn hàng DMS): `backend/app/modules/integration/dms.py`, chỉ sinh file, không ghi dữ liệu (D44).
+- Chuyển đổi file hệ thống ngoài → template import (đơn hàng, khách hàng mới, mặt hàng mới từ file DMS): `backend/app/modules/integration/dms.py`, chỉ sinh file, không ghi dữ liệu (D44).
 - **Trước khi commit: chạy `./scripts/check.sh`** (đủ các bước như CI, dừng ở bước lỗi đầu tiên).
 - Sau mỗi lần đổi API backend: `pnpm api:generate` (sinh lại `packages/api-client/src/schema.d.ts`, CI kiểm tra file này khớp).
 - Mobile: `cd mobile && EXPO_PUBLIC_API_URL=http://<ip-máy>:8000 pnpm start`. Giả lập Android trên Spark (Redroid + Expo Go): xem `infra/android/README.md`.

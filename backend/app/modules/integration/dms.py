@@ -1,6 +1,7 @@
-"""Chuyển file đơn hàng tải từ DMS (báo cáo ReportSOSalesRealtime) sang template import đơn hàng.
+"""Chuyển file đơn hàng tải từ DMS (báo cáo ReportSOSalesRealtime) sang template import.
 
-Chỉ đổi định dạng, không ghi dữ liệu: người dùng tải file kết quả về rồi import như bình thường.
+Từ cùng một file DMS sinh ra: đơn hàng, khách hàng mới, mặt hàng mới. Chỉ đổi định dạng, không ghi
+dữ liệu: người dùng tải file kết quả về, bổ sung nếu cần, rồi import như bình thường (D44).
 """
 
 import io
@@ -11,14 +12,18 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill
 
 from app.core.errors import AppError
-from app.core.importing import validate_row
+from app.core.importing import ImportSpec, validate_row
 from app.modules.integration.service import RawRow, build_template, read_file
+from app.modules.master_data.importers import CUSTOMERS, PRODUCTS
 from app.modules.orders.importers import ORDERS
 
 # Cột của DMS dùng để chuyển đổi; các cột khác bị bỏ qua.
 REQUIRED = ("OrderNbr", "OrderDate", "CustomerCD", "InventoryCD", "OrderSalesQty", "SalesPrice")
+CUSTOMER_REQUIRED = ("CustomerCD", "CustomerName")
+PRODUCT_REQUIRED = ("InventoryCD", "InventoryName")
 DEFAULT_PRODUCT_CODE_LENGTH = 18
 MAX_REPORTED_ERRORS = 20
 
@@ -34,6 +39,17 @@ class DmsSummary:
     skipped_returns: int = 0
     first_delivery_date: date | None = None
     last_delivery_date: date | None = None
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass
+class MasterSummary:
+    """Kết quả lọc khách hàng / mặt hàng: chỉ mã chưa có trong hệ thống được đưa vào file."""
+
+    total: int = 0
+    new: int = 0
+    existing: int = 0
+    incomplete: int = 0
     warnings: list[str] = field(default_factory=list)
 
 
@@ -93,16 +109,21 @@ def product_code(value: Any, length: int) -> str:
     return code
 
 
-def _parse(rows: list[RawRow], length: int, summary: DmsSummary) -> list[_Line]:
+def read_dms(content: bytes, filename: str, required: tuple[str, ...]) -> list[RawRow]:
+    rows = read_file(content, filename)
     if not rows:
         raise AppError("File không có dữ liệu", code="empty_file")
-    missing = [c for c in REQUIRED if c not in rows[0][1]]
+    missing = [c for c in required if c not in rows[0][1]]
     if missing:
         raise AppError(
             "File không đúng định dạng đơn hàng DMS",
             code="invalid_dms_file",
             details=[f"Thiếu cột: {', '.join(missing)}"],
         )
+    return rows
+
+
+def _parse(rows: list[RawRow], length: int, summary: DmsSummary) -> list[_Line]:
     lines: list[_Line] = []
     errors: list[str] = []
     for row_no, raw in rows:
@@ -153,7 +174,7 @@ def convert_dms_orders(
     product_code_length: int = DEFAULT_PRODUCT_CODE_LENGTH,
 ) -> tuple[bytes, DmsSummary]:
     summary = DmsSummary()
-    lines = _parse(read_file(content, filename), product_code_length, summary)
+    lines = _parse(read_dms(content, filename, REQUIRED), product_code_length, summary)
 
     by_order: dict[str, list[_Line]] = defaultdict(list)
     for line in lines:
@@ -213,24 +234,160 @@ def convert_dms_orders(
     summary.products = len({r["ma_hang"] for r in out})
     if delivery_date is None and summary.first_delivery_date != summary.last_delivery_date:
         summary.warnings.append("Các đơn có ngày giao yêu cầu khác nhau (theo ngày tạo phiếu giao)")
-    return _write(out), summary
+    return _write(ORDERS, out), summary
 
 
-def _write(rows: list[dict[str, Any]]) -> bytes:
-    wb = load_workbook(io.BytesIO(build_template(ORDERS)))
+def _first_by_code(rows: list[RawRow], key: str, transform: Any = _text) -> dict[str, RawRow]:
+    """Dòng đầu tiên của mỗi mã (file đơn hàng lặp lại thông tin khách/mặt hàng ở mọi dòng)."""
+    found: dict[str, RawRow] = {}
+    for row in rows:
+        code = transform(row[1].get(key))
+        if code and code.lower() not in found:
+            found[code.lower()] = row
+    return found
+
+
+def _missing_required(spec: ImportSpec, row: dict[str, Any]) -> list[str]:
+    return [c.key for c in spec.columns if c.required and row.get(c.key) in (None, "")]
+
+
+def dms_customer_codes(content: bytes, filename: str) -> list[str]:
+    rows = read_dms(content, filename, CUSTOMER_REQUIRED)
+    return [_text(raw.get("CustomerCD")) for _, raw in _first_by_code(rows, "CustomerCD").values()]
+
+
+def convert_dms_customers(
+    content: bytes, filename: str, existing: set[str]
+) -> tuple[bytes, MasterSummary]:
+    """Khách hàng chưa có (`existing` là mã viết thường). DMS không có tọa độ nên để trống."""
+    summary = MasterSummary()
+    out: list[dict[str, Any]] = []
+    rows = read_dms(content, filename, CUSTOMER_REQUIRED)
+    for code, (_, raw) in sorted(_first_by_code(rows, "CustomerCD").items()):
+        summary.total += 1
+        if code in existing:
+            summary.existing += 1
+            continue
+        name = _text(raw.get("CustomerName"))
+        address = _text(raw.get("AddressLine1")) or None
+        out.append(
+            {
+                "ma_kh": _text(raw.get("CustomerCD")),
+                "ten_kh": name,
+                "dia_chi_kh": address,
+                "nv_sales": _text(raw.get("EmployeeName")) or None,
+                "ma_diem_giao": "DG1",
+                "ten_diem_giao": name,
+                "dia_chi_diem_giao": address,
+                "diem_mac_dinh": "C",
+            }
+        )
+    summary.new = len(out)
+    summary.incomplete = sum(bool(_missing_required(CUSTOMERS, r)) for r in out)
+    if out:
+        summary.warnings.append(
+            "DMS không có tọa độ và thường chỉ ghi số nhà: cần điền Vĩ độ, Kinh độ "
+            "và địa chỉ đầy đủ trước khi import (xem sheet Cần bổ sung)."
+        )
+    return _write(CUSTOMERS, out, name_key="ten_kh"), summary
+
+
+def dms_product_codes(content: bytes, filename: str, length: int) -> list[str]:
+    rows = read_dms(content, filename, PRODUCT_REQUIRED)
+    return list(_first_by_code(rows, "InventoryCD", lambda v: product_code(v, length)))
+
+
+_TEMP_CLASS = {"khô": "Khô", "lạnh": "Lạnh", "đông": "Đông"}
+
+
+def convert_dms_products(
+    content: bytes,
+    filename: str,
+    existing: set[str],
+    *,
+    product_code_length: int = DEFAULT_PRODUCT_CODE_LENGTH,
+) -> tuple[bytes, MasterSummary]:
+    """Mặt hàng chưa có. DMS không có trọng lượng, đơn vị SKU; số SKU/ĐVT lấy từ UnitRate > 1."""
+    summary = MasterSummary()
+    out: list[dict[str, Any]] = []
+    rows = read_dms(content, filename, PRODUCT_REQUIRED)
+    by_code = _first_by_code(rows, "InventoryCD", lambda v: product_code(v, product_code_length))
+    for code, (_, raw) in sorted(by_code.items()):
+        summary.total += 1
+        if code in existing:
+            summary.existing += 1
+            continue
+        rate = _decimal(raw.get("UnitRate"))
+        out.append(
+            {
+                "ma_hang": product_code(raw.get("InventoryCD"), product_code_length),
+                "ten_hang": _text(raw.get("InventoryName")),
+                "loai_hang": _TEMP_CLASS.get(_text(raw.get("INAttribute3Descr")).lower()),
+                "don_vi_tinh": "Thùng",
+                # UnitRate = 1: DMS không biết số SKU trong 1 thùng/két, để người dùng điền.
+                "sl_sku": int(rate) if rate > 1 and rate == rate.to_integral_value() else None,
+                "sl_dvt": 1,
+                "nha_may": _text(raw.get("INAttribute1Descr")) or None,
+                "nhom_san_pham": _text(raw.get("INAttribute2Descr")) or None,
+            }
+        )
+    summary.new = len(out)
+    # Mặt hàng mới bắt buộc có đủ đơn vị SKU và quy đổi (bắt buộc theo nghiệp vụ, không theo cột).
+    extra = ("don_vi_sku", "sl_sku")
+    summary.incomplete = sum(
+        bool(_missing_required(PRODUCTS, r) or any(r.get(k) is None for k in extra)) for r in out
+    )
+    if out:
+        summary.warnings.append(
+            "DMS không có trọng lượng và đơn vị SKU: cần điền Trọng lượng (kg), Đơn vị SKU, "
+            "kiểm tra Đơn vị tính (Thùng/Két) và số SKU quy đổi trước khi import "
+            "(xem sheet Cần bổ sung)."
+        )
+    return _write(PRODUCTS, out, name_key="ten_hang", also_required=extra), summary
+
+
+_MISSING_FILL = PatternFill("solid", fgColor="FFF59D")
+
+
+def _write(
+    spec: ImportSpec,
+    rows: list[dict[str, Any]],
+    *,
+    name_key: str | None = None,
+    also_required: tuple[str, ...] = (),
+) -> bytes:
+    """Ghi các dòng vào template `spec`; ô bắt buộc còn trống tô vàng, liệt kê ở sheet riêng."""
+    wb = load_workbook(io.BytesIO(build_template(spec)))
     ws = wb.worksheets[0]
     ws.delete_rows(2)  # dòng ví dụ của template
-    keys = [c.key for c in ORDERS.columns]
+    columns = spec.columns
+    required = {c.key for c in columns if c.required} | set(also_required)
+    todo: list[list[Any]] = []
     for r, row in enumerate(rows, start=2):
-        for c, key in enumerate(keys, start=1):
-            value = row.get(key)
-            if value is None:
-                continue
+        for c, col in enumerate(columns, start=1):
+            value = row.get(col.key)
             cell = ws.cell(row=r, column=c, value=value)
+            if value is None:
+                if col.key in required and name_key:
+                    cell.fill = _MISSING_FILL
+                continue
             if isinstance(value, str):
                 cell.number_format = "@"  # giữ nguyên số 0 đầu mã khi mở bằng Excel
-            elif key in ("gia_tri_don", "thanh_tien"):
+            elif col.key in ("gia_tri_don", "thanh_tien"):
                 cell.number_format = "#,##0"
+        if name_key:
+            missing = [c.label for c in columns if c.key in required and row.get(c.key) is None]
+            if missing:
+                todo.append([r, row[columns[0].key], row[name_key], ", ".join(missing)])
+    if todo:
+        sheet = wb.create_sheet("Cần bổ sung", 1)
+        sheet.append(["Dòng", columns[0].label, "Tên", "Còn thiếu"])
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+        for item in todo:
+            sheet.append(item)
+        for letter, width in zip("ABCD", (8, 22, 48, 60), strict=True):
+            sheet.column_dimensions[letter].width = width
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()

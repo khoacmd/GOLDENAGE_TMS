@@ -1,11 +1,12 @@
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from sqlalchemy import Select, func, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, ConflictError, NotFoundError
+from app.core.importing import load_by_codes
 from app.core.schemas import PageParams, paginate
 from app.modules.master_data.models import (
     Customer,
@@ -391,6 +392,16 @@ async def list_products(
     if product_group:
         stmt = stmt.where(Product.product_group == product_group)
     return await paginate(session, _search(stmt, Product, params), params)
+
+
+async def existing_customer_codes(session: AsyncSession, codes: Iterable[str]) -> set[str]:
+    """Mã khách hàng (viết thường) đã có trong công ty, kể cả đang ngưng hoạt động."""
+    return set(await load_by_codes(session, Customer, codes))
+
+
+async def existing_product_codes(session: AsyncSession, codes: Iterable[str]) -> set[str]:
+    """Mã mặt hàng (viết thường) đã có trong công ty, kể cả đang ngưng hoạt động."""
+    return set(await load_by_codes(session, Product, codes))
 
 
 async def product_attributes(session: AsyncSession) -> tuple[list[str], list[str]]:

@@ -102,7 +102,8 @@
 - [x] Vá: trang bị tràn ngang 8px khi mở hộp thoại (lề mặc định của `body`); form khách hàng xếp 1 cột trên màn hình hẹp
 - [x] Vá: import khách hàng/kho có tọa độ nhiều chữ số thập phân (dán từ Google Maps) lỗi 500 → tự làm tròn 6 chữ số; trang Import báo rõ lỗi máy chủ thay vì lỗi đọc JSON
 - [ ] (Phase sau) Báo cáo thống kê theo Nhóm sản phẩm / Nhà máy
-- [x] Menu "Chuyển đổi dữ liệu" → "Chuyển đổi dữ liệu đơn hàng từ DMS": file đơn hàng DMS → template import đơn hàng (mã hàng đủ 18 ký tự, gộp hàng tặng, ngày giao theo phiếu giao hoặc chọn tay), không ghi dữ liệu (D44)
+- [x] Menu "Chuyển đổi DL" → "CĐ DL đơn DMS": file đơn hàng DMS → template import đơn hàng (mã hàng đủ 18 ký tự, gộp hàng tặng, ngày giao theo phiếu giao hoặc chọn tay), không ghi dữ liệu (D44)
+- [x] "CĐ DL Khách hàng", "CĐ DL Mặt hàng": lọc khách hàng / mặt hàng chưa có từ file đơn hàng DMS sang template import, ô bắt buộc còn trống tô vàng + sheet "Cần bổ sung" (D44)
 
 ## Quy định lưu hành theo vùng (D38–D40, `docs/GOV_REGULATION.md`)
 - [x] Tổng hợp quy định Hà Nội (QĐ 01/2026, QĐ 52/2026), phương án được duyệt

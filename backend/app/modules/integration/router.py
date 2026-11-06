@@ -20,12 +20,14 @@ from app.modules.integration.schemas import (
     ApiKeyCreated,
     ApiKeyOut,
     ColumnOut,
+    DmsMasterConversionOut,
     DmsOrdersConversionOut,
     ImportJobOut,
     ImportResultOut,
     ImportSpecOut,
     IntegrationRequest,
 )
+from app.modules.master_data import service as master_data
 
 imports_router = APIRouter(prefix="/imports", tags=["imports"])
 api_keys_router = APIRouter(prefix="/api-keys", tags=["integration"])
@@ -103,6 +105,64 @@ async def list_jobs(
 # --- Chuyển đổi file từ hệ thống ngoài sang template import ----------------------------
 
 
+async def _read_upload(file: UploadFile) -> bytes:
+    data = await file.read(get_settings().max_import_bytes + 1)
+    if len(data) > get_settings().max_import_bytes:
+        raise AppError(
+            f"File quá lớn (tối đa {get_settings().max_import_bytes // 1024 // 1024} MB)",
+            code="file_too_large",
+        )
+    return data
+
+
+def _master_out(
+    prefix: str, file: UploadFile, content: bytes, summary: dms.MasterSummary
+) -> DmsMasterConversionOut:
+    stem = PurePath(file.filename or "dms").stem
+    return DmsMasterConversionOut(
+        filename=f"{prefix}_{stem}.xlsx",
+        content_base64=base64.b64encode(content).decode(),
+        **asdict(summary),
+    )
+
+
+@conversions_router.post("/dms-customers")
+async def convert_dms_customers(
+    _: ManagerOrAdminDep,
+    session: DbSession,
+    file: Annotated[UploadFile, File(description="File đơn hàng tải từ DMS (.xlsx/.csv)")],
+) -> DmsMasterConversionOut:
+    """Khách hàng trong file DMS chưa có trong hệ thống → template import khách hàng."""
+    data = await _read_upload(file)
+    name = file.filename or ""
+    existing = await master_data.existing_customer_codes(
+        session, dms.dms_customer_codes(data, name)
+    )
+    content, summary = dms.convert_dms_customers(data, name, existing)
+    return _master_out("KhachHang", file, content, summary)
+
+
+@conversions_router.post("/dms-products")
+async def convert_dms_products(
+    _: ManagerOrAdminDep,
+    session: DbSession,
+    file: Annotated[UploadFile, File(description="File đơn hàng tải từ DMS (.xlsx/.csv)")],
+    product_code_length: Annotated[
+        int, Query(ge=0, le=40, description="Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ")
+    ] = dms.DEFAULT_PRODUCT_CODE_LENGTH,
+) -> DmsMasterConversionOut:
+    """Mặt hàng trong file DMS chưa có trong hệ thống → template import mặt hàng."""
+    data = await _read_upload(file)
+    name = file.filename or ""
+    existing = await master_data.existing_product_codes(
+        session, dms.dms_product_codes(data, name, product_code_length)
+    )
+    content, summary = dms.convert_dms_products(
+        data, name, existing, product_code_length=product_code_length
+    )
+    return _master_out("MatHang", file, content, summary)
+
+
 @conversions_router.post("/dms-orders")
 async def convert_dms_orders(
     _: ManagerOrAdminDep,
@@ -114,12 +174,7 @@ async def convert_dms_orders(
         int, Query(ge=0, le=40, description="Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ")
     ] = dms.DEFAULT_PRODUCT_CODE_LENGTH,
 ) -> DmsOrdersConversionOut:
-    data = await file.read(get_settings().max_import_bytes + 1)
-    if len(data) > get_settings().max_import_bytes:
-        raise AppError(
-            f"File quá lớn (tối đa {get_settings().max_import_bytes // 1024 // 1024} MB)",
-            code="file_too_large",
-        )
+    data = await _read_upload(file)
     content, summary = dms.convert_dms_orders(
         data,
         file.filename or "",

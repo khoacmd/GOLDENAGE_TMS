@@ -60,11 +60,13 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/reports', label: 'Báo cáo', icon: <BarChartOutlined />, access: ['manager', 'company_admin'] },
   {
     path: '/conversions',
-    label: 'Chuyển đổi dữ liệu',
+    label: 'Chuyển đổi DL',
     icon: <SwapOutlined />,
     access: ['company_admin', 'manager'],
     children: [
-      { path: '/conversions/dms-orders', label: 'Chuyển đổi dữ liệu đơn hàng từ DMS', access: ['company_admin', 'manager'] },
+      { path: '/conversions/dms-orders', label: 'CĐ DL đơn DMS', access: ['company_admin', 'manager'] },
+      { path: '/conversions/dms-customers', label: 'CĐ DL Khách hàng', access: ['company_admin', 'manager'] },
+      { path: '/conversions/dms-products', label: 'CĐ DL Mặt hàng', access: ['company_admin', 'manager'] },
     ],
   },
   { path: '/imports', label: 'Import dữ liệu', icon: <ImportOutlined />, access: ['company_admin', 'manager'] },

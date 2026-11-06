@@ -97,3 +97,15 @@ class DmsOrdersConversionOut(BaseModel):
     first_delivery_date: date | None
     last_delivery_date: date | None
     warnings: list[str]
+
+
+class DmsMasterConversionOut(BaseModel):
+    """Lọc khách hàng / mặt hàng từ file DMS: chỉ mã chưa có trong hệ thống được đưa vào file."""
+
+    filename: str
+    content_base64: str
+    total: int
+    new: int
+    existing: int
+    incomplete: int
+    warnings: list[str]

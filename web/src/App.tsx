@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 
 import { AppLayout } from './layout/AppLayout'
 import { CompaniesPage } from './pages/CompaniesPage'
+import { DmsMasterPage } from './pages/conversions/DmsMasterPage'
 import { DmsOrdersPage } from './pages/conversions/DmsOrdersPage'
 import { DevicesPage } from './pages/DevicesPage'
 import { HomePage } from './pages/HomePage'
@@ -50,6 +51,8 @@ export default function App() {
         <Route path="conversions">
           <Route index element={<Navigate to="dms-orders" replace />} />
           <Route path="dms-orders" element={<DmsOrdersPage />} />
+          <Route path="dms-customers" element={<DmsMasterPage key="customers" kind="customers" />} />
+          <Route path="dms-products" element={<DmsMasterPage key="products" kind="products" />} />
         </Route>
         <Route path="imports" element={<ImportPage />} />
         <Route path="users" element={<UsersPage />} />

@@ -24,20 +24,9 @@ import { Link } from 'react-router'
 import { api } from '../../api'
 import { unwrap } from '../../lib/api-helpers'
 import { fmtDate, fmtNumber } from '../../lib/labels'
+import { download } from './download'
 
 type Conversion = components['schemas']['DmsOrdersConversionOut']
-
-function download(result: Conversion) {
-  const bytes = Uint8Array.from(atob(result.content_base64), (c) => c.charCodeAt(0))
-  const url = URL.createObjectURL(
-    new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-  )
-  const a = document.createElement('a')
-  a.href = url
-  a.download = result.filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 export function DmsOrdersPage() {
   const { message } = App.useApp()

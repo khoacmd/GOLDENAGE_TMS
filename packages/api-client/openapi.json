@@ -4897,6 +4897,116 @@
         }
       }
     },
+    "/api/v1/conversions/dms-customers": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Convert Dms Customers",
+        "description": "Khách hàng trong file DMS chưa có trong hệ thống → template import khách hàng.",
+        "operationId": "convert_dms_customers_api_v1_conversions_dms_customers_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_convert_dms_customers_api_v1_conversions_dms_customers_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DmsMasterConversionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/conversions/dms-products": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Convert Dms Products",
+        "description": "Mặt hàng trong file DMS chưa có trong hệ thống → template import mặt hàng.",
+        "operationId": "convert_dms_products_api_v1_conversions_dms_products_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_code_length",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 40,
+              "minimum": 0,
+              "description": "Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ",
+              "default": 18,
+              "title": "Product Code Length"
+            },
+            "description": "Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_convert_dms_products_api_v1_conversions_dms_products_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DmsMasterConversionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/conversions/dms-orders": {
       "post": {
         "tags": [
@@ -6165,6 +6275,21 @@
         "title": "AvailablePartOut",
         "description": "Phần đơn đang chờ xếp lệnh (PENDING hoặc giao thất bại trước đó)."
       },
+      "Body_convert_dms_customers_api_v1_conversions_dms_customers_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "File đơn hàng tải từ DMS (.xlsx/.csv)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_convert_dms_customers_api_v1_conversions_dms_customers_post"
+      },
       "Body_convert_dms_orders_api_v1_conversions_dms_orders_post": {
         "properties": {
           "file": {
@@ -6179,6 +6304,21 @@
           "file"
         ],
         "title": "Body_convert_dms_orders_api_v1_conversions_dms_orders_post"
+      },
+      "Body_convert_dms_products_api_v1_conversions_dms_products_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "File đơn hàng tải từ DMS (.xlsx/.csv)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_convert_dms_products_api_v1_conversions_dms_products_post"
       },
       "Body_import_file_api_v1_imports__kind__post": {
         "properties": {
@@ -9476,6 +9616,53 @@
           "ESTIMATE"
         ],
         "title": "DistanceSource"
+      },
+      "DmsMasterConversionOut": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_base64": {
+            "type": "string",
+            "title": "Content Base64"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "new": {
+            "type": "integer",
+            "title": "New"
+          },
+          "existing": {
+            "type": "integer",
+            "title": "Existing"
+          },
+          "incomplete": {
+            "type": "integer",
+            "title": "Incomplete"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_base64",
+          "total",
+          "new",
+          "existing",
+          "incomplete",
+          "warnings"
+        ],
+        "title": "DmsMasterConversionOut",
+        "description": "Lọc khách hàng / mặt hàng từ file DMS: chỉ mã chưa có trong hệ thống được đưa vào file."
       },
       "DmsOrdersConversionOut": {
         "properties": {

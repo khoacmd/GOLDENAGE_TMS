@@ -1,8 +1,10 @@
 import base64
+import io
 from datetime import datetime
 from typing import Any
 
 from httpx import AsyncClient
+from openpyxl import load_workbook
 
 from tests.conftest import auth, create_user, login
 from tests.test_imports import upload, xlsx
@@ -119,3 +121,100 @@ async def test_convert_requires_manager(client: AsyncClient, admin_token: str) -
     content = dms_file([["DH-1", "SO", D3, D4, "C001", 1, 1, 0, 1, False]])
     status, _ = await convert(client, keeper, content)
     assert status == 403
+
+
+MASTER_HEADERS = [
+    "OrderNbr",
+    "CustomerCD",
+    "CustomerName",
+    "AddressLine1",
+    "EmployeeName",
+    "InventoryCD",
+    "InventoryName",
+    "INAttribute1Descr",
+    "INAttribute2Descr",
+    "INAttribute3Descr",
+    "UnitRate",
+]
+MASTER_ROWS = [
+    ["DH-1", "C001", "Khách 1", "Số 1", "NV A", 472500001, "Sữa 180ml", "DLM", "Sữa DL", "Lạnh", 1],
+    [
+        "DH-2",
+        "C009",
+        "Khách 9",
+        "Số 9",
+        "NV B",
+        410055531,
+        "Trà ô long",
+        "NÚI TIÊN",
+        "Đồ Uống",
+        "Khô",
+        24,
+    ],
+    ["DH-3", "C009", "Khách 9", "Số 9", "NV B", 472500099, "Sữa mới", "DLM", "Sữa DL", "Lạnh", 1],
+]
+
+
+async def post_master(client: AsyncClient, token: str, kind: str) -> dict[str, Any]:
+    resp = await client.post(
+        f"/api/v1/conversions/dms-{kind}",
+        headers=auth(token),
+        files={"file": ("dms.xlsx", xlsx(MASTER_HEADERS, MASTER_ROWS))},
+    )
+    assert resp.status_code == 200, resp.text
+    body: dict[str, Any] = resp.json()
+    return body
+
+
+def data_rows(body: dict[str, Any]) -> tuple[list[tuple[Any, ...]], list[tuple[Any, ...]]]:
+    wb = load_workbook(io.BytesIO(base64.b64decode(body["content_base64"])))
+    rows = list(wb["Dữ liệu"].iter_rows(min_row=2, values_only=True))
+    todo = list(wb["Cần bổ sung"].iter_rows(min_row=2, values_only=True))
+    return rows, todo
+
+
+async def test_convert_dms_customers_only_new(client: AsyncClient, admin_token: str) -> None:
+    await seed(client, admin_token)
+    body = await post_master(client, admin_token, "customers")
+    assert body["filename"] == "KhachHang_dms.xlsx"
+    assert (body["total"], body["new"], body["existing"], body["incomplete"]) == (2, 1, 1, 1)
+    rows, todo = data_rows(body)
+    # Mã KH, tên, địa chỉ, ..., NV sales, ..., điểm giao DG1, tọa độ trống, mặc định.
+    assert [(r[0], r[1], r[2], r[7], r[10], r[12], r[13], r[15]) for r in rows] == [
+        ("C009", "Khách 9", "Số 9", "NV B", "DG1", "Số 9", None, "C")
+    ]
+    assert todo == [(2, "C009", "Khách 9", "Vĩ độ, Kinh độ")]
+
+    # Điền tọa độ là import được.
+    content = xlsx(
+        ["Mã KH", "Tên KH", "Mã điểm giao", "Địa chỉ điểm giao", "Vĩ độ", "Kinh độ"],
+        [["C009", "Khách 9", "DG1", "Số 9", 21.0, 105.8]],
+    )
+    assert (await upload(client, admin_token, "customers", content, "kh.xlsx"))["created"] == 1
+
+
+async def test_convert_dms_products_only_new(client: AsyncClient, admin_token: str) -> None:
+    await seed(client, admin_token)
+    body = await post_master(client, admin_token, "products")
+    assert body["filename"] == "MatHang_dms.xlsx"
+    assert (body["total"], body["new"], body["existing"], body["incomplete"]) == (3, 2, 1, 2)
+    rows, todo = data_rows(body)
+    assert [r[:10] for r in rows] == [
+        (
+            "000000000410055531",
+            "Trà ô long",
+            "Khô",
+            "Thùng",
+            None,
+            None,
+            24,
+            1,
+            "NÚI TIÊN",
+            "Đồ Uống",
+        ),
+        ("000000000472500099", "Sữa mới", "Lạnh", "Thùng", None, None, None, 1, "DLM", "Sữa DL"),
+    ]
+    assert [t[3] for t in todo] == [
+        "Trọng lượng (kg), Đơn vị SKU",
+        "Trọng lượng (kg), Đơn vị SKU, SL SKU quy đổi",
+    ]

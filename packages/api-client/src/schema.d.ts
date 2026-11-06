@@ -1235,6 +1235,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversions/dms-customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convert Dms Customers
+         * @description Khách hàng trong file DMS chưa có trong hệ thống → template import khách hàng.
+         */
+        post: operations["convert_dms_customers_api_v1_conversions_dms_customers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversions/dms-products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convert Dms Products
+         * @description Mặt hàng trong file DMS chưa có trong hệ thống → template import mặt hàng.
+         */
+        post: operations["convert_dms_products_api_v1_conversions_dms_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversions/dms-orders": {
         parameters: {
             query?: never;
@@ -1687,8 +1727,24 @@ export interface components {
             /** Longitude */
             longitude: string;
         };
+        /** Body_convert_dms_customers_api_v1_conversions_dms_customers_post */
+        Body_convert_dms_customers_api_v1_conversions_dms_customers_post: {
+            /**
+             * File
+             * @description File đơn hàng tải từ DMS (.xlsx/.csv)
+             */
+            file: string;
+        };
         /** Body_convert_dms_orders_api_v1_conversions_dms_orders_post */
         Body_convert_dms_orders_api_v1_conversions_dms_orders_post: {
+            /**
+             * File
+             * @description File đơn hàng tải từ DMS (.xlsx/.csv)
+             */
+            file: string;
+        };
+        /** Body_convert_dms_products_api_v1_conversions_dms_products_post */
+        Body_convert_dms_products_api_v1_conversions_dms_products_post: {
             /**
              * File
              * @description File đơn hàng tải từ DMS (.xlsx/.csv)
@@ -2751,6 +2807,26 @@ export interface components {
          * @enum {string}
          */
         DistanceSource: "ODOMETER" | "MANUAL" | "PLANNED" | "ESTIMATE";
+        /**
+         * DmsMasterConversionOut
+         * @description Lọc khách hàng / mặt hàng từ file DMS: chỉ mã chưa có trong hệ thống được đưa vào file.
+         */
+        DmsMasterConversionOut: {
+            /** Filename */
+            filename: string;
+            /** Content Base64 */
+            content_base64: string;
+            /** Total */
+            total: number;
+            /** New */
+            new: number;
+            /** Existing */
+            existing: number;
+            /** Incomplete */
+            incomplete: number;
+            /** Warnings */
+            warnings: string[];
+        };
         /**
          * DmsOrdersConversionOut
          * @description Kết quả chuyển đổi file đơn hàng DMS; file Excel theo template đơn hàng (base64).
@@ -7385,6 +7461,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_dms_customers_api_v1_conversions_dms_customers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_convert_dms_customers_api_v1_conversions_dms_customers_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DmsMasterConversionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_dms_products_api_v1_conversions_dms_products_post: {
+        parameters: {
+            query?: {
+                /** @description Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ */
+                product_code_length?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_convert_dms_products_api_v1_conversions_dms_products_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DmsMasterConversionOut"];
                 };
             };
             /** @description Validation Error */
