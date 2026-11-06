@@ -49,7 +49,8 @@ export function CustomersMap({ q, onEdit }: { q?: string; onEdit?: (customerId: 
         points={points}
         zones={showZones ? zones : undefined}
         onPointAction={onEdit}
-        height={360}
+        // Gấp đôi chiều cao cũ (360), nhưng không quá 70% màn hình để điện thoại còn chỗ cuộn.
+        height="min(720px, 70vh)"
       />
     </Space>
   )

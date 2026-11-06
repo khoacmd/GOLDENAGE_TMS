@@ -98,6 +98,7 @@
 - [ ] (Phase sau) Một mặt hàng nhiều SKU: đơn vị trên từng dòng đơn, bảng quy đổi nhiều dòng, tồn kho quy về một đơn vị chung (D37)
 - [x] Mặt hàng có Nhà máy và Nhóm sản phẩm (chữ tự do, import bỏ trống thì giữ nguyên), lọc trên trang Mặt hàng (D42)
 - [x] Bản đồ khách hàng trên trang Dữ liệu gốc → Khách hàng: nút Ẩn/Hiện (mặc định ẩn, nhớ lựa chọn), mọi điểm giao đang hoạt động khớp ô tìm kiếm, gom cụm, bật/tắt vùng hạn chế, bấm điểm để sửa (D43)
+- [x] Bản đồ khách hàng cao gấp đôi (720px, tối đa 70% chiều cao màn hình)
 - [x] Vá: trang bị tràn ngang 8px khi mở hộp thoại (lề mặc định của `body`); form khách hàng xếp 1 cột trên màn hình hẹp
 - [x] Vá: import khách hàng/kho có tọa độ nhiều chữ số thập phân (dán từ Google Maps) lỗi 500 → tự làm tròn 6 chữ số; trang Import báo rõ lỗi máy chủ thay vì lỗi đọc JSON
 - [ ] (Phase sau) Báo cáo thống kê theo Nhóm sản phẩm / Nhà máy

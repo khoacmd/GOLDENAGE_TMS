@@ -115,7 +115,7 @@ export function MapView({
   routes?: MapRoute[]
   /** Vùng hạn chế lưu hành, vẽ dưới các tuyến. */
   zones?: MapZone[]
-  height?: number
+  height?: number | string
   onPick?: (lat: number, lng: number) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
