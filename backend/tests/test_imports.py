@@ -122,6 +122,27 @@ async def test_customers_import_and_update(client: AsyncClient, admin_token: str
     assert (result["created"], result["updated"]) == (0, 1)
 
 
+async def test_long_coordinates_are_rounded(client: AsyncClient, admin_token: str) -> None:
+    # Tọa độ nhiều chữ số thập phân (dán từ Google Maps) trước đây làm import lỗi 500.
+    content = xlsx(
+        ["Mã KH", "Tên KH", "Mã điểm giao", "Địa chỉ điểm giao", "Vĩ độ", "Kinh độ"],
+        [["KH9", "Khách 9", "DG1", "Số 9", 21.0199737861799, 105.844682006747]],
+    )
+    result = await upload(client, admin_token, "customers", content, "kh.xlsx")
+    assert result["status"] == "SUCCEEDED", result
+    warehouses = (
+        "ma_kho,ten_kho,dia_chi,vi_do,kinh_do\nK9,Kho 9,Số 9,21.0367668696915,105.84776022\n"
+    )
+    result = await upload(client, admin_token, "warehouses", warehouses.encode(), "kho.csv")
+    assert result["status"] == "SUCCEEDED", result
+    customer = (await client.get("/api/v1/customers", headers=auth(admin_token))).json()["items"][0]
+    point = customer["delivery_points"][0]
+    assert (point["latitude"], point["longitude"]) == ("21.019974", "105.844682")
+    warehouses_out = await client.get("/api/v1/warehouses", headers=auth(admin_token))
+    warehouse = warehouses_out.json()["items"][0]
+    assert (warehouse["latitude"], warehouse["longitude"]) == ("21.036767", "105.847760")
+
+
 async def test_validation_errors_are_all_or_nothing(client: AsyncClient, admin_token: str) -> None:
     content = xlsx(
         ["Mã hàng", "Tên hàng", "Loại hàng", "Đơn vị tính", "Trọng lượng (kg)"],

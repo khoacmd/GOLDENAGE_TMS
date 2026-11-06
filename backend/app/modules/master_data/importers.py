@@ -1,10 +1,10 @@
 """Import dữ liệu gốc theo template chuẩn (xem docs/IMPORT_TEMPLATES.md)."""
 
 from collections.abc import Sequence
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, Any
 
-from pydantic import BeforeValidator, Field
+from pydantic import AfterValidator, BeforeValidator, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,8 +95,14 @@ COST_METHOD = enum_parser(
     },
 )
 
-Lat = Annotated[Num, Field(ge=-90, le=90)]
-Lng = Annotated[Num, Field(ge=-180, le=180)]
+
+def _round_coordinate(value: Decimal) -> Decimal:
+    # Tọa độ dán từ Google Maps có thể tới 13-15 chữ số thập phân; DB lưu 6 (~0,1 m).
+    return value.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+
+Lat = Annotated[Num, Field(ge=-90, le=90), AfterValidator(_round_coordinate)]
+Lng = Annotated[Num, Field(ge=-180, le=180), AfterValidator(_round_coordinate)]
 
 
 def _assign(entity: object, values: dict[str, Any]) -> None:

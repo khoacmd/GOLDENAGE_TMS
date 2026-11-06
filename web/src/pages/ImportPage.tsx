@@ -46,8 +46,9 @@ export function ImportPage() {
       const body = new FormData()
       body.append('file', file!.originFileObj as File)
       const resp = await authFetch(`/api/v1/imports/${kind}?dry_run=${dryRun}`, { method: 'POST', body })
-      const json = await resp.json()
-      if (!resp.ok) throw new Error(json?.error?.message ?? 'Import thất bại')
+      // Lỗi ngoài dự kiến (500, proxy) trả chữ thường, không phải JSON.
+      const json = await resp.json().catch(() => null)
+      if (!resp.ok || !json) throw new Error(json?.error?.message ?? `Import thất bại: lỗi máy chủ (${resp.status})`)
       return json as ImportResult
     },
     onSuccess: async (data) => {
