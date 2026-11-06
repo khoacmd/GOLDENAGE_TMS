@@ -4897,6 +4897,87 @@
         }
       }
     },
+    "/api/v1/conversions/dms-orders": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Convert Dms Orders",
+        "operationId": "convert_dms_orders_api_v1_conversions_dms_orders_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "delivery_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày giao yêu cầu cho mọi đơn; trống = theo file",
+              "title": "Delivery Date"
+            },
+            "description": "Ngày giao yêu cầu cho mọi đơn; trống = theo file"
+          },
+          {
+            "name": "product_code_length",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 40,
+              "minimum": 0,
+              "description": "Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ",
+              "default": 18,
+              "title": "Product Code Length"
+            },
+            "description": "Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_convert_dms_orders_api_v1_conversions_dms_orders_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DmsOrdersConversionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code": {
       "post": {
         "tags": [
@@ -6083,6 +6164,21 @@
         ],
         "title": "AvailablePartOut",
         "description": "Phần đơn đang chờ xếp lệnh (PENDING hoặc giao thất bại trước đó)."
+      },
+      "Body_convert_dms_orders_api_v1_conversions_dms_orders_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "File đơn hàng tải từ DMS (.xlsx/.csv)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_convert_dms_orders_api_v1_conversions_dms_orders_post"
       },
       "Body_import_file_api_v1_imports__kind__post": {
         "properties": {
@@ -9380,6 +9476,94 @@
           "ESTIMATE"
         ],
         "title": "DistanceSource"
+      },
+      "DmsOrdersConversionOut": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_base64": {
+            "type": "string",
+            "title": "Content Base64"
+          },
+          "lines": {
+            "type": "integer",
+            "title": "Lines"
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders"
+          },
+          "customers": {
+            "type": "integer",
+            "title": "Customers"
+          },
+          "products": {
+            "type": "integer",
+            "title": "Products"
+          },
+          "total_value": {
+            "type": "integer",
+            "title": "Total Value"
+          },
+          "skipped_zero_qty": {
+            "type": "integer",
+            "title": "Skipped Zero Qty"
+          },
+          "skipped_returns": {
+            "type": "integer",
+            "title": "Skipped Returns"
+          },
+          "first_delivery_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Delivery Date"
+          },
+          "last_delivery_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Delivery Date"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_base64",
+          "lines",
+          "orders",
+          "customers",
+          "products",
+          "total_value",
+          "skipped_zero_qty",
+          "skipped_returns",
+          "first_delivery_date",
+          "last_delivery_date",
+          "warnings"
+        ],
+        "title": "DmsOrdersConversionOut",
+        "description": "Kết quả chuyển đổi file đơn hàng DMS; file Excel theo template đơn hàng (base64)."
       },
       "DriverContact": {
         "properties": {

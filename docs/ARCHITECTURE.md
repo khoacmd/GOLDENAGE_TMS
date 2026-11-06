@@ -266,6 +266,8 @@ Nội dung quy định và nguồn: `docs/GOV_REGULATION.md`. Chỉ áp dụng k
 - Upsert **idempotent** theo mã (`code` / `external_ref`, không phân biệt hoa thường); tồn kho là snapshot thay toàn bộ theo kho kèm `synced_at`.
 - Đơn đã vào kế hoạch/giao/hủy bị **khóa**: lần đồng bộ sau báo lỗi cho dòng đó, không ghi đè.
 - Template chuẩn và tài liệu: `docs/IMPORT_TEMPLATES.md` (sinh từ code), dữ liệu mẫu `docs/samples/`.
+- **Chuyển đổi dữ liệu** (web: menu Chuyển đổi dữ liệu, quyền admin công ty/quản lý): đổi file xuất từ hệ thống ngoài sang template import, **không ghi dữ liệu**; người dùng tải file kết quả rồi import như thường (D44).
+  - Đơn hàng từ DMS (`integration/dms.py`, `POST /conversions/dms-orders`, trả file base64 + thống kê): báo cáo đơn bán hàng DMS (cột `OrderNbr`, `OrderDate`, `CreateShipDate`, `CustomerCD`, `InventoryCD`, `OrderSalesQty`, `OrderFreeQty`, `SalesPrice`, `OrderType`, `IsReturned`). Số lượng = bán + tặng, thành tiền = số lượng bán × đơn giá; cùng mặt hàng trong 1 đơn gộp 1 dòng; bỏ dòng số lượng 0, hàng trả (`IsReturned`, `OrderType` khác `SO`). Ngày giao yêu cầu = `CreateShipDate` muộn nhất của đơn (trống thì ngày đặt) hoặc 1 ngày người dùng chọn. Mã hàng toàn số thêm số 0 bên trái đủ độ dài (mặc định 18, vì DMS xuất mã dạng số làm mất số 0). Kết quả được kiểm tra bằng model dòng của import đơn hàng trước khi trả.
 
 ## 11. Mobile & xác nhận giao hàng
 
@@ -383,3 +385,4 @@ Ghi nhận khi dựng M0 trên Spark:
 | D41 | Xe tải xét theo trọng tải hàng (≤ 2.000 kg ngoài giờ cao điểm; > 2.000 và ≤ 10.000 kg 21:00–06:00), xe Van xét theo tổng trọng lượng (< 3.500 kg không giới hạn), theo xác nhận của công ty. Xe tải trên 10.000 kg và xe Van từ 3.500 kg/chưa khai: xử lý an toàn, chờ xác nhận | Chốt, chờ đối chiếu văn bản gốc |
 | D42 | Nhà máy và Nhóm sản phẩm của mặt hàng là chữ tự do lấy từ hệ thống bán hàng (chưa có danh mục riêng); import bỏ trống thì giữ nguyên. Báo cáo theo nhóm để sau | Chốt |
 | D43 | Bản đồ khách hàng dùng API tọa độ riêng không phân trang (mọi điểm giao đang hoạt động khớp bộ lọc của danh sách) và lớp điểm gom cụm, không dùng marker DOM | Chốt |
+| D44 | Chuyển đổi file từ hệ thống ngoài (DMS) chỉ sinh file theo template import, không import trực tiếp, để người dùng xem lại và đi qua cùng một luồng kiểm tra/lịch sử import | Chốt |

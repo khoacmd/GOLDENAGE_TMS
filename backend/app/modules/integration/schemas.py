@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -80,3 +80,20 @@ class ApiKeyOut(BaseModel):
 class ApiKeyCreated(ApiKeyOut):
     # Chỉ trả về một lần khi tạo.
     api_key: str
+
+
+class DmsOrdersConversionOut(BaseModel):
+    """Kết quả chuyển đổi file đơn hàng DMS; file Excel theo template đơn hàng (base64)."""
+
+    filename: str
+    content_base64: str
+    lines: int
+    orders: int
+    customers: int
+    products: int
+    total_value: int
+    skipped_zero_qty: int
+    skipped_returns: int
+    first_delivery_date: date | None
+    last_delivery_date: date | None
+    warnings: list[str]

@@ -13,6 +13,7 @@ import {
   MenuUnfoldOutlined,
   MobileOutlined,
   SettingOutlined,
+  SwapOutlined,
   TeamOutlined,
 } from '@ant-design/icons'
 import type { CompanyRole } from '@tms/api-client'
@@ -57,6 +58,15 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { path: '/reports', label: 'Báo cáo', icon: <BarChartOutlined />, access: ['manager', 'company_admin'] },
+  {
+    path: '/conversions',
+    label: 'Chuyển đổi dữ liệu',
+    icon: <SwapOutlined />,
+    access: ['company_admin', 'manager'],
+    children: [
+      { path: '/conversions/dms-orders', label: 'Chuyển đổi dữ liệu đơn hàng từ DMS', access: ['company_admin', 'manager'] },
+    ],
+  },
   { path: '/imports', label: 'Import dữ liệu', icon: <ImportOutlined />, access: ['company_admin', 'manager'] },
   { path: '/users', label: 'Người dùng', icon: <TeamOutlined />, access: ['company_admin'] },
   { path: '/devices', label: 'Thiết bị', icon: <MobileOutlined />, access: ['company_admin'] },

@@ -12,7 +12,12 @@ from app.modules.devices.router import router as devices_router
 from app.modules.dispatch.router import router as dispatch_router
 from app.modules.identity.router import router as auth_router
 from app.modules.identity.router import staff_router, users_router
-from app.modules.integration.router import api_keys_router, imports_router, integration_router
+from app.modules.integration.router import (
+    api_keys_router,
+    conversions_router,
+    imports_router,
+    integration_router,
+)
 from app.modules.inventory.router import router as inventory_router
 from app.modules.master_data.router import router as master_data_router
 from app.modules.orders.router import router as orders_router
@@ -61,6 +66,7 @@ def create_app() -> FastAPI:
         imports_router,
         api_keys_router,
         integration_router,
+        conversions_router,
         zalo_router,
         traffic_router,
     ):

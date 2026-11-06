@@ -1235,6 +1235,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversions/dms-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Convert Dms Orders */
+        post: operations["convert_dms_orders_api_v1_conversions_dms_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/{customer_id}/contacts/{contact_id}/activation-code": {
         parameters: {
             query?: never;
@@ -1669,6 +1686,14 @@ export interface components {
             latitude: string;
             /** Longitude */
             longitude: string;
+        };
+        /** Body_convert_dms_orders_api_v1_conversions_dms_orders_post */
+        Body_convert_dms_orders_api_v1_conversions_dms_orders_post: {
+            /**
+             * File
+             * @description File đơn hàng tải từ DMS (.xlsx/.csv)
+             */
+            file: string;
         };
         /** Body_import_file_api_v1_imports__kind__post */
         Body_import_file_api_v1_imports__kind__post: {
@@ -2726,6 +2751,36 @@ export interface components {
          * @enum {string}
          */
         DistanceSource: "ODOMETER" | "MANUAL" | "PLANNED" | "ESTIMATE";
+        /**
+         * DmsOrdersConversionOut
+         * @description Kết quả chuyển đổi file đơn hàng DMS; file Excel theo template đơn hàng (base64).
+         */
+        DmsOrdersConversionOut: {
+            /** Filename */
+            filename: string;
+            /** Content Base64 */
+            content_base64: string;
+            /** Lines */
+            lines: number;
+            /** Orders */
+            orders: number;
+            /** Customers */
+            customers: number;
+            /** Products */
+            products: number;
+            /** Total Value */
+            total_value: number;
+            /** Skipped Zero Qty */
+            skipped_zero_qty: number;
+            /** Skipped Returns */
+            skipped_returns: number;
+            /** First Delivery Date */
+            first_delivery_date: string | null;
+            /** Last Delivery Date */
+            last_delivery_date: string | null;
+            /** Warnings */
+            warnings: string[];
+        };
         /** DriverContact */
         DriverContact: {
             /** Name */
@@ -7330,6 +7385,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_dms_orders_api_v1_conversions_dms_orders_post: {
+        parameters: {
+            query?: {
+                /** @description Ngày giao yêu cầu cho mọi đơn; trống = theo file */
+                delivery_date?: string | null;
+                /** @description Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ */
+                product_code_length?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_convert_dms_orders_api_v1_conversions_dms_orders_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DmsOrdersConversionOut"];
                 };
             };
             /** @description Validation Error */

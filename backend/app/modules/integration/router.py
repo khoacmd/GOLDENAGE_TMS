@@ -1,14 +1,18 @@
+import base64
 import uuid
+from dataclasses import asdict
+from datetime import date
+from pathlib import PurePath
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Header, Query, Response, UploadFile, status
 
-from app.core.auth import CompanyAdminDep, CurrentUserDep, OfficeStaffDep
+from app.core.auth import CompanyAdminDep, CurrentUserDep, ManagerOrAdminDep, OfficeStaffDep
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.errors import AppError, PermissionDeniedError
 from app.core.schemas import Page, PageParams, page_params
-from app.modules.integration import service
+from app.modules.integration import dms, service
 from app.modules.integration.models import ImportKind, ImportSource
 from app.modules.integration.registry import SPECS
 from app.modules.integration.schemas import (
@@ -16,6 +20,7 @@ from app.modules.integration.schemas import (
     ApiKeyCreated,
     ApiKeyOut,
     ColumnOut,
+    DmsOrdersConversionOut,
     ImportJobOut,
     ImportResultOut,
     ImportSpecOut,
@@ -25,6 +30,7 @@ from app.modules.integration.schemas import (
 imports_router = APIRouter(prefix="/imports", tags=["imports"])
 api_keys_router = APIRouter(prefix="/api-keys", tags=["integration"])
 integration_router = APIRouter(prefix="/integration", tags=["integration"])
+conversions_router = APIRouter(prefix="/conversions", tags=["imports"])
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -92,6 +98,40 @@ async def list_jobs(
 ) -> Page[ImportJobOut]:
     items, total = await service.list_jobs(session, params)
     return Page(items=[ImportJobOut.model_validate(j) for j in items], total=total)
+
+
+# --- Chuyển đổi file từ hệ thống ngoài sang template import ----------------------------
+
+
+@conversions_router.post("/dms-orders")
+async def convert_dms_orders(
+    _: ManagerOrAdminDep,
+    file: Annotated[UploadFile, File(description="File đơn hàng tải từ DMS (.xlsx/.csv)")],
+    delivery_date: Annotated[
+        date | None, Query(description="Ngày giao yêu cầu cho mọi đơn; trống = theo file")
+    ] = None,
+    product_code_length: Annotated[
+        int, Query(ge=0, le=40, description="Độ dài mã hàng sau khi thêm số 0 bên trái; 0 = giữ")
+    ] = dms.DEFAULT_PRODUCT_CODE_LENGTH,
+) -> DmsOrdersConversionOut:
+    data = await file.read(get_settings().max_import_bytes + 1)
+    if len(data) > get_settings().max_import_bytes:
+        raise AppError(
+            f"File quá lớn (tối đa {get_settings().max_import_bytes // 1024 // 1024} MB)",
+            code="file_too_large",
+        )
+    content, summary = dms.convert_dms_orders(
+        data,
+        file.filename or "",
+        delivery_date=delivery_date,
+        product_code_length=product_code_length,
+    )
+    stem = PurePath(file.filename or "dms").stem
+    return DmsOrdersConversionOut(
+        filename=f"DonHang_{stem}.xlsx",
+        content_base64=base64.b64encode(content).decode(),
+        **asdict(summary),
+    )
 
 
 # --- API key (admin công ty) --------------------------------------------------------------
