@@ -116,6 +116,8 @@ class ProductRow(RowModel):
     don_vi_sku: Annotated[OptionalText, Field(max_length=32)] = None
     sl_sku: Annotated[OptionalNum, Field(ge=Decimal("0.001"), le=9999999)] = None
     sl_dvt: Annotated[OptionalNum, Field(ge=Decimal("0.001"), le=9999999)] = None
+    nha_may: Annotated[OptionalText, Field(max_length=128)] = None
+    nhom_san_pham: Annotated[OptionalText, Field(max_length=128)] = None
 
 
 def _sku_values(d: ProductRow, product: Product | None, source: str) -> dict[str, Any] | str:
@@ -167,6 +169,11 @@ async def apply_products(
             "is_active": True,
             **sku,
         }
+        # Bỏ trống = giữ nguyên, để hệ thống ngoài không gửi 2 cột này không xóa mất dữ liệu.
+        if d.nha_may is not None:
+            values["factory"] = d.nha_may
+        if d.nhom_san_pham is not None:
+            values["product_group"] = d.nhom_san_pham
         if product is not None:
             _assign(product, values)
             result.updated += 1
@@ -204,6 +211,20 @@ PRODUCTS = ImportSpec(
         ),
         Column("sl_sku", "SL SKU quy đổi", False, 48, "Vd. 48 Hộp = 1 Thùng: nhập 48"),
         Column("sl_dvt", "SL ĐVT quy đổi", False, 1, "Vd. 48 Hộp = 1 Thùng: nhập 1"),
+        Column(
+            "nha_may",
+            "Nhà máy",
+            False,
+            "DLM",
+            "Nhà máy sản xuất; mặt hàng đã có, bỏ trống: giữ nguyên",
+        ),
+        Column(
+            "nhom_san_pham",
+            "Nhóm sản phẩm",
+            False,
+            "Sữa DL",
+            "Nhóm dùng cho báo cáo thống kê; mặt hàng đã có, bỏ trống: giữ nguyên",
+        ),
     ],
     row_model=ProductRow,
     apply=apply_products,

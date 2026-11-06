@@ -88,6 +88,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   + Đơn vị tính - ĐVT (vận tải): dùng tính khối lượng
   + Trọng lượng (theo đơn vị tính)
   + Đơn vị SKU và quy đổi SKU ↔ ĐVT (vd. 48 Hộp = 1 Thùng). Đơn hàng và tồn kho từ hệ thống ngoài tính theo SKU; phiếu soạn hàng và phiếu giao hàng thể hiện cả 2 đơn vị.
+  + Nhà máy (nhà máy sản xuất) và Nhóm sản phẩm (phân nhóm cho báo cáo thống kê): chữ tự do từ hệ thống bán hàng; import bỏ trống thì giữ nguyên.
 - Thông tin chuyến giao:
   + Mã xe
   + Lái xe

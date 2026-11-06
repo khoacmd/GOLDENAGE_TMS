@@ -96,6 +96,10 @@
 ## Bổ sung nghiệp vụ
 - [x] SKU là số gốc của đơn hàng và tồn kho, ĐVT suy ra theo quy đổi cho vận tải; phiếu soạn và phiếu giao hiện cả 2 đơn vị + dạng chẵn lẻ; đổi quy đổi tự tính lại đơn chưa vào lệnh (D36)
 - [ ] (Phase sau) Một mặt hàng nhiều SKU: đơn vị trên từng dòng đơn, bảng quy đổi nhiều dòng, tồn kho quy về một đơn vị chung (D37)
+- [x] Mặt hàng có Nhà máy và Nhóm sản phẩm (chữ tự do, import bỏ trống thì giữ nguyên), lọc trên trang Mặt hàng (D42)
+- [x] Bản đồ khách hàng trên trang Dữ liệu gốc → Khách hàng: nút Ẩn/Hiện (mặc định ẩn, nhớ lựa chọn), mọi điểm giao đang hoạt động khớp ô tìm kiếm, gom cụm, bật/tắt vùng hạn chế, bấm điểm để sửa (D43)
+- [x] Vá: trang bị tràn ngang 8px khi mở hộp thoại (lề mặc định của `body`); form khách hàng xếp 1 cột trên màn hình hẹp
+- [ ] (Phase sau) Báo cáo thống kê theo Nhóm sản phẩm / Nhà máy
 
 ## Quy định lưu hành theo vùng (D38–D40, `docs/GOV_REGULATION.md`)
 - [x] Tổng hợp quy định Hà Nội (QĐ 01/2026, QĐ 52/2026), phương án được duyệt

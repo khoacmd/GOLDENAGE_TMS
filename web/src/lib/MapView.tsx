@@ -31,6 +31,16 @@ export interface MapMarker {
   title?: string
 }
 
+/** Điểm vẽ thành lớp GeoJSON có gom cụm - dùng khi nhiều điểm (vd. bản đồ khách hàng). */
+export interface MapPoint {
+  id: string
+  lat: number
+  lng: number
+  title: string
+  description?: string
+  color?: string
+}
+
 const TILES_BASE = import.meta.env.VITE_MAP_TILES_BASE ?? '/tiles'
 const OSM_STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -85,6 +95,9 @@ const HANOI: [number, number] = [105.83, 21.02]
  */
 export function MapView({
   markers,
+  points,
+  onPointAction,
+  pointActionLabel = 'Sửa',
   route,
   routes,
   zones,
@@ -92,6 +105,11 @@ export function MapView({
   onPick,
 }: {
   markers: MapMarker[]
+  /** Nhiều điểm (hàng trăm - nghìn): gom cụm khi thu nhỏ, bấm vào điểm hiện thông tin. */
+  points?: MapPoint[]
+  /** Nút trong khung thông tin của điểm (vd. mở form sửa). */
+  onPointAction?: (id: string) => void
+  pointActionLabel?: string
   route?: [number, number][]
   /** Nhiều tuyến, mỗi tuyến 1 màu (vd. các chuyến của kế hoạch ngày). */
   routes?: MapRoute[]
@@ -104,11 +122,14 @@ export function MapView({
   const map = useRef<maplibregl.Map | null>(null)
   const markerRefs = useRef<maplibregl.Marker[]>([])
   const pickRef = useRef(onPick)
+  const pointActionRef = useRef(onPointAction)
   const centered = useRef(false)
+  const pointsFitted = useRef<MapPoint[] | null>(null)
   const [style, setStyle] = useState<maplibregl.StyleSpecification | null>(null)
   useEffect(() => {
     pickRef.current = onPick
-  }, [onPick])
+    pointActionRef.current = onPointAction
+  }, [onPick, onPointAction])
   useEffect(() => {
     let active = true
     void styleReady.then((s) => active && setStyle(s))
@@ -221,6 +242,113 @@ export function MapView({
       m.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 0 })
     }
   }, [markers, route, routes, zones, style])
+
+  useEffect(() => {
+    const m = map.current
+    if (!m || !style || !points) return
+    const data: maplibregl.GeoJSONSourceSpecification['data'] = {
+      type: 'FeatureCollection',
+      features: points.map((p) => ({
+        type: 'Feature',
+        properties: { id: p.id, title: p.title, description: p.description ?? '', color: p.color ?? '#1677ff' },
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+      })),
+    }
+    const draw = () => {
+      const source = m.getSource('points') as maplibregl.GeoJSONSource | undefined
+      if (source) source.setData(data)
+      else {
+        m.addSource('points', { type: 'geojson', data, cluster: true, clusterRadius: 40, clusterMaxZoom: 14 })
+        m.addLayer({
+          id: 'points-cluster',
+          type: 'circle',
+          source: 'points',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': '#1677ff',
+            'circle-opacity': 0.85,
+            'circle-radius': ['step', ['get', 'point_count'], 14, 10, 18, 50, 24, 200, 30],
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#fff',
+          },
+        })
+        // Tile OSM dự phòng không có font (glyphs) → chỉ vẽ số lượng khi style có.
+        if (style.glyphs) {
+          m.addLayer({
+            id: 'points-count',
+            type: 'symbol',
+            source: 'points',
+            filter: ['has', 'point_count'],
+            layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-size': 12, 'text-font': ['Noto Sans Medium'] },
+            paint: { 'text-color': '#fff' },
+          })
+        }
+        m.addLayer({
+          id: 'points',
+          type: 'circle',
+          source: 'points',
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': ['get', 'color'],
+            'circle-radius': 7,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#fff',
+          },
+        })
+        m.on('click', 'points-cluster', (e) => {
+          const feature = e.features?.[0]
+          if (!feature) return
+          const clusterId = feature.properties.cluster_id as number
+          void (m.getSource('points') as maplibregl.GeoJSONSource)
+            .getClusterExpansionZoom(clusterId)
+            .then((zoom) => m.easeTo({ center: (feature.geometry as { coordinates: [number, number] }).coordinates, zoom }))
+        })
+        m.on('click', 'points', (e) => {
+          const feature = e.features?.[0]
+          if (!feature) return
+          const props = feature.properties as { id: string; title: string; description: string }
+          // Dựng DOM bằng textContent: tên/địa chỉ là dữ liệu người dùng nhập.
+          const box = document.createElement('div')
+          const title = document.createElement('div')
+          title.textContent = props.title
+          title.style.fontWeight = '600'
+          box.append(title)
+          if (props.description) {
+            const desc = document.createElement('div')
+            desc.textContent = props.description
+            box.append(desc)
+          }
+          if (pointActionRef.current) {
+            const action = document.createElement('a')
+            action.textContent = pointActionLabel
+            action.href = '#'
+            action.onclick = (ev) => {
+              ev.preventDefault()
+              pointActionRef.current?.(props.id)
+            }
+            box.append(action)
+          }
+          new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+            .setLngLat((feature.geometry as { coordinates: [number, number] }).coordinates)
+            .setDOMContent(box)
+            .addTo(m)
+        })
+        for (const layer of ['points', 'points-cluster']) {
+          m.on('mouseenter', layer, () => (m.getCanvas().style.cursor = 'pointer'))
+          m.on('mouseleave', layer, () => (m.getCanvas().style.cursor = ''))
+        }
+      }
+      // Căn khung theo các điểm khi tập điểm đổi (lọc lại), không phải mỗi lần vẽ.
+      if (pointsFitted.current !== points && points.length > 0) {
+        pointsFitted.current = points
+        const bounds = new maplibregl.LngLatBounds()
+        points.forEach((p) => bounds.extend([p.lng, p.lat]))
+        m.fitBounds(bounds, { padding: 40, maxZoom: 15, duration: 0 })
+      }
+    }
+    if (m.isStyleLoaded()) draw()
+    else m.once('load', draw)
+  }, [points, style, pointActionLabel])
 
   return <div ref={container} style={{ height, width: '100%', borderRadius: 8, overflow: 'hidden' }} />
 }

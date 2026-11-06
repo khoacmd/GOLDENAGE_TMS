@@ -365,6 +365,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Customer Locations
+         * @description Điểm giao đang hoạt động của mọi khách hàng khớp bộ lọc (không phân trang) cho bản đồ.
+         */
+        get: operations["customer_locations_api_v1_customers_locations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/{customer_id}": {
         parameters: {
             query?: never;
@@ -431,6 +451,26 @@ export interface paths {
         put?: never;
         /** Create Product */
         post: operations["create_product_api_v1_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Product Attributes
+         * @description Các giá trị Nhà máy / Nhóm sản phẩm đang dùng.
+         */
+        get: operations["product_attributes_api_v1_products_attributes_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2155,6 +2195,47 @@ export interface components {
              */
             latest: string;
         };
+        /**
+         * CustomerLocation
+         * @description 1 điểm giao trên bản đồ khách hàng.
+         */
+        CustomerLocation: {
+            /**
+             * Customer Id
+             * Format: uuid
+             */
+            customer_id: string;
+            /** Customer Code */
+            customer_code: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Customer Active */
+            customer_active: boolean;
+            /**
+             * Point Id
+             * Format: uuid
+             */
+            point_id: string;
+            /** Point Code */
+            point_code: string;
+            /** Point Name */
+            point_name: string | null;
+            /** Address */
+            address: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Is Default */
+            is_default: boolean;
+        };
+        /** CustomerLocations */
+        CustomerLocations: {
+            /** Items */
+            items: components["schemas"]["CustomerLocation"][];
+            /** Truncated */
+            truncated: boolean;
+        };
         /** CustomerMe */
         CustomerMe: {
             /** Zalo User Id */
@@ -3227,6 +3308,13 @@ export interface components {
          * @enum {string}
          */
         PrinterConnection: "NETWORK" | "USB" | "BLUETOOTH";
+        /** ProductAttributes */
+        ProductAttributes: {
+            /** Factories */
+            factories: string[];
+            /** Product Groups */
+            product_groups: string[];
+        };
         /** ProductCreate */
         ProductCreate: {
             /** Code */
@@ -3250,6 +3338,10 @@ export interface components {
              * @default 1
              */
             uom_ratio: number | string;
+            /** Factory */
+            factory?: string | null;
+            /** Product Group */
+            product_group?: string | null;
             /**
              * Is Active
              * @default true
@@ -3278,6 +3370,10 @@ export interface components {
             sku_ratio: string;
             /** Uom Ratio */
             uom_ratio: string;
+            /** Factory */
+            factory: string | null;
+            /** Product Group */
+            product_group: string | null;
             /** Is Active */
             is_active: boolean;
         };
@@ -3296,6 +3392,10 @@ export interface components {
             sku_ratio?: number | string | null;
             /** Uom Ratio */
             uom_ratio?: number | string | null;
+            /** Factory */
+            factory?: string | null;
+            /** Product Group */
+            product_group?: string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -5315,6 +5415,40 @@ export interface operations {
             };
         };
     };
+    customer_locations_api_v1_customers_locations_get: {
+        parameters: {
+            query?: {
+                /** @description Tìm theo mã/tên */
+                q?: string | null;
+                /** @description Lọc theo trạng thái hoạt động */
+                active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerLocations"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_customer_api_v1_customers__customer_id__get: {
         parameters: {
             query?: never;
@@ -5518,6 +5652,8 @@ export interface operations {
             query?: {
                 /** @description Lọc theo trạng thái hoạt động */
                 active?: boolean | null;
+                factory?: string | null;
+                product_group?: string | null;
                 /** @description Tìm theo mã/tên */
                 q?: string | null;
                 limit?: number;
@@ -5578,6 +5714,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    product_attributes_api_v1_products_attributes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAttributes"];
                 };
             };
         };

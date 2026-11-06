@@ -52,6 +52,8 @@ export function usePaging(pageSize = 20) {
       setQ(value.trim() || undefined)
       setPage(1)
     },
+    /** Về trang 1 khi đổi bộ lọc khác ngoài ô tìm kiếm. */
+    reset: () => setPage(1),
     pagination: (total: number | undefined) => ({
       current: page,
       pageSize: size,

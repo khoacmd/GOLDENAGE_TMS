@@ -1,7 +1,8 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EnvironmentOutlined, PlusOutlined } from '@ant-design/icons'
 import type { components } from '@tms/api-client'
-import { useQuery } from '@tanstack/react-query'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import {
+  App,
   Button,
   Card,
   Checkbox,
@@ -26,16 +27,41 @@ import { CoordinateFields } from '../../lib/CoordinateFields'
 import { mapLink, useEntityModal } from '../../lib/crud'
 import { VEHICLE_REQUIREMENT, WEEKDAYS, options, weekdayText } from '../../lib/labels'
 import { CustomerContactsModal } from './CustomerContacts'
+import { CustomersMap } from './CustomersMap'
 
 type Customer = components['schemas']['CustomerOut']
 type CustomerForm = components['schemas']['CustomerCreate']
 type Point = components['schemas']['DeliveryPointOut']
+
+const MAP_KEY = 'tms-customers-map'
+
+function readMapShown(): boolean {
+  try {
+    return localStorage.getItem(MAP_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 export function CustomersPage() {
   const { hasRole } = useAuth()
   const canEdit = hasRole('company_admin', 'manager')
   const paging = usePaging()
   const [contactsOf, setContactsOf] = useState<Customer | null>(null)
+  // Mặc định ẩn để dành chỗ cho bảng; nhớ lựa chọn trên trình duyệt này.
+  const [showMap, setShowMap] = useState(readMapShown)
+  const toggleMap = () => {
+    setShowMap((shown) => {
+      try {
+        localStorage.setItem(MAP_KEY, shown ? '0' : '1')
+      } catch {
+        // Trình duyệt chặn lưu trữ: vẫn ẩn/hiện được, chỉ không nhớ.
+      }
+      return !shown
+    })
+  }
+  const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const query = useQuery({
     queryKey: ['customers', paging.params],
     queryFn: async () =>
@@ -64,12 +90,28 @@ export function CustomersPage() {
         : unwrap(await api.POST('/api/v1/customers', { body: values })),
   })
 
+  const editCustomer = async (customerId: string) => {
+    try {
+      const customer = await queryClient.fetchQuery({
+        queryKey: ['customers', customerId],
+        queryFn: async () =>
+          unwrap(await api.GET('/api/v1/customers/{customer_id}', { params: { path: { customer_id: customerId } } })),
+      })
+      modal.show(customer)
+    } catch (e) {
+      message.error((e as Error).message)
+    }
+  }
+
   return (
     <Card
       title="Khách hàng & điểm giao"
       extra={
-        <Space>
+        <Space wrap>
           <Input.Search placeholder="Tìm mã, tên" allowClear onSearch={paging.search} />
+          <Button icon={<EnvironmentOutlined />} onClick={toggleMap}>
+            {showMap ? 'Ẩn bản đồ' : 'Hiện bản đồ'}
+          </Button>
           {canEdit && (
             <Button type="primary" onClick={() => modal.show(null)}>
               Thêm khách hàng
@@ -78,6 +120,7 @@ export function CustomersPage() {
         </Space>
       }
     >
+      {showMap && <CustomersMap q={paging.params.q} onEdit={canEdit ? editCustomer : undefined} />}
       <Table<Customer>
         rowKey="id"
         loading={query.isLoading}
@@ -164,12 +207,12 @@ export function CustomersPage() {
         (form, editing) => (
           <>
             <Row gutter={12}>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="code" label="Mã KH" rules={[{ required: true }, CODE_RULE]}>
                   <Input disabled={Boolean(editing)} />
                 </Form.Item>
               </Col>
-              <Col span={16}>
+              <Col xs={24} sm={16}>
                 <Form.Item name="name" label="Tên khách hàng" rules={[{ required: true }]}>
                   <Input />
                 </Form.Item>
@@ -179,34 +222,34 @@ export function CustomersPage() {
               <Input />
             </Form.Item>
             <Row gutter={12}>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="contact_name" label="Người liên hệ">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="phone" label="Điện thoại">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="email" label="Email" rules={[{ type: 'email' }]}>
                   <Input />
                 </Form.Item>
               </Col>
             </Row>
             <Row gutter={12}>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="required_vehicle_type" label="Yêu cầu xe">
                   <Select options={options(VEHICLE_REQUIREMENT)} />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="sales_rep" label="NV sales">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item name="deliveries_per_week" label="Số lần giao/tuần">
                   <InputNumber min={1} max={7} style={{ width: '100%' }} />
                 </Form.Item>
@@ -236,12 +279,12 @@ export function CustomersPage() {
                       }
                     >
                       <Row gutter={12}>
-                        <Col span={8}>
+                        <Col xs={24} sm={8}>
                           <Form.Item name={[field.name, 'code']} label="Mã điểm" rules={[{ required: true }, CODE_RULE]}>
                             <Input />
                           </Form.Item>
                         </Col>
-                        <Col span={16}>
+                        <Col xs={24} sm={16}>
                           <Form.Item name={[field.name, 'name']} label="Tên điểm">
                             <Input />
                           </Form.Item>

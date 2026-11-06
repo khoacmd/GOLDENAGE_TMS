@@ -11,8 +11,11 @@ from app.modules.master_data.schemas import (
     CustomerContactIn,
     CustomerContactOut,
     CustomerCreate,
+    CustomerLocation,
+    CustomerLocations,
     CustomerOut,
     CustomerUpdate,
+    ProductAttributes,
     ProductCreate,
     ProductOut,
     ProductUpdate,
@@ -112,6 +115,36 @@ async def list_customers(
     return Page(items=[CustomerOut.model_validate(c) for c in items], total=total)
 
 
+@router.get("/customers/locations")
+async def customer_locations(
+    _: OfficeStaffDep,
+    session: DbSession,
+    q: Annotated[str | None, Query(description="Tìm theo mã/tên")] = None,
+    active: Active = None,
+) -> CustomerLocations:
+    """Điểm giao đang hoạt động của mọi khách hàng khớp bộ lọc (không phân trang) cho bản đồ."""
+    rows, truncated = await service.customer_locations(session, q, active)
+    return CustomerLocations(
+        items=[
+            CustomerLocation(
+                customer_id=c.id,
+                customer_code=c.code,
+                customer_name=c.name,
+                customer_active=c.is_active,
+                point_id=p.id,
+                point_code=p.code,
+                point_name=p.name,
+                address=p.address,
+                latitude=p.latitude,
+                longitude=p.longitude,
+                is_default=p.is_default,
+            )
+            for c, p in rows
+        ],
+        truncated=truncated,
+    )
+
+
 @router.post("/customers", status_code=status.HTTP_201_CREATED)
 async def create_customer(
     body: CustomerCreate, user: ManagerOrAdminDep, session: DbSession
@@ -189,10 +222,22 @@ async def delete_customer_contact(
 
 @router.get("/products")
 async def list_products(
-    _: OfficeStaffDep, session: DbSession, params: Params, active: Active = None
+    _: OfficeStaffDep,
+    session: DbSession,
+    params: Params,
+    active: Active = None,
+    factory: Annotated[str | None, Query(max_length=128)] = None,
+    product_group: Annotated[str | None, Query(max_length=128)] = None,
 ) -> Page[ProductOut]:
-    items, total = await service.list_products(session, params, active)
+    items, total = await service.list_products(session, params, active, factory, product_group)
     return Page(items=[ProductOut.model_validate(p) for p in items], total=total)
+
+
+@router.get("/products/attributes")
+async def product_attributes(_: OfficeStaffDep, session: DbSession) -> ProductAttributes:
+    """Các giá trị Nhà máy / Nhóm sản phẩm đang dùng."""
+    factories, groups = await service.product_attributes(session)
+    return ProductAttributes(factories=factories, product_groups=groups)
 
 
 @router.post("/products", status_code=status.HTTP_201_CREATED)

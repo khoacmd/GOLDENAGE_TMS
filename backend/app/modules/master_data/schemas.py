@@ -201,6 +201,28 @@ class CustomerOut(_Out):
     delivery_points: list[DeliveryPointOut]
 
 
+class CustomerLocation(BaseModel):
+    """1 điểm giao trên bản đồ khách hàng."""
+
+    customer_id: uuid.UUID
+    customer_code: str
+    customer_name: str
+    customer_active: bool
+    point_id: uuid.UUID
+    point_code: str
+    point_name: str | None
+    address: str
+    latitude: Decimal
+    longitude: Decimal
+    is_default: bool
+
+
+class CustomerLocations(BaseModel):
+    items: list[CustomerLocation]
+    # Quá giới hạn số điểm: chỉ trả phần đầu, web báo người dùng lọc bớt.
+    truncated: bool
+
+
 # --- Mặt hàng ----------------------------------------------------------------------------
 
 
@@ -224,6 +246,8 @@ class ProductCreate(BaseModel):
     sku_uom: str = Field(min_length=1, max_length=32)
     sku_ratio: SkuRatio = Decimal(1)
     uom_ratio: SkuRatio = Decimal(1)
+    factory: str | None = Field(default=None, max_length=128)
+    product_group: str | None = Field(default=None, max_length=128)
     is_active: bool = True
 
     @model_validator(mode="after")
@@ -242,6 +266,8 @@ class ProductUpdate(BaseModel):
     sku_uom: str | None = Field(default=None, min_length=1, max_length=32)
     sku_ratio: SkuRatio | None = None
     uom_ratio: SkuRatio | None = None
+    factory: str | None = Field(default=None, max_length=128)
+    product_group: str | None = Field(default=None, max_length=128)
     is_active: bool | None = None
 
     @model_validator(mode="after")
@@ -250,6 +276,11 @@ class ProductUpdate(BaseModel):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError("Đơn vị SKU và quy đổi không được để trống")
         return self
+
+
+class ProductAttributes(BaseModel):
+    factories: list[str]
+    product_groups: list[str]
 
 
 class ProductOut(_Out):
@@ -262,4 +293,6 @@ class ProductOut(_Out):
     sku_uom: str
     sku_ratio: Decimal
     uom_ratio: Decimal
+    factory: str | None
+    product_group: str | None
     is_active: bool

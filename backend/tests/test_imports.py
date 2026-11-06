@@ -495,3 +495,25 @@ async def test_import_customer_contacts(client: AsyncClient, admin_token: str) -
         ("Chủ mới", None, False),
         ("Thủ kho", "DG2", True),
     ]
+
+
+async def test_product_factory_group_blank_keeps_value(
+    client: AsyncClient, admin_token: str
+) -> None:
+    head = "ma_hang,ten_hang,loai_hang,don_vi_tinh,trong_luong_kg,don_vi_sku,sl_sku,sl_dvt"
+    first = f"{head},nha_may,nhom_san_pham\nH1,Hàng 1,Lạnh,Thùng,9,Hộp,48,1,DLM,Sữa DL\n"
+    result = await upload(client, admin_token, "products", first.encode(), "hang.csv")
+    assert result["status"] == "SUCCEEDED", result
+    # Lần đồng bộ sau không có 2 cột này (hoặc để trống) không xóa giá trị đã có.
+    for content in (
+        f"{head}\nH1,Hàng 1 mới,Lạnh,Thùng,9,,,\n",
+        f"{first.split(chr(10))[0]}\nH1,Hàng 1 mới,Lạnh,Thùng,9,,,,,\n",
+    ):
+        result = await upload(client, admin_token, "products", content.encode(), "hang.csv")
+        assert result["status"] == "SUCCEEDED", result
+    product = (await client.get("/api/v1/products", headers=auth(admin_token))).json()["items"][0]
+    assert (product["name"], product["factory"], product["product_group"]) == (
+        "Hàng 1 mới",
+        "DLM",
+        "Sữa DL",
+    )

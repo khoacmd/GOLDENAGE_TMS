@@ -1453,6 +1453,81 @@
         }
       }
     },
+    "/api/v1/customers/locations": {
+      "get": {
+        "tags": [
+          "master-data"
+        ],
+        "summary": "Customer Locations",
+        "description": "Điểm giao đang hoạt động của mọi khách hàng khớp bộ lọc (không phân trang) cho bản đồ.",
+        "operationId": "customer_locations_api_v1_customers_locations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm theo mã/tên",
+              "title": "Q"
+            },
+            "description": "Tìm theo mã/tên"
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lọc theo trạng thái hoạt động",
+              "title": "Active"
+            },
+            "description": "Lọc theo trạng thái hoạt động"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLocations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{customer_id}": {
       "get": {
         "tags": [
@@ -1814,6 +1889,40 @@
             "description": "Lọc theo trạng thái hoạt động"
           },
           {
+            "name": "factory",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Factory"
+            }
+          },
+          {
+            "name": "product_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Group"
+            }
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
@@ -1921,6 +2030,33 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/products/attributes": {
+      "get": {
+        "tags": [
+          "master-data"
+        ],
+        "summary": "Product Attributes",
+        "description": "Các giá trị Nhà máy / Nhóm sản phẩm đang dùng.",
+        "operationId": "product_attributes_api_v1_products_attributes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductAttributes"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/products/{product_id}": {
@@ -7567,6 +7703,100 @@
         "title": "CustomerEta",
         "description": "Khoảng giờ hàng đến dự kiến."
       },
+      "CustomerLocation": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "customer_code": {
+            "type": "string",
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "type": "string",
+            "title": "Customer Name"
+          },
+          "customer_active": {
+            "type": "boolean",
+            "title": "Customer Active"
+          },
+          "point_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Point Id"
+          },
+          "point_code": {
+            "type": "string",
+            "title": "Point Code"
+          },
+          "point_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "latitude": {
+            "type": "string",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "string",
+            "title": "Longitude"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "customer_code",
+          "customer_name",
+          "customer_active",
+          "point_id",
+          "point_code",
+          "point_name",
+          "address",
+          "latitude",
+          "longitude",
+          "is_default"
+        ],
+        "title": "CustomerLocation",
+        "description": "1 điểm giao trên bản đồ khách hàng."
+      },
+      "CustomerLocations": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerLocation"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "truncated"
+        ],
+        "title": "CustomerLocations"
+      },
       "CustomerMe": {
         "properties": {
           "zalo_user_id": {
@@ -10594,6 +10824,30 @@
         ],
         "title": "PrinterConnection"
       },
+      "ProductAttributes": {
+        "properties": {
+          "factories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Factories"
+          },
+          "product_groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Product Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "factories",
+          "product_groups"
+        ],
+        "title": "ProductAttributes"
+      },
       "ProductCreate": {
         "properties": {
           "code": {
@@ -10661,6 +10915,30 @@
             "title": "Uom Ratio",
             "default": "1"
           },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory"
+          },
+          "product_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Group"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active",
@@ -10716,6 +10994,28 @@
             "type": "string",
             "title": "Uom Ratio"
           },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory"
+          },
+          "product_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Group"
+          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
@@ -10732,6 +11032,8 @@
           "sku_uom",
           "sku_ratio",
           "uom_ratio",
+          "factory",
+          "product_group",
           "is_active"
         ],
         "title": "ProductOut"
@@ -10831,6 +11133,30 @@
               }
             ],
             "title": "Uom Ratio"
+          },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory"
+          },
+          "product_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Group"
           },
           "is_active": {
             "anyOf": [

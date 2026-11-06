@@ -250,6 +250,9 @@ class Product(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     sku_uom: Mapped[str] = mapped_column(String(32))
     sku_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3), server_default=text("1"))
     uom_ratio: Mapped[Decimal] = mapped_column(Numeric(10, 3), server_default=text("1"))
+    # Thông tin mô tả từ hệ thống bán hàng, dùng cho báo cáo thống kê (D42).
+    factory: Mapped[str | None] = mapped_column(String(128))
+    product_group: Mapped[str | None] = mapped_column(String(128))
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
 
     def to_uom(self, sku_qty: Decimal) -> Decimal:

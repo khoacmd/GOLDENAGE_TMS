@@ -69,6 +69,8 @@ Mỗi dòng 1 mặt hàng. Mã đã tồn tại sẽ được cập nhật.
 | Đơn vị SKU | `don_vi_sku` |  | Đơn vị trên đơn hàng và tồn kho. Mặt hàng mới: file bắt buộc cả 3 cột, API bắt buộc cột này (2 số quy đổi bỏ trống = 1). Mặt hàng đã có, bỏ trống cả 3: giữ nguyên | Hộp |
 | SL SKU quy đổi | `sl_sku` |  | Vd. 48 Hộp = 1 Thùng: nhập 48 | 48 |
 | SL ĐVT quy đổi | `sl_dvt` |  | Vd. 48 Hộp = 1 Thùng: nhập 1 | 1 |
+| Nhà máy | `nha_may` |  | Nhà máy sản xuất; mặt hàng đã có, bỏ trống: giữ nguyên | DLM |
+| Nhóm sản phẩm | `nhom_san_pham` |  | Nhóm dùng cho báo cáo thống kê; mặt hàng đã có, bỏ trống: giữ nguyên | Sữa DL |
 
 ## Khách hàng & điểm giao (`customers`)
 

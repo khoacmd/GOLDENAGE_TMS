@@ -38,9 +38,9 @@ from app.modules.orders.service import (
 type CodedModel = type[Warehouse] | type[Vehicle] | type[Customer] | type[Product]
 
 
-def _search[M: Any](
-    stmt: Select[M], model: CodedModel, params: PageParams, *extra: Any
-) -> Select[M]:
+def _search[*Ts](
+    stmt: Select[*Ts], model: CodedModel, params: PageParams, *extra: Any
+) -> Select[*Ts]:
     """Tìm theo mã/tên (và các cột `extra`), sắp xếp theo mã."""
     if params.q:
         pattern = f"%{params.q.strip()}%"
@@ -188,6 +188,26 @@ async def list_customers(
     if active is not None:
         stmt = stmt.where(Customer.is_active.is_(active))
     return await paginate(session, _search(stmt, Customer, params), params)
+
+
+# Bản đồ khách hàng vẽ mọi điểm khớp bộ lọc, không phân trang; giới hạn để trang không quá nặng.
+LOCATION_LIMIT = 5000
+
+
+async def customer_locations(
+    session: AsyncSession, q: str | None, active: bool | None = None
+) -> tuple[list[tuple[Customer, DeliveryPoint]], bool]:
+    """Điểm giao đang hoạt động của các khách hàng khớp bộ lọc của danh sách; kèm cờ bị cắt bớt."""
+    stmt = (
+        select(Customer, DeliveryPoint)
+        .join(DeliveryPoint, DeliveryPoint.customer_id == Customer.id)
+        .where(DeliveryPoint.is_active.is_(True))
+    )
+    if active is not None:
+        stmt = stmt.where(Customer.is_active.is_(active))
+    stmt = _search(stmt, Customer, PageParams(q=q)).order_by(DeliveryPoint.code)
+    rows = (await session.execute(stmt.limit(LOCATION_LIMIT + 1))).all()
+    return [(c, p) for c, p in rows[:LOCATION_LIMIT]], len(rows) > LOCATION_LIMIT
 
 
 async def get_customer(session: AsyncSession, customer_id: uuid.UUID) -> Customer:
@@ -357,12 +377,32 @@ async def delete_contact(
 
 
 async def list_products(
-    session: AsyncSession, params: PageParams, active: bool | None = None
+    session: AsyncSession,
+    params: PageParams,
+    active: bool | None = None,
+    factory: str | None = None,
+    product_group: str | None = None,
 ) -> tuple[list[Product], int]:
     stmt = select(Product)
     if active is not None:
         stmt = stmt.where(Product.is_active.is_(active))
+    if factory:
+        stmt = stmt.where(Product.factory == factory)
+    if product_group:
+        stmt = stmt.where(Product.product_group == product_group)
     return await paginate(session, _search(stmt, Product, params), params)
+
+
+async def product_attributes(session: AsyncSession) -> tuple[list[str], list[str]]:
+    """Các giá trị Nhà máy / Nhóm sản phẩm đang dùng (gợi ý khi nhập, bộ lọc)."""
+
+    async def distinct(column: Any) -> list[str]:
+        rows = await session.scalars(
+            select(column).where(column.is_not(None)).distinct().order_by(column)
+        )
+        return list(rows)
+
+    return await distinct(Product.factory), await distinct(Product.product_group)
 
 
 async def get_product(session: AsyncSession, product_id: uuid.UUID) -> Product:

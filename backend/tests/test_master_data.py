@@ -277,3 +277,77 @@ async def test_customer_contacts(client: AsyncClient, admin_token: str) -> None:
     assert [c["name"] for c in contacts] == ["Chủ đại lý", "Thủ kho mới"]  # chủ trước
     assert (await client.delete(contact_url, headers=auth(admin_token))).status_code == 204
     assert len((await client.get(url, headers=auth(admin_token))).json()) == 1
+
+
+async def test_product_factory_and_group(client: AsyncClient, admin_token: str) -> None:
+    base = {"temp_class": "CHILLED", "uom": "Thùng", "weight_kg": "9.2", "sku_uom": "Thùng"}
+    for code, factory, group in (
+        ("A", "DLM", "Sữa DL"),
+        ("B", "THM", "Sữa TH"),
+        ("C", "DLM", "Sữa DL"),
+        ("D", None, None),
+    ):
+        resp = await client.post(
+            "/api/v1/products",
+            headers=auth(admin_token),
+            json={**base, "code": code, "name": code, "factory": factory, "product_group": group},
+        )
+        assert resp.status_code == 201, resp.text
+
+    url = "/api/v1/products"
+    page = (await client.get(url, headers=auth(admin_token), params={"factory": "DLM"})).json()
+    assert [p["code"] for p in page["items"]] == ["A", "C"]
+    page = (
+        await client.get(url, headers=auth(admin_token), params={"product_group": "Sữa TH"})
+    ).json()
+    assert [p["code"] for p in page["items"]] == ["B"]
+
+    attrs = (await client.get(f"{url}/attributes", headers=auth(admin_token))).json()
+    assert attrs == {"factories": ["DLM", "THM"], "product_groups": ["Sữa DL", "Sữa TH"]}
+
+    product_id = page["items"][0]["id"]
+    resp = await client.patch(
+        f"{url}/{product_id}", headers=auth(admin_token), json={"product_group": None}
+    )
+    assert resp.json()["product_group"] is None
+    assert resp.json()["factory"] == "THM"
+
+
+async def test_customer_locations(
+    client: AsyncClient, sysadmin_token: str, admin_token: str
+) -> None:
+    url = "/api/v1/customers"
+    first = (await client.post(url, headers=auth(admin_token), json=_customer())).json()
+    second = _customer(code="KH002", name="Cửa hàng Bình An")
+    second["delivery_points"] = second["delivery_points"][:1]
+    await client.post(url, headers=auth(admin_token), json=second)
+    # Điểm giao ngưng hoạt động không hiện trên bản đồ.
+    points = [{**p, "is_active": p["code"] == "DG1"} for p in first["delivery_points"]]
+    await client.patch(
+        f"{url}/{first['id']}", headers=auth(admin_token), json={"delivery_points": points}
+    )
+
+    resp = await client.get(f"{url}/locations", headers=auth(admin_token))
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["truncated"] is False
+    assert [(i["customer_code"], i["point_code"]) for i in data["items"]] == [
+        ("KH001", "DG1"),
+        ("KH002", "DG1"),
+    ]
+    assert data["items"][0]["latitude"] == "20.970000"
+
+    # Cùng bộ lọc với danh sách khách hàng.
+    found = (
+        await client.get(f"{url}/locations", headers=auth(admin_token), params={"q": "bình an"})
+    ).json()
+    assert [i["customer_code"] for i in found["items"]] == ["KH002"]
+    await client.patch(f"{url}/{first['id']}", headers=auth(admin_token), json={"is_active": False})
+    active = (
+        await client.get(f"{url}/locations", headers=auth(admin_token), params={"active": True})
+    ).json()
+    assert [i["customer_code"] for i in active["items"]] == ["KH002"]
+
+    await create_company(client, sysadmin_token, "NPP02", "admin02")
+    other = await login(client, "admin02", "admin-pass-123")
+    assert (await client.get(f"{url}/locations", headers=auth(other))).json()["items"] == []

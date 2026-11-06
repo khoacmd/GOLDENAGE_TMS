@@ -1,6 +1,7 @@
 import type { components } from '@tms/api-client'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Typography } from 'antd'
+import { useState } from 'react'
+import { AutoComplete, Button, Card, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Typography } from 'antd'
 
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
@@ -17,11 +18,24 @@ export function ProductsPage() {
   const { hasRole } = useAuth()
   const canEdit = hasRole('company_admin', 'manager')
   const paging = usePaging()
+  const [filters, setFilters] = useState<{ factory?: string; product_group?: string }>({})
   const query = useQuery({
-    queryKey: ['products', paging.params],
+    queryKey: ['products', paging.params, filters],
     queryFn: async () =>
-      unwrap(await api.GET('/api/v1/products', { params: { query: paging.params } })),
+      unwrap(await api.GET('/api/v1/products', { params: { query: { ...paging.params, ...filters } } })),
   })
+  // Nằm dưới khóa 'products' để được làm mới cùng danh sách sau khi lưu.
+  const attributes = useQuery({
+    queryKey: ['products', 'attributes'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/products/attributes')),
+  })
+  const toOptions = (values: string[] | undefined) => (values ?? []).map((v) => ({ value: v, label: v }))
+  const factories = toOptions(attributes.data?.factories)
+  const groups = toOptions(attributes.data?.product_groups)
+  const filter = (key: keyof typeof filters) => (value: string | undefined) => {
+    setFilters((f) => ({ ...f, [key]: value }))
+    paging.reset()
+  }
 
   const modal = useEntityModal<Product, ProductForm>({
     queryKey: 'products',
@@ -42,7 +56,23 @@ export function ProductsPage() {
     <Card
       title="Mặt hàng"
       extra={
-        <Space>
+        <Space wrap>
+          <Select
+            allowClear
+            placeholder="Nhà máy"
+            style={{ width: 150 }}
+            options={factories}
+            value={filters.factory}
+            onChange={filter('factory')}
+          />
+          <Select
+            allowClear
+            placeholder="Nhóm sản phẩm"
+            style={{ width: 170 }}
+            options={groups}
+            value={filters.product_group}
+            onChange={filter('product_group')}
+          />
           <Input.Search placeholder="Tìm mã, tên" allowClear onSearch={paging.search} />
           {canEdit && (
             <Button type="primary" onClick={() => modal.show(null)}>
@@ -57,16 +87,18 @@ export function ProductsPage() {
         loading={query.isLoading}
         dataSource={query.data?.items}
         pagination={paging.pagination(query.data?.total)}
-        scroll={{ x: 960 }}
+        scroll={{ x: 1200 }}
         columns={[
           { title: 'Mã', dataIndex: 'code', width: 150 },
-          { title: 'Tên hàng', dataIndex: 'name' },
+          { title: 'Tên hàng', dataIndex: 'name', width: 280 },
           {
             title: 'Loại',
             dataIndex: 'temp_class',
             width: 90,
             render: (v: Product['temp_class']) => <Tag color={TEMP_COLOR[v]}>{TEMP_CLASS[v]}</Tag>,
           },
+          { title: 'Nhà máy', dataIndex: 'factory', width: 120 },
+          { title: 'Nhóm sản phẩm', dataIndex: 'product_group', width: 140 },
           { title: 'ĐVT', dataIndex: 'uom', width: 90 },
           { title: 'Trọng lượng (kg)', dataIndex: 'weight_kg', width: 140, align: 'right', render: fmtNumber },
           { title: 'SKU', dataIndex: 'sku_uom', width: 90 },
@@ -95,6 +127,14 @@ export function ProductsPage() {
           <Form.Item name="name" label="Tên hàng" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
+          <Space size="large" wrap>
+            <Form.Item name="factory" label="Nhà máy">
+              <AutoComplete style={{ width: 200 }} options={factories} filterOption allowClear />
+            </Form.Item>
+            <Form.Item name="product_group" label="Nhóm sản phẩm">
+              <AutoComplete style={{ width: 200 }} options={groups} filterOption allowClear />
+            </Form.Item>
+          </Space>
           <Space size="large" wrap>
             <Form.Item name="temp_class" label="Loại hàng" rules={[{ required: true }]}>
               <Select style={{ width: 140 }} options={options(TEMP_CLASS)} />
