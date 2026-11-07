@@ -1567,6 +1567,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Rivers
+         * @description Sông dùng để xác định bờ của điểm giao/kho (dữ liệu dùng chung).
+         */
+        get: operations["list_rivers_api_v1_rivers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/river-bridges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Bridges */
+        get: operations["list_bridges_api_v1_river_bridges_get"];
+        put?: never;
+        /** Create Bridge */
+        post: operations["create_bridge_api_v1_river_bridges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/river-bridges/load-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Load Defaults
+         * @description Thêm các cầu mẫu chưa có (Hà Nội: cầu qua sông Hồng).
+         */
+        post: operations["load_defaults_api_v1_river_bridges_load_defaults_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/river-bridges/{bridge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Bridge */
+        put: operations["update_bridge_api_v1_river_bridges__bridge_id__put"];
+        post?: never;
+        /** Delete Bridge */
+        delete: operations["delete_bridge_api_v1_river_bridges__bridge_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1786,6 +1862,55 @@ export interface components {
              * @description Ảnh chứng từ giao nhận
              */
             file: string;
+        };
+        /** BridgeIn */
+        BridgeIn: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** River Code */
+            river_code: string;
+            /** Latitude */
+            latitude: number | string;
+            /** Longitude */
+            longitude: number | string;
+            /**
+             * Motorbike Penalty
+             * @default 0
+             */
+            motorbike_penalty: number;
+            /** Note */
+            note?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** BridgeOut */
+        BridgeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** River Code */
+            river_code: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Motorbike Penalty */
+            motorbike_penalty: number;
+            /** Note */
+            note: string | null;
+            /** Is Active */
+            is_active: boolean;
         };
         /** BulkCancelIn */
         BulkCancelIn: {
@@ -3036,6 +3161,11 @@ export interface components {
             /** Delivered At */
             delivered_at?: string | null;
         };
+        /** LoadDefaultsOut */
+        LoadDefaultsOut: {
+            /** Created */
+            created: number;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Username */
@@ -3612,6 +3742,18 @@ export interface components {
             by_customer: components["schemas"]["CustomerRow"][];
             /** Failure Reasons */
             failure_reasons: components["schemas"]["ReasonRow"][];
+        };
+        /** RiverOut */
+        RiverOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: [
+                number,
+                number
+            ][];
         };
         /** RolesUpdate */
         RolesUpdate: {
@@ -8130,6 +8272,163 @@ export interface operations {
             path: {
                 vehicle_id: string;
                 permit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rivers_api_v1_rivers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiverOut"][];
+                };
+            };
+        };
+    };
+    list_bridges_api_v1_river_bridges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BridgeOut"][];
+                };
+            };
+        };
+    };
+    create_bridge_api_v1_river_bridges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BridgeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BridgeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    load_defaults_api_v1_river_bridges_load_defaults_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoadDefaultsOut"];
+                };
+            };
+        };
+    };
+    update_bridge_api_v1_river_bridges__bridge_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bridge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BridgeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BridgeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bridge_api_v1_river_bridges__bridge_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bridge_id: string;
             };
             cookie?: never;
         };

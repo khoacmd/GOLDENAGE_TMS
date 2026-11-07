@@ -85,6 +85,8 @@
 - [x] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6, `infra/prod`)
 - [x] Lập kế hoạch bằng nút: chọn các xe sử dụng (bỏ trống = toàn bộ đội xe); job định kỳ luôn dùng toàn bộ đội xe
 - [x] Trang Kế hoạch giao hàng: chọn nhiều lệnh chưa xuất kho để xóa (hủy, phần đơn về chờ xếp), ẩn lệnh đã hủy mặc định
+- [x] Xe máy hạn chế qua sông: danh mục Cầu vượt sông (mức phạt theo cầu, cầu mẫu sông Hồng), bộ giải ưu tiên điểm giao cùng bờ với kho của xe máy (D45)
+- [ ] (Phase sau) Tuyến OSRM xe máy tránh cầu bị hạn chế (vẽ bản đồ, dẫn đường); thêm sông Đuống nếu cần
 - [ ] (Khi có dữ liệu) Hiệu chỉnh hệ số thời gian di chuyển theo giờ xuất phát/kết thúc thực tế của chuyến
 
 ## M5 – Chi phí & báo cáo

@@ -124,17 +124,24 @@ def solve(problem: Problem) -> Solution:
         return node_location[int(manager.IndexToNode(index))]
 
     # Chi phí di chuyển theo profile và đơn giá/km của từng xe (đơn vị: đồng).
-    cost_callbacks: dict[tuple[str, float], int] = {}
+    cost_callbacks: dict[tuple[str, float, str | None], int] = {}
     time_callbacks: dict[str, int] = {}
     for v, slot in enumerate(slots):
         matrix = problem.matrices[slot.vehicle.profile]
-        key = (slot.vehicle.profile, slot.vehicle.cost_per_km)
+        key = (slot.vehicle.profile, slot.vehicle.cost_per_km, slot.vehicle.penalty)
         if key not in cost_callbacks:
+            penalty = problem.penalties.get(slot.vehicle.penalty or "")
 
             def arc_cost(
-                i: int, j: int, m: Matrix = matrix, rate: float = slot.vehicle.cost_per_km
+                i: int,
+                j: int,
+                m: Matrix = matrix,
+                rate: float = slot.vehicle.cost_per_km,
+                extra: list[list[int]] | None = penalty,
             ) -> int:
-                return int(m.distance_m[location(i)][location(j)] * rate / 1000)
+                a, b = location(i), location(j)
+                cost = int(m.distance_m[a][b] * rate / 1000)
+                return cost + extra[a][b] if extra is not None else cost
 
             cost_callbacks[key] = routing.RegisterTransitCallback(arc_cost)
         routing.SetArcCostEvaluatorOfVehicle(cost_callbacks[key], v)

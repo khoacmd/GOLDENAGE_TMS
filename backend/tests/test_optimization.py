@@ -169,3 +169,18 @@ def test_benchmark_100_points_two_depots() -> None:
     print(
         f"\n{len(sol.routes)} chuyến, {sol.distance_m / 1000:.1f} km, bỏ {len(sol.unassigned)} điểm"
     )
+
+
+def test_penalty_moves_job_to_other_vehicle() -> None:
+    # B ở bên kia sông (vị trí 2): xe máy rẻ hơn nhưng bị phạt khi qua sông → ô tô giao B.
+    pts = [(0, 0), (0, 2), (2, 0)]
+    bike = Vehicle("XM1", "motorbike", 100, 2000, ("K1",), penalty="river")
+    jobs = [job("A", 1, 50, ("XE1", "XM1")), job("B", 2, 50, ("XE1", "XM1"))]
+    sol = solve(problem(pts, vehicles=[car(), bike], jobs=jobs))
+    assert {j: r.vehicle_id for r in sol.routes for j in r.job_ids} == {"A": "XM1", "B": "XM1"}
+
+    across = [[0, 0, 100_000], [0, 0, 100_000], [100_000, 100_000, 0]]
+    sol = solve(problem(pts, vehicles=[car(), bike], jobs=jobs, penalties={"river": across}))
+    assert {j: r.vehicle_id for r in sol.routes for j in r.job_ids} == {"A": "XM1", "B": "XE1"}
+    # Phạt chỉ tính vào hàm mục tiêu, không vào chi phí của tuyến.
+    assert next(r for r in sol.routes if r.vehicle_id == "XM1").cost == 4 * 2000

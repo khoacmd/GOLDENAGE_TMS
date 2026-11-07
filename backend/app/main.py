@@ -23,6 +23,7 @@ from app.modules.master_data.router import router as master_data_router
 from app.modules.orders.router import router as orders_router
 from app.modules.planning.router import router as planning_router
 from app.modules.reporting.router import router as reporting_router
+from app.modules.rivers.router import router as rivers_router
 from app.modules.tenancy.router import admin_router, company_router
 from app.modules.traffic.router import router as traffic_router
 from app.modules.zalo.router import router as zalo_router
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
         conversions_router,
         zalo_router,
         traffic_router,
+        rivers_router,
     ):
         app.include_router(router, prefix="/api/v1")
     return app

@@ -55,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
       { path: '/master-data/inventory', label: 'Tồn kho', access: OFFICE },
       { path: '/master-data/warehouses', label: 'Kho hàng', access: OFFICE },
       { path: '/master-data/vehicles', label: 'Đội xe', access: OFFICE },
+      { path: '/master-data/river-bridges', label: 'Cầu vượt sông', access: ['company_admin', 'manager'] },
     ],
   },
   { path: '/reports', label: 'Báo cáo', icon: <BarChartOutlined />, access: ['manager', 'company_admin'] },

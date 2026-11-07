@@ -39,6 +39,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Production: `infra/prod` (Caddy + nginx + image `tms-api`/`tms-web` từ workflow Images); hướng dẫn `docs/DEPLOY.md`. Sửa Dockerfile/compose thì chạy thử theo mục 8 của DEPLOY.md.
 - Kiểm thử bảo mật `backend/tests/test_security.py` quét mọi endpoint: endpoint mới mở cho khách/lái xe phải thêm vào danh sách cho phép trong file này.
 - Quy định lưu hành theo vùng (module `traffic`, `docs/GOV_REGULATION.md`): vùng + quy tắc là dữ liệu trong `backend/app/modules/traffic/data/hanoi.json`, nạp bằng `uv run python -m app.cli load-traffic-zones`; sửa ranh giới thì dựng lại OSRM ô tô (`infra/osrm/car_zone.lua`, tên class OSRM chỉ nhận chữ và số). Tắt theo mặc định, công ty tự bật.
+- Xe máy qua sông (module `rivers`, ARCHITECTURE mục 9d): đường tâm sông là dữ liệu trong `backend/app/modules/rivers/data/*.json` (sửa bằng code), cầu + mức phạt là danh mục theo công ty trên web.
 - Máy dev/test là DGX Spark **ARM64 (aarch64)**: mọi Docker image phải hỗ trợ `linux/arm64`. Production hiện chạy trên chính máy này (stack `tms-prod`, Caddy :58880 chỉ nghe 127.0.0.1) song song với stack dev `tms` - đừng `down`/xóa nhầm; sau này có thể chuyển sang cloud VPS.
 - Quy ước code backend:
   - Bảng theo công ty dùng `TenantMixin`; migration tạo bảng đó PHẢI gọi `enable_tenant_rls()` (`app/core/rls.py`). Test `test_every_tenant_table_has_forced_rls` sẽ fail nếu quên.

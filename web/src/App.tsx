@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage'
 import { CustomersPage } from './pages/master/CustomersPage'
 import { InventoryPage } from './pages/master/InventoryPage'
 import { ProductsPage } from './pages/master/ProductsPage'
+import { RiverBridgesPage } from './pages/master/RiverBridgesPage'
 import { VehiclesPage } from './pages/master/VehiclesPage'
 import { WarehousesPage } from './pages/master/WarehousesPage'
 import { OrdersPage } from './pages/OrdersPage'
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="warehouses" element={<WarehousesPage />} />
+          <Route path="river-bridges" element={<RiverBridgesPage />} />
           <Route path="vehicles" element={<VehiclesPage />} />
         </Route>
         <Route path="reports" element={<ReportsPage />} />

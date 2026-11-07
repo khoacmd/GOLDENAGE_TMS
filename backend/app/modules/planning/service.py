@@ -9,6 +9,7 @@
 """
 
 import asyncio
+import itertools
 import logging
 import time as clock
 import uuid
@@ -34,6 +35,8 @@ from app.modules.master_data import service as master_data
 from app.modules.master_data.models import Vehicle, VehicleRequirement, Warehouse
 from app.modules.orders.models import OrderPart, TempGroup
 from app.modules.planning.models import PlanningRun, RunStatus, RunTrigger
+from app.modules.rivers import geometry as river_geometry
+from app.modules.rivers import service as rivers
 from app.modules.routing import service as routing
 from app.modules.routing.service import Point, Profile
 from app.modules.tenancy.models import CompanySettings
@@ -393,6 +396,19 @@ def build_jobs(
 # --- Chạy ------------------------------------------------------------------------------
 
 
+def _river_crossings(
+    path: list[Point], river_list: list[river_geometry.River], rate_per_km: float
+) -> list[river_geometry.Crossing]:
+    """Các lần qua sông trên tuyến (kho → điểm giao → kho), cầu dự kiến theo chi phí nhỏ nhất."""
+    found = []
+    for a, b in itertools.pairwise(path):
+        for river in river_list:
+            crossing = river_geometry.crossing(a, b, river, rate_per_km)
+            if crossing is not None:
+                found.append(crossing)
+    return found
+
+
 def _seconds(t: datetime) -> int:
     return t.hour * 3600 + t.minute * 60 + t.second
 
@@ -534,6 +550,20 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
                 "Chưa tính được tuyến tránh vùng hạn chế: tuyến của ô tô có thể đi xuyên vùng"
             )
 
+    # Xe máy: phạt khi đi qua sông (theo danh mục cầu) để ưu tiên điểm giao cùng bờ với kho.
+    river_list = await rivers.planning_rivers(session)
+    penalties: dict[str, list[list[int]]] = {}
+    penalty_of: dict[uuid.UUID, str] = {}
+    if river_list:
+        for v in usable:
+            if dispatch.vehicle_profile(v) == Profile.MOTORBIKE:
+                key = f"river:{v.cost_per_km}"
+                if key not in penalties:
+                    penalties[key] = river_geometry.penalty_matrix(
+                        locations, river_list, float(v.cost_per_km)
+                    )
+                penalty_of[v.id] = key
+
     def solver_profile(vehicle: Vehicle) -> str:
         profile = dispatch.vehicle_profile(vehicle)
         restricted = limits is not None and vehicle.id in limits.restricted_vehicles
@@ -557,11 +587,13 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
                     for w in v.warehouse_ids
                     if limits is not None and (v.id, w) in limits.depots
                 },
+                penalty=penalty_of.get(v.id),
             )
             for v in usable
         ],
         jobs=jobs,
         matrices=matrices,
+        penalties=penalties,
         shift_start_s=shift_start,
         shift_end_s=shift_end,
         turnaround_s=settings.turnaround_minutes * 60,
@@ -578,6 +610,8 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             unassigned[part_id] = REASON_CAPACITY
 
     trips: list[Trip] = []
+    job_location = {j.id: j.location for j in jobs}
+    rate_of = {v.id: v.cost_per_km for v in usable}
     midnight = datetime.combine(plan_date, datetime.min.time(), tz)
     for route in sorted(solution.routes, key=lambda r: (r.vehicle_id, r.trip_seq)):
         stops: list[StopIn] = []
@@ -612,6 +646,15 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
         trip.planned_start = midnight + timedelta(seconds=route.start_s)
         trip.planned_end = midnight + timedelta(seconds=route.end_s)
         warnings += [f"{trip.code}: {w}" for w in trip_warnings]
+        if trip.vehicle_id in penalty_of:
+            path = [location_of[trip.warehouse_id]]
+            path += [job_location[j] for j in route.job_ids] + path[:1]
+            warnings += [
+                f"{trip.code}: xe máy qua {c.river} (dự kiến {c.bridge})"
+                for c in _river_crossings(
+                    [locations[i] for i in path], river_list, float(rate_of[trip.vehicle_id])
+                )
+            ]
         trips.append(trip)
     await session.flush()
 
@@ -662,6 +705,11 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             for v in vehicles
         ],
         "selected_vehicle_ids": run.vehicle_ids,
+        "river_bridges": [
+            {"river": r.name, "bridge": b.name, "motorbike_penalty": b.penalty}
+            for r in river_list
+            for b in r.bridges
+        ],
         "shift": [shift_start, shift_end],
         "settings": {
             "service_minutes": settings.service_minutes,

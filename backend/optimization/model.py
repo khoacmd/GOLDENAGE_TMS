@@ -31,6 +31,8 @@ class Vehicle:
     fixed_cost: int = 0  # chi phí cố định mỗi lượt (giảm số chuyến)
     # Giờ được rời/về từng kho (kho trong vùng hạn chế); không khai báo = cả ca, rỗng = không dùng.
     depot_windows: Mapping[str, tuple[Window, ...]] = field(default_factory=dict)
+    # Khóa của `Problem.penalties`: chi phí phạt cộng thêm theo cặp địa điểm (vd. xe máy qua sông).
+    penalty: str | None = None
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,8 @@ class Problem:
     time_limit_s: int = 10
     # Phạt khi bỏ 1 điểm; phải lớn hơn mọi chi phí để bộ giải chỉ bỏ khi không xếp được.
     drop_penalty: int = 10**10
+    # Chi phí phạt (đồng) giữa các địa điểm theo chỉ số ma trận, chỉ tính vào hàm mục tiêu.
+    penalties: Mapping[str, list[list[int]]] = field(default_factory=dict)
 
 
 @dataclass

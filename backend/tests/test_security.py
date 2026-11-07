@@ -148,6 +148,7 @@ async def tenant_a(
         json=_permit_body(zone_id),
     )
     assert permit.status_code == 201, permit.text
+    await client.post("/api/v1/river-bridges/load-defaults", headers=auth(env.admin))
     ids = {
         "trip_id": trip["id"],
         "item_id": trip["stops"][0]["items"][0]["id"],
@@ -163,6 +164,7 @@ async def tenant_a(
         "user_id": env.driver_id,
         "company_id": next(c["id"] for c in companies if c["code"] == "NPP01"),
         "permit_id": permit.json()["id"],
+        "bridge_id": await first("/api/v1/river-bridges"),
         "kind": "products",
     }
     return TenantA(env=env, ids=ids, trip=trip, zone_id=zone_id)
@@ -196,6 +198,14 @@ def write_body(path: str, a: TenantA) -> Any:
         },
         "/api/v1/vehicles/{vehicle_id}/permits": _permit_body(a.zone_id),
         "/api/v1/vehicles/{vehicle_id}/permits/{permit_id}": _permit_body(a.zone_id),
+        "/api/v1/river-bridges/{bridge_id}": {
+            "code": "B1",
+            "name": "Cầu B",
+            "river_code": "SONG_HONG",
+            "latitude": 21,
+            "longitude": 105.8,
+            "motorbike_penalty": 0,
+        },
         "/api/v1/users/{user_id}/roles": {"roles": ["manager"]},
         "/api/v1/users/{user_id}/pin": {"pin": "246810"},
         "/api/v1/driver/trips/{trip_id}/items/{item_id}/confirm": {
@@ -225,6 +235,7 @@ async def snapshot(client: AsyncClient, a: TenantA) -> list[Any]:
         "/api/v1/api-keys",
         "/api/v1/users",
         "/api/v1/company/settings",
+        "/api/v1/river-bridges",
     ]
     return [(await client.get(p, headers=token)).json() for p in paths]
 

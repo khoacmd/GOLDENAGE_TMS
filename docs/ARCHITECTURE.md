@@ -228,6 +228,13 @@ Chi tiết triển khai:
 - Bộ giải (`optimization/vrp.py`): mỗi xe nhân thành `max_trips × số kho` xe ảo, chuỗi thời gian `start(k+1) ≥ end(k) + quay đầu × active(k)`; phần đơn cùng điểm + nhóm nhiệt độ + kho gộp 1 node (vượt tải xe lớn nhất thì chia nhiều node, không tách phần đơn); OR-Tools `PATH_CHEAPEST_ARC` + `GUIDED_LOCAL_SEARCH`. (OR-Tools 9.15: `SetAllowedVehiclesForIndex` lỗi binding Python → dùng `VehicleVar(i).SetValues([-1, ...])`.)
 - Điều chỉnh: kéo thả điểm dừng giữa các chuyến / đổi thứ tự (`POST /planning/move-stop`, 1 transaction, kiểm tra ràng buộc như lập tay); trang kết quả so chi phí hiện tại với phương án tối ưu.
 
+## 9d. Xe máy qua sông (module `rivers`, D45)
+
+- **Dữ liệu:** sông = đường tâm (danh sách điểm) trong `backend/app/modules/rivers/data/*.json`, dùng chung, sửa bằng code (hiện có sông Hồng, trích từ OSM). `river_bridges(code, name, river_code, latitude, longitude, motorbike_penalty, note, is_active)` theo công ty (RLS), admin công ty quản lý ở Dữ liệu gốc → Cầu vượt sông; nút "Thêm cầu mẫu Hà Nội" chép các cầu trong file (Thăng Long, Nhật Tân, Long Biên: 200.000 đ; Chương Dương, Vĩnh Tuy, Thanh Trì: 1.000.000 đ), cầu đã có mã giữ nguyên. API `GET /rivers`, `/river-bridges` (+ POST/PUT/DELETE, `POST /river-bridges/load-defaults`).
+- **Bờ sông:** phía của điểm so với đoạn đường tâm gần nhất (chiếu phẳng); điểm ngoài 2 đầu đường tâm thì không xét. Sông không có cầu đang dùng thì bỏ qua.
+- **Bộ giải:** xe máy có ma trận phạt (`Vehicle.penalty` → `Problem.penalties`), cộng vào chi phí cung đường, không vào chi phí chuyến. Cặp điểm khác bờ: phạt = min theo cầu (phạt của cầu + quãng đi vòng qua cầu theo đường chim bay × 1,35 × đơn giá/km). Kết quả: xe máy ưu tiên điểm cùng bờ với kho, điểm bên kia giao bằng ô tô hoặc qua cầu phạt thấp. Kế hoạch có cảnh báo khi lệnh xe máy vẫn qua sông (kèm cầu dự kiến); `input_snapshot.river_bridges` lưu tham số đã dùng.
+- **Hạn chế:** chỉ đổi cách xếp đơn, tuyến OSRM của xe máy (vẽ bản đồ, dẫn đường) vẫn có thể đi qua cầu bị hạn chế; khoảng cách/thời gian không tính phần đi vòng.
+
 ## 9c. Quy định lưu hành theo vùng (module `traffic`, D38)
 
 Nội dung quy định và nguồn: `docs/GOV_REGULATION.md`. Chỉ áp dụng khi công ty bật `company_settings.traffic_rules_enabled`.
@@ -388,3 +395,4 @@ Ghi nhận khi dựng M0 trên Spark:
 | D42 | Nhà máy và Nhóm sản phẩm của mặt hàng là chữ tự do lấy từ hệ thống bán hàng (chưa có danh mục riêng); import bỏ trống thì giữ nguyên. Báo cáo theo nhóm để sau | Chốt |
 | D43 | Bản đồ khách hàng dùng API tọa độ riêng không phân trang (mọi điểm giao đang hoạt động khớp bộ lọc của danh sách) và lớp điểm gom cụm, không dùng marker DOM | Chốt |
 | D44 | Chuyển đổi file từ hệ thống ngoài (DMS) chỉ sinh file theo template import, không import trực tiếp, để người dùng xem lại và đi qua cùng một luồng kiểm tra/lịch sử import. Khách hàng/mặt hàng chỉ lấy mã chưa có, vì DMS thiếu tọa độ, trọng lượng, đơn vị SKU và địa chỉ đầy đủ | Chốt |
+| D45 | Xe máy hạn chế qua sông bằng chi phí phạt theo cầu trong hàm mục tiêu (danh mục cầu theo công ty, đường tâm sông dùng chung trong code), không cấm cứng và chưa đổi tuyến OSRM | Chốt |

@@ -5927,6 +5927,235 @@
           }
         }
       }
+    },
+    "/api/v1/rivers": {
+      "get": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "List Rivers",
+        "description": "Sông dùng để xác định bờ của điểm giao/kho (dữ liệu dùng chung).",
+        "operationId": "list_rivers_api_v1_rivers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RiverOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Rivers Api V1 Rivers Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/river-bridges": {
+      "get": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "List Bridges",
+        "operationId": "list_bridges_api_v1_river_bridges_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BridgeOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Bridges Api V1 River Bridges Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "Create Bridge",
+        "operationId": "create_bridge_api_v1_river_bridges_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BridgeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/river-bridges/load-defaults": {
+      "post": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "Load Defaults",
+        "description": "Thêm các cầu mẫu chưa có (Hà Nội: cầu qua sông Hồng).",
+        "operationId": "load_defaults_api_v1_river_bridges_load_defaults_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadDefaultsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/river-bridges/{bridge_id}": {
+      "put": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "Update Bridge",
+        "operationId": "update_bridge_api_v1_river_bridges__bridge_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bridge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Bridge Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BridgeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BridgeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "rivers"
+        ],
+        "summary": "Delete Bridge",
+        "operationId": "delete_bridge_api_v1_river_bridges__bridge_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bridge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Bridge Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6396,6 +6625,149 @@
           "file"
         ],
         "title": "Body_upload_photo_api_v1_driver_photos_post"
+      },
+      "BridgeIn": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._/-]+$",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "river_code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "River Code"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "motorbike_penalty": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Motorbike Penalty",
+            "default": 0
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "river_code",
+          "latitude",
+          "longitude"
+        ],
+        "title": "BridgeIn"
+      },
+      "BridgeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "river_code": {
+            "type": "string",
+            "title": "River Code"
+          },
+          "latitude": {
+            "type": "string",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "string",
+            "title": "Longitude"
+          },
+          "motorbike_penalty": {
+            "type": "integer",
+            "title": "Motorbike Penalty"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "river_code",
+          "latitude",
+          "longitude",
+          "motorbike_penalty",
+          "note",
+          "is_active"
+        ],
+        "title": "BridgeOut"
       },
       "BulkCancelIn": {
         "properties": {
@@ -10192,6 +10564,19 @@
         ],
         "title": "ItemUpdateIn"
       },
+      "LoadDefaultsOut": {
+        "properties": {
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created"
+        ],
+        "title": "LoadDefaultsOut"
+      },
       "LoginRequest": {
         "properties": {
           "username": {
@@ -11749,6 +12134,42 @@
           "failure_reasons"
         ],
         "title": "ReportOut"
+      },
+      "RiverOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "path": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "path"
+        ],
+        "title": "RiverOut"
       },
       "RolesUpdate": {
         "properties": {
