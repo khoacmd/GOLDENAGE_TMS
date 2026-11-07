@@ -14,6 +14,8 @@ export class ApiError extends Error {
 /** Lấy `data` từ kết quả openapi-fetch, ném ApiError (thông báo tiếng Việt) nếu lỗi. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.data !== undefined) return result.data
+  // 204 No Content: openapi-fetch trả data = undefined dù request thành công.
+  if (result.response.ok) return undefined as T
   if (result.response.status === 403) throw new ApiError('Bạn không có quyền thực hiện thao tác này')
   throw new ApiError(errorMessage(result.error), errorFields(result.error))
 }

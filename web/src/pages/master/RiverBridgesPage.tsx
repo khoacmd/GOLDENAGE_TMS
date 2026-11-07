@@ -138,7 +138,7 @@ export function RiverBridgesPage() {
           columns={[
             { title: 'Sông', dataIndex: 'river_code', width: 110, render: riverName },
             { title: 'Mã', dataIndex: 'code', width: 130 },
-            { title: 'Tên cầu', dataIndex: 'name' },
+            { title: 'Tên cầu', dataIndex: 'name', width: 170 },
             {
               title: 'Tọa độ',
               width: 180,
