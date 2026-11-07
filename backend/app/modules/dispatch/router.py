@@ -233,6 +233,7 @@ async def picking_list(trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
     lines, adhoc = service.picking_lines(trip)
     return PickingListOut(
         trip=summary_out(trip),
+        warehouse_name=trip.warehouse.name,
         lines=[PickingLineOut.model_validate(line) for line in lines],
         adhoc_items=adhoc,
     )

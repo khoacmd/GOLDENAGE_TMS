@@ -3731,6 +3731,8 @@ export interface components {
         /** PickingListOut */
         PickingListOut: {
             trip: components["schemas"]["TripSummaryOut"];
+            /** Warehouse Name */
+            warehouse_name: string;
             /** Lines */
             lines: components["schemas"]["PickingLineOut"][];
             /** Adhoc Items */

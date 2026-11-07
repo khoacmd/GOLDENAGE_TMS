@@ -12102,6 +12102,10 @@
           "trip": {
             "$ref": "#/components/schemas/TripSummaryOut"
           },
+          "warehouse_name": {
+            "type": "string",
+            "title": "Warehouse Name"
+          },
           "lines": {
             "items": {
               "$ref": "#/components/schemas/PickingLineOut"
@@ -12120,6 +12124,7 @@
         "type": "object",
         "required": [
           "trip",
+          "warehouse_name",
           "lines",
           "adhoc_items"
         ],

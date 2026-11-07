@@ -17,7 +17,7 @@ type Picking = components['schemas']['PickingListOut']
 
 const right = { ...cell, textAlign: 'right' as const }
 const th = { ...cell, fontWeight: 600, textAlign: 'center' as const }
-// Mã hàng dài (18 chữ số) không xuống dòng.
+// Mã hàng dài (18 chữ số), nhóm hàng: không xuống dòng.
 const code = { ...cell, fontSize: 11, whiteSpace: 'nowrap' as const, overflow: 'hidden' }
 
 /** 100 Hộp với 48 Hộp = 1 Thùng → "2 Thùng + 4 Hộp"; SKU không nhỏ hơn ĐVT → null. */
@@ -141,7 +141,7 @@ function pickingDoc(profile: Profile, data: Picking, notices: string[], printedA
         <Title>PHIẾU SOẠN HÀNG</Title>
         <InfoGrid
           items={[
-            ['Kho xuất', t.warehouse_code],
+            ['Kho xuất', data.warehouse_name],
             ['Xe', `${t.vehicle_code} (lượt ${t.trip_seq})`],
             ['Lái xe', t.driver?.full_name ?? '-'],
             ['Phụ xe', t.assistant?.full_name ?? '-'],
@@ -154,12 +154,12 @@ function pickingDoc(profile: Profile, data: Picking, notices: string[], printedA
         <col style={{ width: '9mm' }} />
         <col style={{ width: '35mm' }} />
         <col />
-        <col style={{ width: '12mm' }} />
+        <col style={{ width: '17mm' }} />
+        <col style={{ width: '19mm' }} />
         <col style={{ width: '20mm' }} />
-        <col style={{ width: '20mm' }} />
-        <col style={{ width: '26mm' }} />
+        <col style={{ width: '24mm' }} />
         <col style={{ width: '13mm' }} />
-        <col style={{ width: '16mm' }} />
+        <col style={{ width: '14mm' }} />
       </>
     ),
     head: (
@@ -176,7 +176,7 @@ function pickingDoc(profile: Profile, data: Picking, notices: string[], printedA
         <td style={right}>{i + 1}</td>
         <td style={code}>{l.product_code}</td>
         <td style={cell}>{l.product_name}</td>
-        <td style={cell}>{TEMP_GROUP[l.temp_group]}</td>
+        <td style={code}>{TEMP_GROUP[l.temp_group]}</td>
         <td style={right}>
           {fmtNumber(l.sku_qty)} {l.sku_uom}
         </td>
@@ -191,9 +191,6 @@ function pickingDoc(profile: Profile, data: Picking, notices: string[], printedA
     tail: (
       <div style={{ marginTop: '2mm' }}>
         {data.adhoc_items.length > 0 && <div>Hàng khác: {data.adhoc_items.join('; ')}</div>}
-        <div>
-          Tổng khối lượng: <b>{fmtNumber(t.total_weight_kg)} kg</b>
-        </div>
         {notices.map((n) => (
           <div key={n} style={{ fontStyle: 'italic' }}>
             {n}
@@ -320,13 +317,8 @@ function deliveryDoc(profile: Profile, data: Notes, n: Note, index: number, prin
     ],
     tail: (
       <div style={{ marginTop: '2mm' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>
-            Tổng khối lượng: <b>{fmtNumber(n.total_weight_kg)} kg</b>
-          </span>
-          <span>
-            Tổng giá trị: <b>{fmtNumber(n.total_value)} đ</b>
-          </span>
+        <div style={{ textAlign: 'right' }}>
+          Tổng giá trị: <b>{fmtNumber(n.total_value)} đ</b>
         </div>
         <Signatures roles={['Thủ kho', 'Lái xe', 'Khách hàng']} />
         <div style={{ fontSize: 11 }}>In lúc {fmtDateTime(printedAt)}</div>

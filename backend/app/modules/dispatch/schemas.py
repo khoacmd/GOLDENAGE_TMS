@@ -214,6 +214,7 @@ class PickingLineOut(BaseModel):
 
 class PickingListOut(BaseModel):
     trip: TripSummaryOut
+    warehouse_name: str
     lines: list[PickingLineOut]
     adhoc_items: list[str]
 

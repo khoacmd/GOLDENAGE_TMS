@@ -148,6 +148,7 @@ async def test_full_lifecycle(client: AsyncClient, env: Env) -> None:
         "code"
     ] == "invalid_status"
     picking = (await client.get(f"{url}/picking-list", headers=auth(env.keeper))).json()
+    assert picking["warehouse_name"]
     assert {line["product_code"] for line in picking["lines"]} == {
         "SUA-TT-180",
         "SUA-CHUA-100",
