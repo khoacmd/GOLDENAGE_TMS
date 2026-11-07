@@ -1,3 +1,4 @@
+import base64
 import uuid
 
 from sqlalchemy import func, select
@@ -8,7 +9,13 @@ from app.core.errors import AppError, ConflictError, NotFoundError
 from app.modules.identity import service as identity_service
 from app.modules.identity.models import CompanyRole
 from app.modules.tenancy.models import Company, CompanySettings
-from app.modules.tenancy.schemas import CompanyCreate, CompanySettingsUpdate, CompanyUpdate
+from app.modules.tenancy.schemas import (
+    CompanyCreate,
+    CompanySettingsUpdate,
+    CompanyUpdate,
+    PrintProfileOut,
+    PrintTemplates,
+)
 
 
 async def list_companies(session: AsyncSession) -> list[Company]:
@@ -85,3 +92,50 @@ async def update_settings(
         raise AppError("Giờ bắt đầu ca phải trước giờ kết thúc", code="invalid_shift")
     await session.flush()
     return settings
+
+
+# --- Mẫu phiếu in ---------------------------------------------------------------------------
+
+LOGO_TYPES = {"image/png", "image/jpeg", "image/webp"}
+MAX_LOGO_BYTES = 512 * 1024
+
+
+async def print_profile(session: AsyncSession, company_id: uuid.UUID) -> PrintProfileOut:
+    settings = await get_settings(session, company_id)
+    company = await get_company(session, company_id)
+    logo = await session.scalar(
+        select(CompanySettings.logo).where(CompanySettings.company_id == company_id)
+    )
+    return PrintProfileOut(
+        company_name=company.name,
+        logo=(
+            f"data:{settings.logo_content_type};base64,{base64.b64encode(logo).decode()}"
+            if logo
+            else None
+        ),
+        **{f: getattr(settings, f) for f in PrintTemplates.model_fields},
+    )
+
+
+async def update_print_templates(
+    session: AsyncSession, company_id: uuid.UUID, data: PrintTemplates
+) -> None:
+    settings = await get_settings(session, company_id)
+    for field, value in data.model_dump().items():
+        setattr(settings, field, value)
+    await session.flush()
+
+
+async def set_logo(
+    session: AsyncSession, company_id: uuid.UUID, data: bytes | None, content_type: str = ""
+) -> None:
+    """Đặt logo (PNG/JPEG/WebP, tối đa 512 KB); `data=None` = xóa logo."""
+    if data is not None:
+        if content_type not in LOGO_TYPES:
+            raise AppError("Logo phải là ảnh PNG, JPEG hoặc WebP", code="invalid_logo")
+        if not data or len(data) > MAX_LOGO_BYTES:
+            raise AppError("Logo rỗng hoặc lớn hơn 512 KB", code="invalid_logo")
+    settings = await get_settings(session, company_id)
+    settings.logo = data
+    settings.logo_content_type = content_type if data is not None else None
+    await session.flush()

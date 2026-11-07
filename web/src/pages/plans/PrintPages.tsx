@@ -1,15 +1,24 @@
+import type { components } from '@tms/api-client'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Spin } from 'antd'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useParams } from 'react-router'
 
 import { api } from '../../api'
 import { unwrap } from '../../lib/api-helpers'
 import { TEMP_GROUP, fmtDate, fmtDateTime, fmtNumber } from '../../lib/labels'
+import { PagedDocuments, type PrintDoc } from '../../lib/PagedDocument'
+import { printCell as cell } from '../../lib/printStyles'
 
-const page = { maxWidth: 820, margin: '0 auto', padding: 24, background: '#fff', color: '#000', fontSize: 13 }
-const table = { width: '100%', borderCollapse: 'collapse' as const, marginTop: 12 }
-const cell = { border: '1px solid #000', padding: '4px 6px' }
+type Profile = components['schemas']['PrintProfileOut']
+type Note = components['schemas']['DeliveryNoteOut']
+type Notes = components['schemas']['DeliveryNotesOut']
+type Picking = components['schemas']['PickingListOut']
+
+const right = { ...cell, textAlign: 'right' as const }
+const th = { ...cell, fontWeight: 600, textAlign: 'center' as const }
+// Mã hàng dài (18 chữ số) không xuống dòng.
+const code = { ...cell, fontSize: 11, whiteSpace: 'nowrap' as const, overflow: 'hidden' }
 
 /** 100 Hộp với 48 Hộp = 1 Thùng → "2 Thùng + 4 Hộp"; SKU không nhỏ hơn ĐVT → null. */
 function packText(l: {
@@ -25,154 +34,304 @@ function packText(l: {
   return parts.join(' + ')
 }
 
-function PrintShell({ title, children }: { title: string; children: ReactNode }) {
-  const [printedAt] = useState(() => new Date().toISOString())
+function usePrintProfile() {
+  return useQuery({
+    queryKey: ['print-profile'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/company/print-profile')),
+  })
+}
+
+/** Đầu phiếu: logo + nội dung đầu trang theo mẫu của công ty (dòng đầu in đậm), bên phải số phiếu. */
+export function PrintHeader({ profile, text, aside }: { profile: Profile; text?: string | null; aside?: ReactNode }) {
+  const [first, ...rest] = (text || profile.company_name).split('\n')
   return (
-    <div style={page}>
-      <style>{'@media print { .no-print { display: none } body { background: #fff } }'}</style>
-      <div className="no-print" style={{ textAlign: 'right', marginBottom: 12 }}>
-        <Button type="primary" onClick={() => window.print()}>
-          In / Lưu PDF
-        </Button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4mm', minHeight: '18mm' }}>
+      {profile.logo && (
+        <img src={profile.logo} alt="" style={{ height: '18mm', maxWidth: '45mm', objectFit: 'contain' }} />
+      )}
+      <div style={{ flex: 1, whiteSpace: 'pre-line' }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{first}</div>
+        {rest.join('\n')}
       </div>
-      <h2 style={{ textAlign: 'center', margin: 0 }}>{title}</h2>
-      {children}
-      <table style={{ width: '100%', marginTop: 40, textAlign: 'center' }}>
-        <tbody>
-          <tr>
-            <td>Người lập</td>
-            <td>Thủ kho</td>
-            <td>Lái xe</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style={{ marginTop: 60, fontSize: 11, color: '#666' }}>In lúc {fmtDateTime(printedAt)}</p>
+      {aside && <div style={{ whiteSpace: 'pre-line', textAlign: 'right' }}>{aside}</div>}
     </div>
   )
 }
 
-export function PickingListPrint() {
-  const { tripId } = useParams()
-  const query = useQuery({
-    queryKey: ['picking', tripId],
-    queryFn: async () =>
-      unwrap(await api.GET('/api/v1/trips/{trip_id}/picking-list', { params: { path: { trip_id: tripId! } } })),
-  })
-  const data = query.data
-  if (!data) return <Spin />
-  const t = data.trip
+function Title({ children }: { children: ReactNode }) {
+  return <h2 style={{ textAlign: 'center', margin: '3mm 0 2mm', fontSize: 18 }}>{children}</h2>
+}
+
+/** Bảng thông tin 2 cột (nhãn: giá trị), không viền. */
+function InfoGrid({ items }: { items: [string, ReactNode][] }) {
   return (
-    <PrintShell title="PHIẾU SOẠN HÀNG">
-      <p style={{ textAlign: 'center' }}>
-        Lệnh {t.code} · Ngày giao {fmtDate(t.plan_date)} · Kho {t.warehouse_code} · Xe {t.vehicle_code} (lượt {t.trip_seq}) ·
-        Lái xe {t.driver?.full_name ?? '-'}
-      </p>
-      <table style={table}>
-        <thead>
-          <tr>
-            {['#', 'Mã hàng', 'Tên hàng', 'Nhóm', 'SL SKU', 'SKU', 'SL ĐVT', 'ĐVT', 'Chẵn + lẻ', 'Kg', 'Thực xuất'].map((h) => (
-              <th key={h} style={cell}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.lines.map((l, i) => (
-            <tr key={`${l.product_code}-${i}`}>
-              <td style={cell}>{i + 1}</td>
-              <td style={cell}>{l.product_code}</td>
-              <td style={cell}>{l.product_name}</td>
-              <td style={cell}>{TEMP_GROUP[l.temp_group]}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.sku_qty)}</td>
-              <td style={cell}>{l.sku_uom}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.uom_qty)}</td>
-              <td style={cell}>{l.uom}</td>
-              <td style={cell}>{packText(l) ?? '-'}</td>
-              <td style={{ ...cell, textAlign: 'right' }}>{fmtNumber(l.weight_kg)}</td>
-              <td style={{ ...cell, width: 80 }} />
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {data.adhoc_items.length > 0 && <p>Hàng khác: {data.adhoc_items.join('; ')}</p>}
-      <p>
-        Tổng khối lượng: <b>{fmtNumber(t.total_weight_kg)} kg</b>
-      </p>
-    </PrintShell>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '6mm', marginBottom: '2mm' }}>
+      {items.map(([label, value]) => (
+        <div key={label}>
+          {label}: <b>{value}</b>
+        </div>
+      ))}
+    </div>
   )
 }
 
-export function DeliveryNotesPrint() {
+function Signatures({ roles }: { roles: string[] }) {
+  return (
+    <table style={{ width: '100%', marginTop: '4mm', textAlign: 'center', tableLayout: 'fixed' }}>
+      <tbody>
+        <tr>
+          {roles.map((r) => (
+            <td key={r}>
+              <b>{r}</b>
+              <div style={{ fontSize: 11, fontStyle: 'italic' }}>(Ký, ghi rõ họ tên)</div>
+              <div style={{ height: '22mm' }} />
+            </td>
+          ))}
+        </tr>
+      </tbody>
+    </table>
+  )
+}
+
+function Toolbar() {
+  return (
+    <Button type="primary" onClick={() => window.print()}>
+      In / Lưu PDF
+    </Button>
+  )
+}
+
+function useParamsTrip() {
   const { tripId } = useParams()
-  const query = useQuery({
-    queryKey: ['trip', tripId],
-    queryFn: async () => unwrap(await api.GET('/api/v1/trips/{trip_id}', { params: { path: { trip_id: tripId! } } })),
+  return tripId!
+}
+
+export function PickingListPrint() {
+  const tripId = useParamsTrip()
+  const profile = usePrintProfile()
+  const picking = useQuery({
+    queryKey: ['picking', tripId],
+    queryFn: async () =>
+      unwrap(await api.GET('/api/v1/trips/{trip_id}/picking-list', { params: { path: { trip_id: tripId } } })),
   })
   const traffic = useQuery({
     queryKey: ['trip', tripId, 'traffic'],
     queryFn: async () =>
-      unwrap(await api.GET('/api/v1/trips/{trip_id}/traffic', { params: { path: { trip_id: tripId! } } })),
+      unwrap(await api.GET('/api/v1/trips/{trip_id}/traffic', { params: { path: { trip_id: tripId } } })),
   })
-  const t = query.data
-  if (!t) return <Spin />
-  return (
-    <PrintShell title="PHIẾU GIAO HÀNG">
-      <p style={{ textAlign: 'center' }}>
-        Lệnh {t.code} · Ngày {fmtDate(t.plan_date)} · Xe {t.vehicle_code} · Lái xe {t.driver?.full_name ?? '-'}
-        {t.assistant && ` · Phụ xe ${t.assistant.full_name}`}
-      </p>
-      {traffic.data?.notices.map((n) => (
-        <p key={n} style={{ fontStyle: 'italic', margin: '4px 0' }}>
-          {n}
-        </p>
-      ))}
-      <table style={table}>
-        <thead>
-          <tr>
-            {['#', 'Khách hàng / địa chỉ', 'Đơn hàng / mặt hàng (SKU · ĐVT)', 'Kg', 'Giá trị (đ)', 'Ký nhận'].map((h) => (
-              <th key={h} style={cell}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {t.stops.map((st) => (
-            <tr key={st.id}>
-              <td style={cell}>{st.seq}</td>
-              <td style={cell}>
-                <b>{st.customer_code ? `${st.customer_code} - ${st.customer_name}` : st.name}</b>
-                <div>{st.address}</div>
-              </td>
-              <td style={cell}>
-                {st.items
-                  .filter((i) => i.status !== 'CANCELLED')
-                  .map((i) => (
-                    <div key={i.id} style={{ marginBottom: 4 }}>
-                      <b>{i.external_ref ? `${i.external_ref} (${TEMP_GROUP[i.temp_group!]})` : i.description}</b>
-                      {i.lines?.map((l) => (
-                        <div key={l.product_code}>
-                          {l.product_code} {l.product_name}:{' '}
-                          <span style={{ whiteSpace: 'nowrap' }}>
-                            {fmtNumber(l.sku_qty)} {l.sku_uom} · {packText(l) ?? `${fmtNumber(l.uom_qty)} ${l.uom}`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-              </td>
-              <td style={{ ...cell, textAlign: 'right' }}>
-                {fmtNumber(st.items.filter((i) => i.status !== 'CANCELLED').reduce((s, i) => s + Number(i.weight_kg), 0))}
-              </td>
-              <td style={{ ...cell, textAlign: 'right' }}>
-                {fmtNumber(st.items.filter((i) => i.status !== 'CANCELLED').reduce((s, i) => s + Number(i.value), 0))}
-              </td>
-              <td style={{ ...cell, width: 110, height: 48 }} />
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </PrintShell>
+  const [printedAt] = useState(() => new Date().toISOString())
+  const docs = useMemo(
+    () =>
+      profile.data && picking.data && traffic.isFetched
+        ? [pickingDoc(profile.data, picking.data, traffic.data?.notices ?? [], printedAt)]
+        : null,
+    [profile.data, picking.data, traffic.data, traffic.isFetched, printedAt],
   )
+  if (!docs) return <Spin />
+  return <PagedDocuments docs={docs} toolbar={<Toolbar />} />
+}
+
+function pickingDoc(profile: Profile, data: Picking, notices: string[], printedAt: string): PrintDoc {
+  const t = data.trip
+  return {
+    key: t.id,
+    header: (
+      <>
+        <PrintHeader profile={profile} text={profile.picking_header} aside={`Lệnh: ${t.code}\nNgày giao: ${fmtDate(t.plan_date)}`} />
+        <Title>PHIẾU SOẠN HÀNG</Title>
+        <InfoGrid
+          items={[
+            ['Kho xuất', t.warehouse_code],
+            ['Xe', `${t.vehicle_code} (lượt ${t.trip_seq})`],
+            ['Lái xe', t.driver?.full_name ?? '-'],
+            ['Phụ xe', t.assistant?.full_name ?? '-'],
+          ]}
+        />
+      </>
+    ),
+    cols: (
+      <>
+        <col style={{ width: '9mm' }} />
+        <col style={{ width: '35mm' }} />
+        <col />
+        <col style={{ width: '12mm' }} />
+        <col style={{ width: '20mm' }} />
+        <col style={{ width: '20mm' }} />
+        <col style={{ width: '26mm' }} />
+        <col style={{ width: '13mm' }} />
+        <col style={{ width: '16mm' }} />
+      </>
+    ),
+    head: (
+      <tr>
+        {['#', 'Mã hàng', 'Tên hàng', 'Nhóm', 'SL SKU', 'SL ĐVT', 'Chẵn + lẻ', 'Kg', 'Thực xuất'].map((h) => (
+          <th key={h} style={th}>
+            {h}
+          </th>
+        ))}
+      </tr>
+    ),
+    rows: data.lines.map((l, i) => (
+      <tr key={`${l.product_code}-${i}`}>
+        <td style={right}>{i + 1}</td>
+        <td style={code}>{l.product_code}</td>
+        <td style={cell}>{l.product_name}</td>
+        <td style={cell}>{TEMP_GROUP[l.temp_group]}</td>
+        <td style={right}>
+          {fmtNumber(l.sku_qty)} {l.sku_uom}
+        </td>
+        <td style={right}>
+          {fmtNumber(l.uom_qty)} {l.uom}
+        </td>
+        <td style={cell}>{packText(l) ?? '-'}</td>
+        <td style={right}>{fmtNumber(l.weight_kg)}</td>
+        <td style={cell} />
+      </tr>
+    )),
+    tail: (
+      <div style={{ marginTop: '2mm' }}>
+        {data.adhoc_items.length > 0 && <div>Hàng khác: {data.adhoc_items.join('; ')}</div>}
+        <div>
+          Tổng khối lượng: <b>{fmtNumber(t.total_weight_kg)} kg</b>
+        </div>
+        {notices.map((n) => (
+          <div key={n} style={{ fontStyle: 'italic' }}>
+            {n}
+          </div>
+        ))}
+        <Signatures roles={['Người lập', 'Thủ kho', 'Lái xe']} />
+        <div style={{ fontSize: 11 }}>In lúc {fmtDateTime(printedAt)}</div>
+      </div>
+    ),
+    footer: profile.picking_footer,
+  }
+}
+
+export function DeliveryNotesPrint() {
+  const tripId = useParamsTrip()
+  const profile = usePrintProfile()
+  const notes = useQuery({
+    queryKey: ['delivery-notes', tripId],
+    queryFn: async () =>
+      unwrap(await api.GET('/api/v1/trips/{trip_id}/delivery-notes', { params: { path: { trip_id: tripId } } })),
+  })
+  const [printedAt] = useState(() => new Date().toISOString())
+  const docs = useMemo(
+    () =>
+      profile.data && notes.data
+        ? notes.data.notes.map((n, i) => deliveryDoc(profile.data, notes.data, n, i, printedAt))
+        : null,
+    [profile.data, notes.data, printedAt],
+  )
+  if (!docs) return <Spin />
+  if (!docs.length) return <p style={{ padding: 24 }}>Lệnh không có hàng cần giao.</p>
+  return (
+    <PagedDocuments
+      docs={docs}
+      toolbar={
+        <span>
+          {docs.length} phiếu · <Toolbar />
+        </span>
+      }
+    />
+  )
+}
+
+function deliveryDoc(profile: Profile, data: Notes, n: Note, index: number, printedAt: string): PrintDoc {
+  const t = data.trip
+  const customer = n.customer_code ? `${n.customer_code} - ${n.customer_name}` : (n.customer_name ?? '-')
+  const contact = [n.contact_name, n.phone].filter(Boolean).join(' - ')
+  return {
+    key: `${n.stop_seq}-${n.order_ref ?? `adhoc-${index}`}`,
+    header: (
+      <>
+        <PrintHeader
+          profile={profile}
+          text={profile.delivery_header}
+          aside={`${n.order_ref ? `Số đơn: ${n.order_ref}\n` : ''}Ngày giao: ${fmtDate(t.plan_date)}`}
+        />
+        <Title>PHIẾU GIAO HÀNG</Title>
+        <div style={{ marginBottom: '1mm' }}>
+          Khách hàng: <b>{customer}</b>
+        </div>
+        <div style={{ marginBottom: '1mm' }}>
+          Địa chỉ giao: <b>{n.address ?? '-'}</b>
+        </div>
+        <InfoGrid
+          items={[
+            ['Người liên hệ', contact || '-'],
+            ['Ngày đặt', n.order_date ? fmtDate(n.order_date) : '-'],
+            ['Kho xuất', data.warehouse_name],
+            ['Lệnh giao', `${t.code} (điểm ${n.stop_seq})`],
+            ['Xe', `${t.vehicle_code} - ${data.vehicle_plate}`],
+            ['Lái xe', [t.driver?.full_name, t.driver?.phone].filter(Boolean).join(' - ') || '-'],
+          ]}
+        />
+        {n.order_note && <div style={{ marginBottom: '1mm' }}>Ghi chú: {n.order_note}</div>}
+      </>
+    ),
+    cols: (
+      <>
+        <col style={{ width: '9mm' }} />
+        <col style={{ width: '35mm' }} />
+        <col />
+        <col style={{ width: '18mm' }} />
+        <col style={{ width: '25mm' }} />
+        <col style={{ width: '13mm' }} />
+        <col style={{ width: '20mm' }} />
+        <col style={{ width: '14mm' }} />
+      </>
+    ),
+    head: (
+      <tr>
+        {['STT', 'Mã hàng', 'Tên hàng', 'Số lượng', 'Quy đổi', 'Kg', 'Thành tiền', 'Thực nhận'].map((h) => (
+          <th key={h} style={th}>
+            {h}
+          </th>
+        ))}
+      </tr>
+    ),
+    rows: [
+      ...n.lines.map((l, i) => (
+        <tr key={`${l.product_code}-${i}`}>
+          <td style={right}>{i + 1}</td>
+          <td style={code}>{l.product_code}</td>
+          <td style={cell}>{l.product_name}</td>
+          <td style={right}>
+            {fmtNumber(l.sku_qty)} {l.sku_uom}
+          </td>
+          <td style={cell}>{packText(l) ?? `${fmtNumber(l.uom_qty)} ${l.uom}`}</td>
+          <td style={right}>{fmtNumber(l.weight_kg)}</td>
+          <td style={right}>{l.amount === null ? '' : fmtNumber(l.amount)}</td>
+          <td style={cell} />
+        </tr>
+      )),
+      ...n.adhoc_items.map((a, i) => (
+        <tr key={`adhoc-${i}`}>
+          <td style={right}>{n.lines.length + i + 1}</td>
+          <td style={cell} />
+          <td style={cell} colSpan={4}>
+            {a}
+          </td>
+          <td style={cell} />
+          <td style={cell} />
+        </tr>
+      )),
+    ],
+    tail: (
+      <div style={{ marginTop: '2mm' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>
+            Tổng khối lượng: <b>{fmtNumber(n.total_weight_kg)} kg</b>
+          </span>
+          <span>
+            Tổng giá trị: <b>{fmtNumber(n.total_value)} đ</b>
+          </span>
+        </div>
+        <Signatures roles={['Thủ kho', 'Lái xe', 'Khách hàng']} />
+        <div style={{ fontSize: 11 }}>In lúc {fmtDateTime(printedAt)}</div>
+      </div>
+    ),
+    footer: profile.delivery_footer,
+  }
 }

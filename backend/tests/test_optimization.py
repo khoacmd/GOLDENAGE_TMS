@@ -184,3 +184,18 @@ def test_penalty_moves_job_to_other_vehicle() -> None:
     assert {j: r.vehicle_id for r in sol.routes for j in r.job_ids} == {"A": "XM1", "B": "XE1"}
     # Phạt chỉ tính vào hàm mục tiêu, không vào chi phí của tuyến.
     assert next(r for r in sol.routes if r.vehicle_id == "XM1").cost == 4 * 2000
+
+
+def test_vehicle_costs_prefer_other_vehicle() -> None:
+    # Ô tô rẻ hơn, 1 tuyến giao cả 2 điểm; A gần kho bị cộng chi phí nếu ô tô giao → xe máy giao A.
+    pts = [(0, 0), (1, 0), (5, 0)]
+    bike = Vehicle("XM1", "motorbike", 100, 8000, ("K1",))
+    jobs = [job("A", 1, 50, ("XE1", "XM1")), job("B", 2, 50, ("XE1", "XM1"))]
+    sol = solve(problem(pts, vehicles=[car(), bike], jobs=jobs))
+    assert {j: r.vehicle_id for r in sol.routes for j in r.job_ids} == {"A": "XE1", "B": "XE1"}
+
+    near = job("A", 1, 50, ("XE1", "XM1"), vehicle_costs={"XE1": 100_000})
+    sol = solve(problem(pts, vehicles=[car(), bike], jobs=[near, jobs[1]]))
+    assert {j: r.vehicle_id for r in sol.routes for j in r.job_ids} == {"A": "XM1", "B": "XE1"}
+    # Chi phí cộng thêm chỉ tính vào hàm mục tiêu.
+    assert next(r for r in sol.routes if r.vehicle_id == "XE1").cost == 10 * 5000

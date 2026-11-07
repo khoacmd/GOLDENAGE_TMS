@@ -822,6 +822,147 @@
         ]
       }
     },
+    "/api/v1/company/print-profile": {
+      "get": {
+        "tags": [
+          "company"
+        ],
+        "summary": "Get Print Profile",
+        "description": "Logo + đầu/chân trang dùng khi in phiếu soạn hàng, phiếu giao hàng.",
+        "operationId": "get_print_profile_api_v1_company_print_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintProfileOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "company"
+        ],
+        "summary": "Update Print Profile",
+        "operationId": "update_print_profile_api_v1_company_print_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrintTemplates"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintProfileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/company/logo": {
+      "put": {
+        "tags": [
+          "company"
+        ],
+        "summary": "Upload Logo",
+        "operationId": "upload_logo_api_v1_company_logo_put",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_logo_api_v1_company_logo_put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintProfileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "company"
+        ],
+        "summary": "Delete Logo",
+        "operationId": "delete_logo_api_v1_company_logo_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintProfileOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/warehouses": {
       "get": {
         "tags": [
@@ -3575,6 +3716,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PickingListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{trip_id}/delivery-notes": {
+      "get": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Delivery Notes",
+        "description": "Phiếu giao hàng tách theo từng đơn (in kèm chữ ký thủ kho, lái xe, khách hàng).",
+        "operationId": "delivery_notes_api_v1_trips__trip_id__delivery_notes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryNotesOut"
                 }
               }
             }
@@ -6611,6 +6801,21 @@
         ],
         "title": "Body_import_file_api_v1_imports__kind__post"
       },
+      "Body_upload_logo_api_v1_company_logo_put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Logo PNG/JPEG/WebP, tối đa 512 KB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_logo_api_v1_company_logo_put"
+      },
       "Body_upload_photo_api_v1_driver_photos_post": {
         "properties": {
           "file": {
@@ -7068,6 +7273,22 @@
             "title": "Travel Time Factor",
             "description": "Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)"
           },
+          "motorbike_priority_radius_km": {
+            "type": "number",
+            "maximum": 50.0,
+            "minimum": 0.0,
+            "title": "Motorbike Priority Radius Km",
+            "description": "Bán kính quanh kho ưu tiên xe máy giao (0 = tắt)",
+            "default": 5
+          },
+          "motorbike_priority_cost": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Motorbike Priority Cost",
+            "description": "Chi phí cộng thêm khi ô tô giao điểm",
+            "default": 100000
+          },
           "confirm_time_rule": {
             "type": "boolean",
             "title": "Confirm Time Rule"
@@ -7464,6 +7685,32 @@
               }
             ],
             "title": "Travel Time Factor"
+          },
+          "motorbike_priority_radius_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 50.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motorbike Priority Radius Km"
+          },
+          "motorbike_priority_cost": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motorbike Priority Cost"
           }
         },
         "type": "object",
@@ -9391,6 +9638,274 @@
           "FAILED"
         ],
         "title": "DeliveryAttemptStatus"
+      },
+      "DeliveryNoteLineOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "temp_group": {
+            "$ref": "#/components/schemas/TempGroup"
+          },
+          "sku_qty": {
+            "type": "string",
+            "title": "Sku Qty"
+          },
+          "sku_uom": {
+            "type": "string",
+            "title": "Sku Uom"
+          },
+          "uom_qty": {
+            "type": "string",
+            "title": "Uom Qty"
+          },
+          "uom": {
+            "type": "string",
+            "title": "Uom"
+          },
+          "whole_uom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whole Uom"
+          },
+          "rest_sku": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rest Sku"
+          },
+          "weight_kg": {
+            "type": "string",
+            "title": "Weight Kg"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "temp_group",
+          "sku_qty",
+          "sku_uom",
+          "uom_qty",
+          "uom",
+          "whole_uom",
+          "rest_sku",
+          "weight_kg",
+          "amount"
+        ],
+        "title": "DeliveryNoteLineOut"
+      },
+      "DeliveryNoteOut": {
+        "properties": {
+          "stop_seq": {
+            "type": "integer",
+            "title": "Stop Seq"
+          },
+          "order_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Ref"
+          },
+          "order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Date"
+          },
+          "requested_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Date"
+          },
+          "order_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Note"
+          },
+          "customer_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Code"
+          },
+          "customer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Name"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryNoteLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "adhoc_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Adhoc Items"
+          },
+          "total_weight_kg": {
+            "type": "string",
+            "title": "Total Weight Kg"
+          },
+          "total_value": {
+            "type": "string",
+            "title": "Total Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stop_seq",
+          "order_ref",
+          "order_date",
+          "requested_date",
+          "order_note",
+          "customer_code",
+          "customer_name",
+          "contact_name",
+          "phone",
+          "address",
+          "lines",
+          "adhoc_items",
+          "total_weight_kg",
+          "total_value"
+        ],
+        "title": "DeliveryNoteOut",
+        "description": "Phiếu giao hàng của 1 đơn (các phần đơn của đơn trên lệnh); điểm dừng chỉ có hàng tự do\nthì 1 phiếu cho điểm đó (`order_ref` = null, hàng ở `adhoc_items`)."
+      },
+      "DeliveryNotesOut": {
+        "properties": {
+          "trip": {
+            "$ref": "#/components/schemas/TripSummaryOut"
+          },
+          "vehicle_plate": {
+            "type": "string",
+            "title": "Vehicle Plate"
+          },
+          "warehouse_name": {
+            "type": "string",
+            "title": "Warehouse Name"
+          },
+          "warehouse_address": {
+            "type": "string",
+            "title": "Warehouse Address"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/DeliveryNoteOut"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trip",
+          "vehicle_plate",
+          "warehouse_name",
+          "warehouse_address",
+          "notes"
+        ],
+        "title": "DeliveryNotesOut"
       },
       "DeliveryPointIn": {
         "properties": {
@@ -11656,6 +12171,135 @@
           "pin"
         ],
         "title": "PinUpdate"
+      },
+      "PrintProfileOut": {
+        "properties": {
+          "picking_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picking Header"
+          },
+          "picking_footer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picking Footer"
+          },
+          "delivery_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Header"
+          },
+          "delivery_footer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Footer"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "logo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo",
+            "description": "Logo dạng data URL, null nếu chưa có"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "logo"
+        ],
+        "title": "PrintProfileOut"
+      },
+      "PrintTemplates": {
+        "properties": {
+          "picking_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picking Header"
+          },
+          "picking_footer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picking Footer"
+          },
+          "delivery_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Header"
+          },
+          "delivery_footer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Footer"
+          }
+        },
+        "type": "object",
+        "title": "PrintTemplates",
+        "description": "Đầu trang (cạnh logo) và chân trang của phiếu in; trống = mặc định (tên công ty)."
       },
       "PrinterConnection": {
         "type": "string",

@@ -1,7 +1,7 @@
 import uuid
 from datetime import time
 
-from sqlalchemy import ARRAY, Float, ForeignKey, SmallInteger, String, text
+from sqlalchemy import ARRAY, Float, ForeignKey, LargeBinary, SmallInteger, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -69,3 +69,19 @@ class CompanySettings(TimestampMixin, Base):
     traffic_rules_enabled: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     # Thời gian chừa để vào/ra vùng hạn chế ở 2 đầu khung giờ được phép.
     traffic_zone_buffer_minutes: Mapped[int] = mapped_column(default=15, server_default=text("15"))
+    # Ưu tiên xe máy giao các điểm trong bán kính (km, đường chim bay) quanh kho xuất: ô tô giao
+    # điểm đó bị cộng chi phí (đồng/điểm) trong hàm mục tiêu. 0 km = tắt.
+    motorbike_priority_radius_km: Mapped[float] = mapped_column(
+        Float, default=5.0, server_default=text("5")
+    )
+    motorbike_priority_cost: Mapped[int] = mapped_column(
+        default=100_000, server_default=text("100000")
+    )
+
+    # Mẫu phiếu in: logo (ảnh nhỏ, lưu trong DB, chỉ nạp khi cần) + đầu/chân trang từng loại phiếu.
+    logo: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    logo_content_type: Mapped[str | None] = mapped_column(String(32))
+    picking_header: Mapped[str | None] = mapped_column(Text)
+    picking_footer: Mapped[str | None] = mapped_column(Text)
+    delivery_header: Mapped[str | None] = mapped_column(Text)
+    delivery_footer: Mapped[str | None] = mapped_column(Text)

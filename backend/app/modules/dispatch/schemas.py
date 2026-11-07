@@ -218,6 +218,48 @@ class PickingListOut(BaseModel):
     adhoc_items: list[str]
 
 
+class DeliveryNoteLineOut(BaseModel):
+    product_code: str
+    product_name: str
+    temp_group: TempGroup
+    sku_qty: Decimal
+    sku_uom: str
+    uom_qty: Decimal
+    uom: str
+    whole_uom: int | None
+    rest_sku: Decimal | None
+    weight_kg: Decimal
+    amount: Decimal | None
+
+
+class DeliveryNoteOut(BaseModel):
+    """Phiếu giao hàng của 1 đơn (các phần đơn của đơn trên lệnh); điểm dừng chỉ có hàng tự do
+    thì 1 phiếu cho điểm đó (`order_ref` = null, hàng ở `adhoc_items`)."""
+
+    stop_seq: int
+    order_ref: str | None
+    order_date: date | None
+    requested_date: date | None
+    order_note: str | None
+    customer_code: str | None
+    customer_name: str | None
+    contact_name: str | None
+    phone: str | None
+    address: str | None
+    lines: list[DeliveryNoteLineOut]
+    adhoc_items: list[str]
+    total_weight_kg: Decimal
+    total_value: Decimal
+
+
+class DeliveryNotesOut(BaseModel):
+    trip: TripSummaryOut
+    vehicle_plate: str
+    warehouse_name: str
+    warehouse_address: str
+    notes: list[DeliveryNoteOut]
+
+
 class AuditOut(_Out):
     action: str
     data: dict[str, object]

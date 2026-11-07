@@ -227,6 +227,7 @@ Chi tiết triển khai:
 - Bản đồ: `GET /trips/{id}/route` trả tuyến theo đường (OSRM `/route`, cache Redis) → web vẽ nét liền; chưa có OSRM thì nối thẳng nét đứt (`web/src/lib/roads.ts`).
 - Bộ giải (`optimization/vrp.py`): mỗi xe nhân thành `max_trips × số kho` xe ảo, chuỗi thời gian `start(k+1) ≥ end(k) + quay đầu × active(k)`; phần đơn cùng điểm + nhóm nhiệt độ + kho gộp 1 node (vượt tải xe lớn nhất thì chia nhiều node, không tách phần đơn); OR-Tools `PATH_CHEAPEST_ARC` + `GUIDED_LOCAL_SEARCH`. (OR-Tools 9.15: `SetAllowedVehiclesForIndex` lỗi binding Python → dùng `VehicleVar(i).SetValues([-1, ...])`.)
 - Điều chỉnh: kéo thả điểm dừng giữa các chuyến / đổi thứ tự (`POST /planning/move-stop`, 1 transaction, kiểm tra ràng buộc như lập tay); trang kết quả so chi phí hiện tại với phương án tối ưu.
+- **Ưu tiên xe máy trong bán kính (D46):** điểm giao cách kho xuất ≤ `company_settings.motorbike_priority_radius_km` (mặc định 5 km, đường chim bay; 0 = tắt) mà có xe máy giao được → ô tô giao điểm đó bị cộng `motorbike_priority_cost` (mặc định 100.000 đ/điểm) vào hàm mục tiêu (`Job.vehicle_costs`, cộng ở cung đi đến điểm), không vào chi phí chuyến. Ngoài bán kính xếp hỗn hợp như cũ. Là ràng buộc mềm: xe máy hết tải/lượt/giờ thì ô tô vẫn giao; điểm gần nhưng bên kia sông thì phạt qua cầu của xe máy (mục 9d) thường lớn hơn nên vẫn đi ô tô. Tham số lưu vào `input_snapshot.settings`.
 
 ## 9d. Xe máy qua sông (module `rivers`, D45)
 
@@ -234,6 +235,13 @@ Chi tiết triển khai:
 - **Bờ sông:** phía của điểm so với đoạn đường tâm gần nhất (chiếu phẳng); điểm ngoài 2 đầu đường tâm thì không xét. Sông không có cầu đang dùng thì bỏ qua.
 - **Bộ giải:** xe máy có ma trận phạt (`Vehicle.penalty` → `Problem.penalties`), cộng vào chi phí cung đường, không vào chi phí chuyến. Cặp điểm khác bờ: phạt = min theo cầu (phạt của cầu + quãng đi vòng qua cầu theo đường chim bay × 1,35 × đơn giá/km). Kết quả: xe máy ưu tiên điểm cùng bờ với kho, điểm bên kia giao bằng ô tô hoặc qua cầu phạt thấp. Kế hoạch có cảnh báo khi lệnh xe máy vẫn qua sông (kèm cầu dự kiến); `input_snapshot.river_bridges` lưu tham số đã dùng.
 - **Hạn chế:** chỉ đổi cách xếp đơn, tuyến OSRM của xe máy (vẽ bản đồ, dẫn đường) vẫn có thể đi qua cầu bị hạn chế; khoảng cách/thời gian không tính phần đi vòng.
+
+## 9e. Phiếu in (D17, D47)
+
+- In bằng trang in của trình duyệt, khổ A4 (`@page { size: A4; margin: 0 }`), viền đen liền cho máy in kim. `web/src/lib/PagedDocument.tsx` tự chia trang: đo chiều cao đầu phiếu, tiêu đề bảng, từng dòng, phần cuối, chân trang ở độ rộng trang rồi xếp dòng vào trang (chừa 3% sai khác khi in); tiêu đề bảng lặp lại mỗi trang, phần cuối (tổng, chữ ký) không bị tách; chân trang mọi trang có "Trang x/y" đánh **theo từng phiếu** (CSS `counter(pages)` chỉ đếm cả lần in).
+- **Phiếu giao hàng** (`GET /trips/{id}/delivery-notes`): mỗi đơn trên lệnh 1 phiếu (gộp phần khô + lạnh của đơn), hàng tự do của điểm dừng gộp 1 phiếu; mục đã hủy không in. Gồm khách hàng, địa chỉ giao, người liên hệ, ngày đặt, kho, lệnh, xe, lái xe, ghi chú đơn; dòng hàng (SKU, quy đổi chẵn + lẻ, kg, thành tiền, cột "Thực nhận" để ghi tay); tổng kg + giá trị; chữ ký **Thủ kho, Lái xe, Khách hàng**.
+- **Phiếu soạn hàng**: 1 phiếu/lệnh (gộp theo mặt hàng), chữ ký Người lập, Thủ kho, Lái xe; thông báo khung giờ lưu hành của lệnh in ở phần cuối phiếu này.
+- **Mẫu phiếu theo công ty** (Cấu hình → Mẫu phiếu in, admin công ty): logo PNG/JPEG/WebP ≤ 512 KB lưu trong `company_settings.logo` (bytea, chỉ nạp khi cần; nằm trong backup DB), đầu trang / chân trang chữ tự do (≤ 2.000 ký tự) riêng cho phiếu soạn hàng và phiếu giao hàng; đầu trang trống = tên công ty, dòng đầu in đậm. API `GET /company/print-profile` (văn phòng, logo dạng data URL), `PUT /company/print-profile`, `PUT/DELETE /company/logo`.
 
 ## 9c. Quy định lưu hành theo vùng (module `traffic`, D38)
 
@@ -395,4 +403,6 @@ Ghi nhận khi dựng M0 trên Spark:
 | D42 | Nhà máy và Nhóm sản phẩm của mặt hàng là chữ tự do lấy từ hệ thống bán hàng (chưa có danh mục riêng); import bỏ trống thì giữ nguyên. Báo cáo theo nhóm để sau | Chốt |
 | D43 | Bản đồ khách hàng dùng API tọa độ riêng không phân trang (mọi điểm giao đang hoạt động khớp bộ lọc của danh sách) và lớp điểm gom cụm, không dùng marker DOM | Chốt |
 | D44 | Chuyển đổi file từ hệ thống ngoài (DMS) chỉ sinh file theo template import, không import trực tiếp, để người dùng xem lại và đi qua cùng một luồng kiểm tra/lịch sử import. Khách hàng/mặt hàng chỉ lấy mã chưa có, vì DMS thiếu tọa độ, trọng lượng, đơn vị SKU và địa chỉ đầy đủ | Chốt |
+| D46 | Ưu tiên xe máy giao điểm trong bán kính quanh kho (mặc định 5 km, đường chim bay) bằng chi phí cộng thêm khi ô tô giao (ràng buộc mềm, cấu hình theo công ty); ngoài bán kính xếp hỗn hợp | Chốt |
+| D47 | Phiếu giao hàng tách theo từng đơn, chữ ký thủ kho/lái xe/khách hàng; chia trang A4 phía trình duyệt, đánh số trang theo từng phiếu; logo lưu trong DB, đầu/chân trang là chữ tự do theo loại phiếu | Chốt |
 | D45 | Xe máy hạn chế qua sông bằng chi phí phạt theo cầu trong hàm mục tiêu (danh mục cầu theo công ty, đường tâm sông dùng chung trong code), không cấm cứng và chưa đổi tuyến OSRM | Chốt |

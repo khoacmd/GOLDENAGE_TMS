@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { unwrap } from '../lib/api-helpers'
 import { WEEKDAYS, fmtDateTime } from '../lib/labels'
+import { PrintTemplatesCard } from './PrintTemplatesCard'
 
 type ApiKey = components['schemas']['ApiKeyOut']
 
@@ -43,6 +44,7 @@ export function SettingsPage() {
       <PlanningSettingsCard />
       <DeliveryRulesSettings />
       <ZaloSettings />
+      <PrintTemplatesCard />
       <ApiKeys />
     </Space>
   )
@@ -201,6 +203,24 @@ function PlanningSettingsCard() {
             style={{ maxWidth: 360 }}
           >
             <InputNumber min={0.5} max={5} step={0.1} precision={2} />
+          </Form.Item>
+        </Space>
+        <Space size="large" wrap align="start">
+          <Form.Item
+            name="motorbike_priority_radius_km"
+            label="Bán kính ưu tiên xe máy (km)"
+            extra="Điểm giao trong bán kính này quanh kho xuất (đường chim bay) ưu tiên giao bằng xe máy; ngoài bán kính xếp hỗn hợp như thường. 0 = tắt."
+            style={{ maxWidth: 360 }}
+          >
+            <InputNumber min={0} max={50} step={0.5} precision={1} />
+          </Form.Item>
+          <Form.Item
+            name="motorbike_priority_cost"
+            label="Chi phí cộng thêm khi ô tô giao điểm gần (đ/điểm)"
+            extra="Chỉ dùng để so sánh phương án. Càng lớn, ô tô càng ít nhận điểm gần; xe máy hết lượt/tải thì ô tô vẫn giao."
+            style={{ maxWidth: 360 }}
+          >
+            <InputNumber min={0} step={50000} style={{ width: 180 }} />
           </Form.Item>
         </Space>
         <Button type="primary" htmlType="submit" loading={save.isPending}>

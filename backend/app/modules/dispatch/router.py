@@ -18,6 +18,8 @@ from app.modules.dispatch.schemas import (
     BulkCancelIn,
     BulkCancelOut,
     CancelIn,
+    DeliveryNoteOut,
+    DeliveryNotesOut,
     ItemUpdateIn,
     PickingLineOut,
     PickingListOut,
@@ -233,6 +235,21 @@ async def picking_list(trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
         trip=summary_out(trip),
         lines=[PickingLineOut.model_validate(line) for line in lines],
         adhoc_items=adhoc,
+    )
+
+
+@router.get("/{trip_id}/delivery-notes")
+async def delivery_notes(
+    trip_id: uuid.UUID, _: OfficeStaffDep, session: DbSession
+) -> DeliveryNotesOut:
+    """Phiếu giao hàng tách theo từng đơn (in kèm chữ ký thủ kho, lái xe, khách hàng)."""
+    trip = await service.get_trip(session, trip_id)
+    return DeliveryNotesOut(
+        trip=summary_out(trip),
+        vehicle_plate=trip.vehicle.plate_no,
+        warehouse_name=trip.warehouse.name,
+        warehouse_address=trip.warehouse.address,
+        notes=[DeliveryNoteOut.model_validate(n) for n in service.delivery_notes(trip)],
     )
 
 

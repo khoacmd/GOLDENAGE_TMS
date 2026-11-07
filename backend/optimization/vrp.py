@@ -123,14 +123,22 @@ def solve(problem: Problem) -> Solution:
     def location(index: int) -> int:
         return node_location[int(manager.IndexToNode(index))]
 
-    # Chi phí di chuyển theo profile và đơn giá/km của từng xe (đơn vị: đồng).
-    cost_callbacks: dict[tuple[str, float, str | None], int] = {}
+    # Chi phí di chuyển theo profile và đơn giá/km của từng xe (đơn vị: đồng), cộng phạt theo
+    # cặp địa điểm (`Vehicle.penalty`) và chi phí khi xe ghé điểm (`Job.vehicle_costs`, tính ở
+    # cung đi đến điểm đó).
+    visit_costs: dict[str, list[int]] = {}
+    for n, node in enumerate(nodes):
+        for vehicle_id, extra_cost in node.job.vehicle_costs.items():
+            visit_costs.setdefault(vehicle_id, [0] * len(node_location))[n] = extra_cost
+    cost_callbacks: dict[tuple[str, float, str | None, str | None], int] = {}
     time_callbacks: dict[str, int] = {}
     for v, slot in enumerate(slots):
         matrix = problem.matrices[slot.vehicle.profile]
-        key = (slot.vehicle.profile, slot.vehicle.cost_per_km, slot.vehicle.penalty)
+        visit_key = slot.vehicle.id if slot.vehicle.id in visit_costs else None
+        key = (slot.vehicle.profile, slot.vehicle.cost_per_km, slot.vehicle.penalty, visit_key)
         if key not in cost_callbacks:
             penalty = problem.penalties.get(slot.vehicle.penalty or "")
+            visits = visit_costs.get(visit_key or "")
 
             def arc_cost(
                 i: int,
@@ -138,10 +146,15 @@ def solve(problem: Problem) -> Solution:
                 m: Matrix = matrix,
                 rate: float = slot.vehicle.cost_per_km,
                 extra: list[list[int]] | None = penalty,
+                visit: list[int] | None = visits,
             ) -> int:
                 a, b = location(i), location(j)
                 cost = int(m.distance_m[a][b] * rate / 1000)
-                return cost + extra[a][b] if extra is not None else cost
+                if extra is not None:
+                    cost += extra[a][b]
+                if visit is not None:
+                    cost += visit[int(manager.IndexToNode(j))]
+                return cost
 
             cost_callbacks[key] = routing.RegisterTransitCallback(arc_cost)
         routing.SetArcCostEvaluatorOfVehicle(cost_callbacks[key], v)

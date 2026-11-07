@@ -45,6 +45,9 @@
 - [x] Thủ kho: danh sách lệnh đã duyệt, phiếu soạn hàng, xác nhận xuất hàng
 - [x] Bổ sung trạng thái "Đã soạn hàng" (`PREPARED`) giữa "Đã duyệt" và "Đã xuất kho": nút "Xác nhận soạn hàng" ở màn hình Xuất kho và chi tiết lệnh, lọc "Cần xử lý"
 - [x] In phiếu soạn hàng / phiếu giao hàng (trang in trình duyệt → PDF)
+- [x] Phiếu giao hàng tách theo từng đơn, chữ ký Thủ kho / Lái xe / Khách hàng; khổ A4 cho máy in kim, tự chia trang, chân trang "Trang x/y" theo từng phiếu (D47)
+- [x] Cấu hình mẫu phiếu in: logo công ty, đầu trang / chân trang của phiếu soạn hàng và phiếu giao hàng
+- [ ] In thử trên máy in kim thật (lề máy in, cỡ chữ)
 - [x] Quản lý cập nhật thủ công trạng thái đơn, xác nhận kết thúc chuyến
 - [x] Bản đồ (MapLibre): chọn tọa độ kho/điểm giao, xem điểm dừng của lệnh
 - [ ] (Phase sau) Thủ kho giới hạn theo kho được phân công (`user_roles.warehouse_id`)
@@ -86,6 +89,7 @@
 - [x] Lập kế hoạch bằng nút: chọn các xe sử dụng (bỏ trống = toàn bộ đội xe); job định kỳ luôn dùng toàn bộ đội xe
 - [x] Trang Kế hoạch giao hàng: chọn nhiều lệnh chưa xuất kho để xóa (hủy, phần đơn về chờ xếp), ẩn lệnh đã hủy mặc định
 - [x] Xe máy hạn chế qua sông: danh mục Cầu vượt sông (mức phạt theo cầu, cầu mẫu sông Hồng), bộ giải ưu tiên điểm giao cùng bờ với kho của xe máy (D45)
+- [x] Ưu tiên xe máy giao các điểm trong bán kính 5 km quanh kho (cấu hình bán kính + chi phí cộng thêm khi ô tô giao), ngoài bán kính xếp hỗn hợp (D46)
 - [ ] (Phase sau) Tuyến OSRM xe máy tránh cầu bị hạn chế (vẽ bản đồ, dẫn đường); thêm sông Đuống nếu cần
 - [ ] (Khi có dữ liệu) Hiệu chỉnh hệ số thời gian di chuyển theo giờ xuất phát/kết thúc thực tế của chuyến
 

@@ -879,6 +879,84 @@ async def close(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:
     return trip
 
 
+# --- Phiếu giao hàng ---------------------------------------------------------------------
+
+
+def delivery_notes(trip: Trip) -> list[dict[str, Any]]:
+    """Mỗi đơn trên lệnh 1 phiếu (gộp phần khô + lạnh); hàng tự do gộp 1 phiếu theo điểm dừng."""
+    notes: list[dict[str, Any]] = []
+    for stop in trip.stops:
+        point = stop.delivery_point
+        base = {
+            "stop_seq": stop.seq,
+            "order_ref": None,
+            "order_date": None,
+            "requested_date": None,
+            "order_note": None,
+            "customer_code": point.customer.code if point else None,
+            "customer_name": point.customer.name if point else stop.name,
+            "contact_name": point.customer.contact_name if point else None,
+            "phone": point.customer.phone if point else None,
+            "address": point.address if point else stop.address,
+        }
+        by_order: dict[str, list[TripItem]] = defaultdict(list)
+        orders: dict[str, SalesOrder] = {}
+        adhoc: list[TripItem] = []
+        for item in stop.items:
+            if item.status == ItemStatus.CANCELLED:
+                continue
+            if item.order_part is None:
+                adhoc.append(item)
+            else:
+                order = item.order_part.order
+                orders[order.external_ref] = order
+                by_order[order.external_ref].append(item)
+        for ref, items in sorted(by_order.items()):
+            order = orders[ref]
+            lines = sorted((line for item in items for line in item.lines), key=lambda x: x.line_no)
+            notes.append(
+                base
+                | {
+                    "order_ref": order.external_ref,
+                    "order_date": order.order_date,
+                    "requested_date": order.requested_date,
+                    "order_note": order.note,
+                    "lines": [
+                        {
+                            "product_code": line.product.code,
+                            "product_name": line.product.name,
+                            "temp_group": line.temp_group,
+                            "sku_qty": line.sku_qty,
+                            "sku_uom": line.sku_uom,
+                            "uom_qty": line.uom_qty,
+                            "uom": line.uom,
+                            "whole_uom": line.whole_uom,
+                            "rest_sku": line.rest_sku,
+                            "weight_kg": line.weight_kg,
+                            "amount": line.amount,
+                        }
+                        for line in lines
+                    ],
+                    "adhoc_items": [],
+                    "total_weight_kg": sum((i.weight_kg for i in items), Decimal(0)),
+                    "total_value": sum((i.value for i in items), Decimal(0)),
+                }
+            )
+        if adhoc:
+            notes.append(
+                base
+                | {
+                    "lines": [],
+                    "adhoc_items": [
+                        f"{i.description} ({i.weight_kg.normalize():f} kg)" for i in adhoc
+                    ],
+                    "total_weight_kg": sum((i.weight_kg for i in adhoc), Decimal(0)),
+                    "total_value": sum((i.value for i in adhoc), Decimal(0)),
+                }
+            )
+    return notes
+
+
 # --- Phiếu soạn hàng ---------------------------------------------------------------------
 
 

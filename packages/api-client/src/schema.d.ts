@@ -275,6 +275,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/company/print-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Print Profile
+         * @description Logo + đầu/chân trang dùng khi in phiếu soạn hàng, phiếu giao hàng.
+         */
+        get: operations["get_print_profile_api_v1_company_print_profile_get"];
+        /** Update Print Profile */
+        put: operations["update_print_profile_api_v1_company_print_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/company/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload Logo */
+        put: operations["upload_logo_api_v1_company_logo_put"];
+        post?: never;
+        /** Delete Logo */
+        delete: operations["delete_logo_api_v1_company_logo_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/warehouses": {
         parameters: {
             query?: never;
@@ -846,6 +885,26 @@ export interface paths {
         };
         /** Picking List */
         get: operations["picking_list_api_v1_trips__trip_id__picking_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{trip_id}/delivery-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Delivery Notes
+         * @description Phiếu giao hàng tách theo từng đơn (in kèm chữ ký thủ kho, lái xe, khách hàng).
+         */
+        get: operations["delivery_notes_api_v1_trips__trip_id__delivery_notes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1855,6 +1914,14 @@ export interface components {
              */
             file: string;
         };
+        /** Body_upload_logo_api_v1_company_logo_put */
+        Body_upload_logo_api_v1_company_logo_put: {
+            /**
+             * File
+             * @description Logo PNG/JPEG/WebP, tối đa 512 KB
+             */
+            file: string;
+        };
         /** Body_upload_photo_api_v1_driver_photos_post */
         Body_upload_photo_api_v1_driver_photos_post: {
             /**
@@ -2037,6 +2104,18 @@ export interface components {
              * @description Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)
              */
             travel_time_factor: number;
+            /**
+             * Motorbike Priority Radius Km
+             * @description Bán kính quanh kho ưu tiên xe máy giao (0 = tắt)
+             * @default 5
+             */
+            motorbike_priority_radius_km: number;
+            /**
+             * Motorbike Priority Cost
+             * @description Chi phí cộng thêm khi ô tô giao điểm
+             * @default 100000
+             */
+            motorbike_priority_cost: number;
             /** Confirm Time Rule */
             confirm_time_rule: boolean;
             /** Confirm Grace Minutes */
@@ -2130,6 +2209,10 @@ export interface components {
             planning_time_limit_s?: number | null;
             /** Travel Time Factor */
             travel_time_factor?: number | null;
+            /** Motorbike Priority Radius Km */
+            motorbike_priority_radius_km?: number | null;
+            /** Motorbike Priority Cost */
+            motorbike_priority_cost?: number | null;
         };
         /** CompanyUpdate */
         CompanyUpdate: {
@@ -2779,6 +2862,77 @@ export interface components {
          * @enum {string}
          */
         DeliveryAttemptStatus: "SCHEDULED" | "IN_TRANSIT" | "DELIVERED" | "FAILED";
+        /** DeliveryNoteLineOut */
+        DeliveryNoteLineOut: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name: string;
+            temp_group: components["schemas"]["TempGroup"];
+            /** Sku Qty */
+            sku_qty: string;
+            /** Sku Uom */
+            sku_uom: string;
+            /** Uom Qty */
+            uom_qty: string;
+            /** Uom */
+            uom: string;
+            /** Whole Uom */
+            whole_uom: number | null;
+            /** Rest Sku */
+            rest_sku: string | null;
+            /** Weight Kg */
+            weight_kg: string;
+            /** Amount */
+            amount: string | null;
+        };
+        /**
+         * DeliveryNoteOut
+         * @description Phiếu giao hàng của 1 đơn (các phần đơn của đơn trên lệnh); điểm dừng chỉ có hàng tự do
+         *     thì 1 phiếu cho điểm đó (`order_ref` = null, hàng ở `adhoc_items`).
+         */
+        DeliveryNoteOut: {
+            /** Stop Seq */
+            stop_seq: number;
+            /** Order Ref */
+            order_ref: string | null;
+            /** Order Date */
+            order_date: string | null;
+            /** Requested Date */
+            requested_date: string | null;
+            /** Order Note */
+            order_note: string | null;
+            /** Customer Code */
+            customer_code: string | null;
+            /** Customer Name */
+            customer_name: string | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Address */
+            address: string | null;
+            /** Lines */
+            lines: components["schemas"]["DeliveryNoteLineOut"][];
+            /** Adhoc Items */
+            adhoc_items: string[];
+            /** Total Weight Kg */
+            total_weight_kg: string;
+            /** Total Value */
+            total_value: string;
+        };
+        /** DeliveryNotesOut */
+        DeliveryNotesOut: {
+            trip: components["schemas"]["TripSummaryOut"];
+            /** Vehicle Plate */
+            vehicle_plate: string;
+            /** Warehouse Name */
+            warehouse_name: string;
+            /** Warehouse Address */
+            warehouse_address: string;
+            /** Notes */
+            notes: components["schemas"]["DeliveryNoteOut"][];
+        };
         /** DeliveryPointIn */
         DeliveryPointIn: {
             /** Code */
@@ -3595,6 +3749,38 @@ export interface components {
         PinUpdate: {
             /** Pin */
             pin: string;
+        };
+        /** PrintProfileOut */
+        PrintProfileOut: {
+            /** Picking Header */
+            picking_header?: string | null;
+            /** Picking Footer */
+            picking_footer?: string | null;
+            /** Delivery Header */
+            delivery_header?: string | null;
+            /** Delivery Footer */
+            delivery_footer?: string | null;
+            /** Company Name */
+            company_name: string;
+            /**
+             * Logo
+             * @description Logo dạng data URL, null nếu chưa có
+             */
+            logo: string | null;
+        };
+        /**
+         * PrintTemplates
+         * @description Đầu trang (cạnh logo) và chân trang của phiếu in; trống = mặc định (tên công ty).
+         */
+        PrintTemplates: {
+            /** Picking Header */
+            picking_header?: string | null;
+            /** Picking Footer */
+            picking_footer?: string | null;
+            /** Delivery Header */
+            delivery_header?: string | null;
+            /** Delivery Footer */
+            delivery_footer?: string | null;
         };
         /**
          * PrinterConnection
@@ -5390,6 +5576,112 @@ export interface operations {
             };
         };
     };
+    get_print_profile_api_v1_company_print_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintProfileOut"];
+                };
+            };
+        };
+    };
+    update_print_profile_api_v1_company_print_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrintTemplates"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_logo_api_v1_company_logo_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_logo_api_v1_company_logo_put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_logo_api_v1_company_logo_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintProfileOut"];
+                };
+            };
+        };
+    };
     list_warehouses_api_v1_warehouses_get: {
         parameters: {
             query?: {
@@ -6890,6 +7182,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PickingListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delivery_notes_api_v1_trips__trip_id__delivery_notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryNotesOut"];
                 };
             };
             /** @description Validation Error */

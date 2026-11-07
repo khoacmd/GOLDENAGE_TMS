@@ -47,6 +47,9 @@ class Job:
     service_s: int = 0
     # Giờ từng xe được đến điểm này (điểm trong vùng hạn chế); không khai báo = cả ca.
     vehicle_windows: Mapping[str, tuple[Window, ...]] = field(default_factory=dict)
+    # Chi phí cộng thêm (đồng) khi xe phục vụ điểm này, để ưu tiên xe khác (vd. điểm gần kho
+    # ưu tiên xe máy); chỉ tính vào hàm mục tiêu.
+    vehicle_costs: Mapping[str, int] = field(default_factory=dict)
 
 
 @dataclass

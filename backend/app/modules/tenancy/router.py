@@ -1,9 +1,15 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from app.core.auth import CompanyAdminDep, CurrentUser, SystemAdminDep, require_roles
+from app.core.auth import (
+    CompanyAdminDep,
+    CurrentUser,
+    OfficeStaffDep,
+    SystemAdminDep,
+    require_roles,
+)
 from app.core.db import DbSession
 from app.modules.identity.models import CompanyRole
 from app.modules.tenancy import service
@@ -13,6 +19,8 @@ from app.modules.tenancy.schemas import (
     CompanySettingsOut,
     CompanySettingsUpdate,
     CompanyUpdate,
+    PrintProfileOut,
+    PrintTemplates,
 )
 
 admin_router = APIRouter(prefix="/admin/companies", tags=["system-admin"])
@@ -61,3 +69,37 @@ async def update_company_settings(
     settings = await service.update_settings(session, current.cid, body)
     await session.commit()
     return CompanySettingsOut.model_validate(settings)
+
+
+@company_router.get("/print-profile")
+async def get_print_profile(current: OfficeStaffDep, session: DbSession) -> PrintProfileOut:
+    """Logo + đầu/chân trang dùng khi in phiếu soạn hàng, phiếu giao hàng."""
+    return await service.print_profile(session, current.cid)
+
+
+@company_router.put("/print-profile")
+async def update_print_profile(
+    body: PrintTemplates, current: CompanyAdminDep, session: DbSession
+) -> PrintProfileOut:
+    await service.update_print_templates(session, current.cid, body)
+    await session.commit()
+    return await service.print_profile(session, current.cid)
+
+
+@company_router.put("/logo")
+async def upload_logo(
+    current: CompanyAdminDep,
+    session: DbSession,
+    file: Annotated[UploadFile, File(description="Logo PNG/JPEG/WebP, tối đa 512 KB")],
+) -> PrintProfileOut:
+    data = await file.read(service.MAX_LOGO_BYTES + 1)
+    await service.set_logo(session, current.cid, data, file.content_type or "")
+    await session.commit()
+    return await service.print_profile(session, current.cid)
+
+
+@company_router.delete("/logo")
+async def delete_logo(current: CompanyAdminDep, session: DbSession) -> PrintProfileOut:
+    await service.set_logo(session, current.cid, None)
+    await session.commit()
+    return await service.print_profile(session, current.cid)

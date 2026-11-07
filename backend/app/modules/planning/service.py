@@ -14,7 +14,7 @@ import logging
 import time as clock
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -393,6 +393,29 @@ def build_jobs(
     return jobs, info, unassigned
 
 
+def prefer_motorbikes(
+    jobs: list[Job],
+    locations: list[Point],
+    depot_location: dict[str, int],
+    motorbike_ids: set[str],
+    radius_km: float,
+    cost: int,
+) -> list[Job]:
+    """Điểm trong bán kính quanh kho xuất (đường chim bay) mà xe máy giao được: ô tô giao điểm đó
+    bị cộng `cost` vào hàm mục tiêu, để xe máy giao trước; ngoài bán kính giữ nguyên."""
+    if radius_km <= 0 or cost <= 0:
+        return jobs
+    out = []
+    for job in jobs:
+        allowed = set(job.vehicle_ids)
+        depot = locations[depot_location[job.depot_id]]
+        near = routing.haversine_m(depot, locations[job.location]) <= radius_km * 1000
+        if near and allowed & motorbike_ids:
+            job = replace(job, vehicle_costs={v: cost for v in allowed - motorbike_ids})
+        out.append(job)
+    return out
+
+
 # --- Chạy ------------------------------------------------------------------------------
 
 
@@ -512,6 +535,14 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
         feasible, allocation, compatible, location_of, settings.service_minutes * 60, limits
     )
     unassigned.update(merge_unassigned)
+    jobs = prefer_motorbikes(
+        jobs,
+        locations,
+        {str(w.id): location_of[w.id] for w in warehouses},
+        {str(v.id) for v in usable if dispatch.vehicle_profile(v) == Profile.MOTORBIKE},
+        settings.motorbike_priority_radius_km,
+        settings.motorbike_priority_cost,
+    )
 
     sources: set[str] = set()
     matrices = {}
@@ -717,6 +748,8 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             "max_trips_per_vehicle": settings.max_trips_per_vehicle,
             "trip_fixed_cost": settings.trip_fixed_cost,
             "travel_time_factor": settings.travel_time_factor,
+            "motorbike_priority_radius_km": settings.motorbike_priority_radius_km,
+            "motorbike_priority_cost": settings.motorbike_priority_cost,
             "traffic_rules_enabled": settings.traffic_rules_enabled,
             "traffic_zone_buffer_minutes": settings.traffic_zone_buffer_minutes,
         },

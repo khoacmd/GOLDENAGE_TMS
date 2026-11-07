@@ -67,6 +67,12 @@ class PlanningSettings(BaseModel):
     travel_time_factor: float = Field(
         ge=0.5, le=5, description="Hệ số nhân thời gian di chuyển của OSRM (đường thông thoáng)"
     )
+    motorbike_priority_radius_km: float = Field(
+        default=5, ge=0, le=50, description="Bán kính quanh kho ưu tiên xe máy giao (0 = tắt)"
+    )
+    motorbike_priority_cost: int = Field(
+        default=100_000, ge=0, le=100_000_000, description="Chi phí cộng thêm khi ô tô giao điểm"
+    )
 
 
 class CompanySettingsOut(DeliveryRules, PlanningSettings):
@@ -107,6 +113,8 @@ class CompanySettingsUpdate(BaseModel):
     trip_fixed_cost: int | None = Field(default=None, ge=0, le=100_000_000)
     planning_time_limit_s: int | None = Field(default=None, ge=1, le=300)
     travel_time_factor: float | None = Field(default=None, ge=0.5, le=5)
+    motorbike_priority_radius_km: float | None = Field(default=None, ge=0, le=50)
+    motorbike_priority_cost: int | None = Field(default=None, ge=0, le=100_000_000)
 
     @field_validator("working_weekdays")
     @classmethod
@@ -119,3 +127,25 @@ class CompanySettingsUpdate(BaseModel):
         if value is not None and value not in zoneinfo.available_timezones():
             raise ValueError("Múi giờ không hợp lệ")
         return value
+
+
+PrintText = Annotated[str | None, Field(default=None, max_length=2000)]
+
+
+class PrintTemplates(BaseModel):
+    """Đầu trang (cạnh logo) và chân trang của phiếu in; trống = mặc định (tên công ty)."""
+
+    picking_header: PrintText = None
+    picking_footer: PrintText = None
+    delivery_header: PrintText = None
+    delivery_footer: PrintText = None
+
+    @field_validator("*")
+    @classmethod
+    def _blank_to_none(cls, value: str | None) -> str | None:
+        return value.strip() or None if value is not None else None
+
+
+class PrintProfileOut(PrintTemplates):
+    company_name: str
+    logo: str | None = Field(description="Logo dạng data URL, null nếu chưa có")
