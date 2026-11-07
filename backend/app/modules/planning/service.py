@@ -65,7 +65,20 @@ async def create_run(
     trigger: RunTrigger,
     actor_id: uuid.UUID | None,
     replace_drafts: bool = True,
+    vehicle_ids: list[uuid.UUID] | None = None,
 ) -> PlanningRun:
+    if vehicle_ids:
+        # Nạp qua session có RLS: id xe của công ty khác coi như không tồn tại.
+        selected = set(vehicle_ids)
+        found = set(
+            await session.scalars(
+                select(Vehicle.id).where(Vehicle.id.in_(selected), Vehicle.is_active.is_(True))
+            )
+        )
+        if found != selected:
+            raise AppError(
+                "Xe được chọn không tồn tại hoặc đã ngưng hoạt động", code="invalid_vehicle"
+            )
     busy = await session.scalar(
         select(PlanningRun.id).where(
             PlanningRun.plan_date == plan_date,
@@ -80,6 +93,7 @@ async def create_run(
         trigger=trigger,
         requested_by=actor_id,
         replace_drafts=replace_drafts,
+        vehicle_ids=sorted(str(v) for v in set(vehicle_ids)) if vehicle_ids else None,
     )
     session.add(run)
     await session.flush()
@@ -408,6 +422,11 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
     warehouses, _ = await master_data.list_warehouses(session, ALL, True)
     active_wh = {w.id for w in warehouses}
     vehicles = [v for v in vehicles if active_wh.intersection(v.warehouse_ids)]
+    if run.vehicle_ids is not None:
+        chosen = set(run.vehicle_ids)
+        vehicles = [v for v in vehicles if str(v.id) in chosen]
+        codes = ", ".join(sorted(v.code for v in vehicles)) or "không còn xe nào hoạt động"
+        warnings.append(f"Chỉ dùng các xe được chọn: {codes}")
 
     # Lượt còn lại của mỗi xe (trừ các lệnh đã có trong ngày).
     used: dict[uuid.UUID, int] = defaultdict(int)
@@ -442,6 +461,8 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
     feasible: list[OrderPart] = []
     for part in parts:
         reason = _infeasible_reason(part, vehicles)
+        if reason is not None and run.vehicle_ids is not None:
+            reason += " (trong các xe được chọn)"
         if reason is None and not _compatible(part, usable):
             reason = "Các xe phù hợp đã dùng hết số lượt trong ngày"
         if reason is None and not _compatible(part, usable, limits):
@@ -640,6 +661,7 @@ async def execute(session: AsyncSession, run: PlanningRun) -> None:
             {"id": str(v.id), "code": v.code, "remaining_trips": remaining_trips[v.id]}
             for v in vehicles
         ],
+        "selected_vehicle_ids": run.vehicle_ids,
         "shift": [shift_start, shift_end],
         "settings": {
             "service_minutes": settings.service_minutes,

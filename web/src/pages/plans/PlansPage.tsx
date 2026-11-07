@@ -1,6 +1,21 @@
-import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Alert, App, Button, Card, Checkbox, DatePicker, Modal, Progress, Space, Table, Tag } from 'antd'
+import { DeleteOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Checkbox,
+  DatePicker,
+  Form,
+  Input,
+  Modal,
+  Progress,
+  Select,
+  Space,
+  Table,
+  Tag,
+} from 'antd'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
@@ -10,6 +25,9 @@ import { useAuth } from '../../auth-context'
 import { unwrap } from '../../lib/api-helpers'
 import { DELIVERY_STATUS, TRIP_STATUS, fmtDateTime, fmtNumber } from '../../lib/labels'
 import { defaultPlanDate, loadPercent, toISODate, type TripSummary } from '../../lib/trips'
+
+// Xóa được lệnh chưa xuất kho (hàng còn trong kho); khớp `dispatch.service.EDITABLE`.
+const DELETABLE: TripSummary['order_status'][] = ['DRAFT', 'APPROVED', 'PREPARED']
 
 export function PlansPage() {
   const navigate = useNavigate()
@@ -33,6 +51,9 @@ export function PlansPage() {
     queryFn: async () => unwrap(await api.GET('/api/v1/planning/runs', { params: { query: { plan_date: planDate } } })),
   })
   const lastRun = runs.data?.[0]
+  const [showCancelled, setShowCancelled] = useState(false)
+  const [selected, setSelected] = useState<string[]>([])
+  const shown = showCancelled ? trips.data : active
 
   return (
     <Card
@@ -81,14 +102,38 @@ export function PlansPage() {
           Phần đơn chờ xếp lệnh:{' '}
           <Tag color={pending.data?.length ? 'orange' : 'green'}>{pending.data?.length ?? '…'}</Tag>
         </span>
+        <Checkbox checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)}>
+          Hiện lệnh đã hủy
+        </Checkbox>
+        {isManager && (
+          <DeleteTripsButton
+            trips={(trips.data ?? []).filter((t) => selected.includes(t.id))}
+            onDone={() => setSelected([])}
+          />
+        )}
       </Space>
       <Table<TripSummary>
         rowKey="id"
         loading={trips.isLoading}
-        dataSource={trips.data}
+        dataSource={shown}
         pagination={false}
         scroll={{ x: 1100 }}
-        onRow={(t) => ({ onClick: () => navigate(`/trips/${t.id}`), style: { cursor: 'pointer' } })}
+        rowSelection={
+          isManager
+            ? {
+                selectedRowKeys: selected,
+                onChange: (keys) => setSelected(keys as string[]),
+                getCheckboxProps: (t) => ({ disabled: !DELETABLE.includes(t.order_status) }),
+              }
+            : undefined
+        }
+        onRow={(t) => ({
+          onClick: (e) => {
+            // Bấm vào ô chọn không mở chi tiết lệnh.
+            if (!(e.target as HTMLElement).closest('.ant-table-selection-column')) navigate(`/trips/${t.id}`)
+          },
+          style: { cursor: 'pointer' },
+        })}
         columns={[
           {
             title: 'Mã lệnh',
@@ -137,14 +182,75 @@ export function PlansPage() {
   )
 }
 
+function DeleteTripsButton({ trips, onDone }: { trips: TripSummary[]; onDone: () => void }) {
+  const { message } = App.useApp()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [reason, setReason] = useState('Xóa lệnh')
+  const remove = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/api/v1/trips/cancel', {
+          body: { trip_ids: trips.map((t) => t.id), reason: reason.trim() },
+        }),
+      ),
+    onSuccess: async (r) => {
+      message.success(`Đã xóa ${r.cancelled} lệnh`)
+      setOpen(false)
+      onDone()
+      await queryClient.invalidateQueries({ queryKey: ['trips'] })
+      await queryClient.invalidateQueries({ queryKey: ['available-parts'] })
+    },
+    onError: (e: Error) => message.error(e.message),
+  })
+  return (
+    <>
+      <Button danger icon={<DeleteOutlined />} disabled={!trips.length} onClick={() => setOpen(true)}>
+        Xóa lệnh đã chọn{trips.length ? ` (${trips.length})` : ''}
+      </Button>
+      <Modal
+        open={open}
+        title={`Xóa ${trips.length} lệnh giao`}
+        okText="Xóa"
+        okButtonProps={{ danger: true, disabled: !reason.trim() }}
+        cancelText="Không"
+        confirmLoading={remove.isPending}
+        onOk={() => remove.mutate()}
+        onCancel={() => setOpen(false)}
+      >
+        <p>{trips.map((t) => t.code).join(', ')}</p>
+        <p>
+          Lệnh chuyển sang trạng thái Đã hủy (vẫn xem lại được khi bật "Hiện lệnh đã hủy"), các phần đơn trở về danh
+          sách chờ xếp lệnh.
+        </p>
+        <Form layout="vertical">
+          <Form.Item label="Lý do" required>
+            <Input maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
+  )
+}
+
 function AutoPlanButton({ planDate }: { planDate: string }) {
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [replace, setReplace] = useState(true)
+  const [vehicleIds, setVehicleIds] = useState<string[]>([])
+  const vehicles = useQuery({
+    queryKey: ['vehicles', 'active'],
+    queryFn: async () => unwrap(await api.GET('/api/v1/vehicles', { params: { query: { active: true, limit: 500 } } })),
+    enabled: open,
+  })
   const run = useMutation({
     mutationFn: async () =>
-      unwrap(await api.POST('/api/v1/planning/runs', { body: { plan_date: planDate, replace_drafts: replace } })),
+      unwrap(
+        await api.POST('/api/v1/planning/runs', {
+          body: { plan_date: planDate, replace_drafts: replace, vehicle_ids: vehicleIds.length ? vehicleIds : null },
+        }),
+      ),
     onSuccess: (r) => navigate(`/plans/runs/${r.id}`),
     onError: (e: Error) => message.error(e.message),
   })
@@ -166,6 +272,23 @@ function AutoPlanButton({ planDate }: { planDate: string }) {
           Xếp mọi phần đơn đang chờ (kể cả đơn giao thất bại trước đó) có ngày giao yêu cầu đến ngày này vào các
           chuyến, tối ưu quãng đường và chi phí. Kết quả là các lệnh nháp để bạn xem, chỉnh và duyệt.
         </p>
+        <Form layout="vertical">
+          <Form.Item label="Xe sử dụng" extra="Bỏ trống: dùng toàn bộ đội xe đang hoạt động.">
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Toàn bộ đội xe"
+              loading={vehicles.isLoading}
+              value={vehicleIds}
+              onChange={setVehicleIds}
+              showSearch={{ optionFilterProp: 'label' }}
+              options={vehicles.data?.items.map((v) => ({
+                value: v.id,
+                label: `${v.code} - ${v.name} (${fmtNumber(v.capacity_kg)} kg)`,
+              }))}
+            />
+          </Form.Item>
+        </Form>
         <Checkbox checked={replace} onChange={(e) => setReplace(e.target.checked)}>
           Hủy các lệnh nháp đã lập tự động trước đó của ngày này rồi lập lại
         </Checkbox>

@@ -13,6 +13,9 @@ class RunCreate(BaseModel):
     replace_drafts: bool = Field(
         default=True, description="Hủy các lệnh nháp lập tự động trước đó của ngày rồi lập lại"
     )
+    vehicle_ids: list[uuid.UUID] | None = Field(
+        default=None, description="Xe được dùng; bỏ trống = toàn bộ đội xe"
+    )
 
 
 class UnassignedPart(BaseModel):
@@ -48,6 +51,7 @@ class RunOut(BaseModel):
     trigger: RunTrigger
     status: RunStatus
     replace_drafts: bool
+    vehicle_ids: list[uuid.UUID] | None
     requested_by: uuid.UUID | None
     created_at: datetime
     started_at: datetime | None

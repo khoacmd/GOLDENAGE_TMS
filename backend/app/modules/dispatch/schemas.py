@@ -63,6 +63,14 @@ class CancelIn(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
 
 
+class BulkCancelIn(CancelIn):
+    trip_ids: list[uuid.UUID] = Field(min_length=1, max_length=200)
+
+
+class BulkCancelOut(BaseModel):
+    cancelled: int
+
+
 class ItemUpdateIn(BaseModel):
     status: ItemStatus
     reason: str | None = Field(default=None, max_length=500)

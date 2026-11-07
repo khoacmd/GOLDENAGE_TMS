@@ -83,6 +83,8 @@
 - [x] Sửa: phần đơn giao thất bại xếp lại được vào lệnh mới (D25)
 - [x] Vẽ tuyến theo đường thực tế (OSRM `/route`) thay cho đường thẳng trên bản đồ
 - [x] Đưa worker + scheduler vào Docker Compose / triển khai (cùng M6, `infra/prod`)
+- [x] Lập kế hoạch bằng nút: chọn các xe sử dụng (bỏ trống = toàn bộ đội xe); job định kỳ luôn dùng toàn bộ đội xe
+- [x] Trang Kế hoạch giao hàng: chọn nhiều lệnh chưa xuất kho để xóa (hủy, phần đơn về chờ xếp), ẩn lệnh đã hủy mặc định
 - [ ] (Khi có dữ liệu) Hiệu chỉnh hệ số thời gian di chuyển theo giờ xuất phát/kết thúc thực tế của chuyến
 
 ## M5 – Chi phí & báo cáo

@@ -248,6 +248,44 @@ async def test_cancel_releases_parts(client: AsyncClient, env: Env) -> None:
     assert len(pool) == 12
 
 
+async def test_cancel_many_only_before_pick(client: AsyncClient, env: Env) -> None:
+    async def create(order: str) -> str:
+        body = trip_body(env, "XE02", "KHO01", [stop(env, (order, "DRY"))])
+        resp = await client.post("/api/v1/trips", headers=auth(env.manager), json=body)
+        trip_id: str = resp.json()["id"]
+        return trip_id
+
+    draft, approved, picked = [await create(o) for o in ("DH2610-006", "DH2610-007", "DH2610-001")]
+    for trip_id in (approved, picked):
+        await client.post(f"/api/v1/trips/{trip_id}/approve", headers=auth(env.manager))
+    await client.post(f"/api/v1/trips/{picked}/prepare", headers=auth(env.keeper))
+    await client.post(f"/api/v1/trips/{picked}/pick", headers=auth(env.keeper))
+
+    async def cancel(ids: list[str], token: str = env.manager) -> Any:
+        return await client.post(
+            "/api/v1/trips/cancel", headers=auth(token), json={"trip_ids": ids, "reason": "Xóa"}
+        )
+
+    assert (await cancel([draft], env.keeper)).status_code == 403
+    # Có lệnh đã xuất kho → không hủy lệnh nào.
+    resp = await cancel([draft, approved, picked])
+    assert resp.status_code == 400
+    assert resp.json()["error"]["details"] == ["L261102-03: đã xuất kho"]
+    resp = await cancel([draft, approved, draft])
+    assert resp.json() == {"cancelled": 2}
+    trips = (
+        await client.get(f"/api/v1/trips?plan_date={PLAN_DATE}", headers=auth(env.manager))
+    ).json()
+    status = {t["id"]: t["order_status"] for t in trips}
+    assert [status[t] for t in (draft, approved, picked)] == ["CANCELLED", "CANCELLED", "PICKED"]
+    pool = (
+        await client.get(
+            f"/api/v1/trips/available-parts?plan_date={PLAN_DATE}", headers=auth(env.manager)
+        )
+    ).json()
+    assert len(pool) == 11
+
+
 async def test_adhoc_trip_without_orders(client: AsyncClient, env: Env) -> None:
     body = trip_body(
         env,

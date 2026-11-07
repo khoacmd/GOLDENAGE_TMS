@@ -72,6 +72,32 @@ async def test_unassigned_reasons_when_no_cold_vehicle(client: AsyncClient, env:
     assert run["warnings"][0].endswith("cần xử lý thủ công")
 
 
+async def test_manual_run_uses_selected_vehicles(client: AsyncClient, env: Env) -> None:
+    xe02 = env.vehicles["XE02"]
+    run = await plan(client, env, vehicle_ids=[xe02, xe02])
+    assert run["vehicle_ids"] == [xe02]
+    assert run["trips"] and {t["vehicle_id"] for t in run["trips"]} == {xe02}
+    assert "Chỉ dùng các xe được chọn: XE02" in run["warnings"]
+
+    # Để trống = toàn bộ đội xe.
+    run = await plan(client, env, vehicle_ids=[])
+    assert run["vehicle_ids"] is None
+    assert len({t["vehicle_id"] for t in run["trips"]}) > 1
+
+    await client.patch(
+        f"/api/v1/vehicles/{env.vehicles['XE03']}",
+        headers=auth(env.admin),
+        json={"is_active": False},
+    )
+    resp = await client.post(
+        "/api/v1/planning/runs",
+        headers=auth(env.manager),
+        json={"plan_date": PLAN_DATE, "vehicle_ids": [env.vehicles["XE03"]]},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "invalid_vehicle"
+
+
 async def test_move_stop_between_trips_and_approve_rules(client: AsyncClient, env: Env) -> None:
     await client.put(
         "/api/v1/company/settings", headers=auth(env.admin), json={"max_trips_per_vehicle": 1}

@@ -54,6 +54,15 @@ from app.modules.traffic.schemas import StopTrafficCheck, TripTrafficCheck
 # Phần đơn có thể xếp lệnh: chưa lập kế hoạch hoặc lần giao trước thất bại.
 ELIGIBLE_PART_STATUSES = (OrderPartStatus.PENDING, OrderPartStatus.FAILED)
 EDITABLE = (TripOrderStatus.DRAFT, TripOrderStatus.APPROVED, TripOrderStatus.PREPARED)
+STATUS_LABEL = {
+    TripOrderStatus.DRAFT: "chưa duyệt",
+    TripOrderStatus.APPROVED: "đã duyệt",
+    TripOrderStatus.PREPARED: "đã soạn hàng",
+    TripOrderStatus.PICKED: "đã xuất kho",
+    TripOrderStatus.DISPATCHED: "đã xuất phát",
+    TripOrderStatus.CLOSED: "đã kết thúc",
+    TripOrderStatus.CANCELLED: "đã hủy",
+}
 # Lệnh còn "giữ" tồn kho tại kho xuất (chưa xuất hàng thực tế).
 RESERVING = EDITABLE
 
@@ -722,6 +731,23 @@ async def cancel(
     audit.record(session, trip.company_id, ENTITY, trip.id, "cancelled", actor_id, reason=reason)
     await session.flush()
     return trip
+
+
+async def cancel_many(
+    session: AsyncSession, trip_ids: list[uuid.UUID], reason: str, actor_id: uuid.UUID
+) -> list[Trip]:
+    """Hủy nhiều lệnh cùng lúc: tất cả hoặc không, chỉ lệnh chưa xuất kho."""
+    trips = [await get_trip(session, trip_id) for trip_id in dict.fromkeys(trip_ids)]
+    blocked = [
+        f"{t.code}: {STATUS_LABEL[t.order_status]}" for t in trips if t.order_status not in EDITABLE
+    ]
+    if blocked:
+        raise AppError(
+            "Chỉ xóa được lệnh chưa duyệt hoặc đã duyệt nhưng chưa xuất kho",
+            code="invalid_status",
+            details=blocked,
+        )
+    return [await cancel(session, trip, reason, actor_id) for trip in trips]
 
 
 async def prepare(session: AsyncSession, trip: Trip, actor_id: uuid.UUID) -> Trip:

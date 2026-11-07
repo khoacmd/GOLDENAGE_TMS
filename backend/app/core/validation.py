@@ -162,6 +162,8 @@ FIELD_LABELS = {
     "vehicle_type": "Loại xe",
     "warehouse_id": "Kho",
     "warehouse_ids": "Kho",
+    "vehicle_ids": "Xe",
+    "trip_ids": "Lệnh giao",
     "weight_kg": "Trọng lượng",
     "working_weekdays": "Ngày làm việc",
     "x-api-key": "API key",

@@ -637,6 +637,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Trips
+         * @description Xóa (hủy) nhiều lệnh chưa xuất kho; phần đơn trở về chờ xếp lệnh.
+         */
+        post: operations["cancel_trips_api_v1_trips_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{trip_id}": {
         parameters: {
             query?: never;
@@ -1766,6 +1786,18 @@ export interface components {
              * @description Ảnh chứng từ giao nhận
              */
             file: string;
+        };
+        /** BulkCancelIn */
+        BulkCancelIn: {
+            /** Reason */
+            reason: string;
+            /** Trip Ids */
+            trip_ids: string[];
+        };
+        /** BulkCancelOut */
+        BulkCancelOut: {
+            /** Cancelled */
+            cancelled: number;
         };
         /** CancelIn */
         CancelIn: {
@@ -3615,6 +3647,11 @@ export interface components {
              * @default true
              */
             replace_drafts: boolean;
+            /**
+             * Vehicle Ids
+             * @description Xe được dùng; bỏ trống = toàn bộ đội xe
+             */
+            vehicle_ids?: string[] | null;
         };
         /** RunDetailOut */
         RunDetailOut: {
@@ -3632,6 +3669,8 @@ export interface components {
             status: components["schemas"]["RunStatus"];
             /** Replace Drafts */
             replace_drafts: boolean;
+            /** Vehicle Ids */
+            vehicle_ids: string[] | null;
             /** Requested By */
             requested_by: string | null;
             /**
@@ -3672,6 +3711,8 @@ export interface components {
             status: components["schemas"]["RunStatus"];
             /** Replace Drafts */
             replace_drafts: boolean;
+            /** Vehicle Ids */
+            vehicle_ids: string[] | null;
             /** Requested By */
             requested_by: string | null;
             /**
@@ -6285,6 +6326,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_trips_api_v1_trips_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkCancelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkCancelOut"];
                 };
             };
             /** @description Validation Error */

@@ -33,6 +33,8 @@ class PlanningRun(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     status: Mapped[RunStatus] = mapped_column(enum_type(RunStatus), default=RunStatus.QUEUED)
     # Hủy các lệnh nháp lập tự động trước đó của ngày này rồi lập lại.
     replace_drafts: Mapped[bool] = mapped_column(default=True)
+    # Xe được dùng (lập bằng tay có thể chọn); null = toàn bộ đội xe đang hoạt động.
+    vehicle_ids: Mapped[list[str] | None] = mapped_column(JSONB)
     requested_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

@@ -15,6 +15,8 @@ from app.modules.dispatch.schemas import (
     ApproveIn,
     AuditOut,
     AvailablePartOut,
+    BulkCancelIn,
+    BulkCancelOut,
     CancelIn,
     ItemUpdateIn,
     PickingLineOut,
@@ -93,6 +95,14 @@ async def create_trip(body: TripIn, user: ManagerDep, session: DbSession) -> Tri
     trip, warnings = await service.save_trip(session, user.cid, body, user.id)
     await session.commit()
     return trip_out(await _reload(session, trip.id), warnings)
+
+
+@router.post("/cancel")
+async def cancel_trips(body: BulkCancelIn, user: ManagerDep, session: DbSession) -> BulkCancelOut:
+    """Xóa (hủy) nhiều lệnh chưa xuất kho; phần đơn trở về chờ xếp lệnh."""
+    trips = await service.cancel_many(session, body.trip_ids, body.reason, user.id)
+    await session.commit()
+    return BulkCancelOut(cancelled=len(trips))
 
 
 @router.get("/{trip_id}")

@@ -187,6 +187,7 @@ trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho soạn─► PR
 
 - Phần đơn được xếp lệnh khi `PENDING` hoặc `FAILED` (giao lại), đơn `OPEN`, ngày giao yêu cầu ≤ ngày lập lệnh. Vào lệnh (kể cả nháp) → `PLANNED` để không xếp trùng.
 - Ràng buộc **chặn** khi lưu lệnh: xe hoạt động, kho thuộc danh sách kho của xe, lái xe/phụ xe có vai trò `driver`, phụ xe bắt buộc nếu xe yêu cầu, phần đơn đúng điểm dừng, loại hàng hợp `cargo_class` của xe, loại xe đúng yêu cầu của khách, tổng khối lượng ≤ trọng tải. **Cảnh báo** (vẫn lưu): tồn kho tại kho xuất không đủ (trừ phần đã giữ bởi lệnh khác chưa xuất kho), ngày giao khác ngày yêu cầu, ngày không phải ngày giao hàng.
+- Xóa nhiều lệnh cùng lúc (`POST /trips/cancel`, web: chọn lệnh trên trang Kế hoạch giao hàng) = hủy từng lệnh, chỉ lệnh `DRAFT/APPROVED/PREPARED` (chưa xuất kho), tất cả hoặc không; không xóa hẳn để giữ lịch sử, danh sách mặc định ẩn lệnh đã hủy.
 - Duyệt cần có lái xe. Sửa lệnh `APPROVED`/`PREPARED` (hàng còn trong kho) → quay về `DRAFT`, cần duyệt và soạn lại; sau `PICKED` không sửa/hủy được (chưa có luồng hoàn trả kho).
 - Quyền: lập/sửa/duyệt/hủy/cập nhật giao/kết thúc = `manager`; xác nhận soạn hàng, xuất kho = `warehouse_keeper`; xuất phát = `manager` hoặc lái xe/phụ xe của chuyến.
 - Thủ kho xác nhận `PREPARED` (đã soạn hàng, `POST /trips/{id}/prepare`) cho lệnh `APPROVED`, rồi `PICKED` (xuất kho, `POST /trips/{id}/pick`) cho lệnh `PREPARED`; không bỏ qua bước soạn hàng.
@@ -216,7 +217,7 @@ trip.order_status:  DRAFT ─duyệt─► APPROVED ─thủ kho soạn─► PR
    - Bỏ node có penalty rất lớn → nếu không đủ năng lực, bộ giải vẫn trả kết quả, danh sách **không xếp được** kèm lý do để quản lý xử lý thủ công (thêm lượt, xe thuê ngoài).
 5. **Kết quả**: kế hoạch `DRAFT` → quản lý xem trên bản đồ, kéo thả điều chỉnh → duyệt.
 
-Kích hoạt: lệnh manual (`POST /planning/runs`) hoặc job định kỳ (`worker/scheduler.py`, mỗi phút): công ty bật `auto_plan_enabled`, đã qua `cutover_time` → lập cho **ngày làm việc kế tiếp**, mỗi ngày 1 lần. Chạy nền bằng Dramatiq (`worker/tasks.py`, queue `planning`, `--threads 1` vì mỗi message dùng event loop riêng); `TMS_TASKS_EAGER=true` chạy ngay trong API (test/dev không có worker). Mỗi lần chạy lưu `planning_runs` (snapshot input) để tái hiện/debug.
+Kích hoạt: lệnh manual (`POST /planning/runs`, nút "Lập kế hoạch tự động"; chọn được các xe sử dụng `vehicle_ids`, bỏ trống = toàn bộ đội xe, lưu ở `planning_runs.vehicle_ids`) hoặc job định kỳ (luôn dùng toàn bộ đội xe) (`worker/scheduler.py`, mỗi phút): công ty bật `auto_plan_enabled`, đã qua `cutover_time` → lập cho **ngày làm việc kế tiếp**, mỗi ngày 1 lần. Chạy nền bằng Dramatiq (`worker/tasks.py`, queue `planning`, `--threads 1` vì mỗi message dùng event loop riêng); `TMS_TASKS_EAGER=true` chạy ngay trong API (test/dev không có worker). Mỗi lần chạy lưu `planning_runs` (snapshot input) để tái hiện/debug.
 
 Chi tiết triển khai:
 - Tham số theo công ty: thời gian giao mỗi điểm, quay đầu tại kho, số lượt tối đa/xe, chi phí cố định/chuyến, thời gian tối ưu tối đa, hệ số thời gian di chuyển. Lượt đã có trong ngày (lệnh thủ công) được trừ khỏi số lượt của xe. Lập trong ngày → chuyến xuất phát từ hiện tại + 15 phút.

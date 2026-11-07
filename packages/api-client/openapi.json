@@ -2911,6 +2911,53 @@
         }
       }
     },
+    "/api/v1/trips/cancel": {
+      "post": {
+        "tags": [
+          "dispatch"
+        ],
+        "summary": "Cancel Trips",
+        "description": "Xóa (hủy) nhiều lệnh chưa xuất kho; phần đơn trở về chờ xếp lệnh.",
+        "operationId": "cancel_trips_api_v1_trips_cancel_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCancelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkCancelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/trips/{trip_id}": {
       "get": {
         "tags": [
@@ -6349,6 +6396,45 @@
           "file"
         ],
         "title": "Body_upload_photo_api_v1_driver_photos_post"
+      },
+      "BulkCancelIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "trip_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Trip Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "trip_ids"
+        ],
+        "title": "BulkCancelIn"
+      },
+      "BulkCancelOut": {
+        "properties": {
+          "cancelled": {
+            "type": "integer",
+            "title": "Cancelled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cancelled"
+        ],
+        "title": "BulkCancelOut"
       },
       "CancelIn": {
         "properties": {
@@ -11740,6 +11826,22 @@
             "title": "Replace Drafts",
             "description": "Hủy các lệnh nháp lập tự động trước đó của ngày rồi lập lại",
             "default": true
+          },
+          "vehicle_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Ids",
+            "description": "Xe được dùng; bỏ trống = toàn bộ đội xe"
           }
         },
         "type": "object",
@@ -11769,6 +11871,21 @@
           "replace_drafts": {
             "type": "boolean",
             "title": "Replace Drafts"
+          },
+          "vehicle_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Ids"
           },
           "requested_by": {
             "anyOf": [
@@ -11868,6 +11985,7 @@
           "trigger",
           "status",
           "replace_drafts",
+          "vehicle_ids",
           "requested_by",
           "created_at",
           "started_at",
@@ -11903,6 +12021,21 @@
           "replace_drafts": {
             "type": "boolean",
             "title": "Replace Drafts"
+          },
+          "vehicle_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Ids"
           },
           "requested_by": {
             "anyOf": [
@@ -11992,6 +12125,7 @@
           "trigger",
           "status",
           "replace_drafts",
+          "vehicle_ids",
           "requested_by",
           "created_at",
           "started_at",

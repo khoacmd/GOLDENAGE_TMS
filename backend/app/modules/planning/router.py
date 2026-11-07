@@ -30,7 +30,13 @@ ManagerDep = Annotated[CurrentUser, Depends(require_roles(CompanyRole.MANAGER))]
 async def create_run(body: RunCreate, user: ManagerDep, session: DbSession) -> RunOut:
     """Lập kế hoạch tự động (chạy nền); theo dõi kết quả qua GET /planning/runs/{id}."""
     run = await service.create_run(
-        session, user.cid, body.plan_date, RunTrigger.MANUAL, user.id, body.replace_drafts
+        session,
+        user.cid,
+        body.plan_date,
+        RunTrigger.MANUAL,
+        user.id,
+        body.replace_drafts,
+        body.vehicle_ids,
     )
     await session.commit()
     await enqueue_run(run.id, user.cid)
